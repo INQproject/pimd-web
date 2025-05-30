@@ -1,10 +1,14 @@
-
 import React from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const HostBookings = () => {
+  const navigate = useNavigate();
+  
   const bookings = [
     {
       id: 'B001',
@@ -46,41 +50,54 @@ const HostBookings = () => {
 
   return (
     <Layout title="Booking History">
-      <Card>
-        <CardHeader>
-          <CardTitle>All Reservations</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {bookings.map(booking => (
-              <div key={booking.id} className="border rounded-lg p-4">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className="font-semibold">#{booking.id}</span>
-                      <Badge className={getStatusColor(booking.status)}>
-                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                      </Badge>
+      <div className="space-y-6">
+        {/* Back Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/dashboard-host')}
+          className="flex items-center space-x-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back</span>
+        </Button>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>All Reservations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {bookings.map(booking => (
+                <div key={booking.id} className="border rounded-lg p-4">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className="font-semibold">#{booking.id}</span>
+                        <Badge className={getStatusColor(booking.status)}>
+                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">
+                        <span className="font-medium">Seeker:</span> {booking.seekerName}
+                      </p>
+                      <p className="text-sm text-gray-600 mb-1">
+                        <span className="font-medium">Spot:</span> {booking.spot}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Date & Time:</span> {booking.date} | {booking.time}
+                      </p>
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium">Seeker:</span> {booking.seekerName}
-                    </p>
-                    <p className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium">Spot:</span> {booking.spot}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Date & Time:</span> {booking.date} | {booking.time}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-green-600">{booking.amount}</p>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-green-600">{booking.amount}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </Layout>
   );
 };

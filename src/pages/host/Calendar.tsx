@@ -6,9 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Calendar as CalendarIcon, Plus, Edit, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Edit, Trash2, Lock, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 const Calendar = () => {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<string>('2024-01-15');
   const [selectedSpot, setSelectedSpot] = useState<string>('');
   const [isAddSlotOpen, setIsAddSlotOpen] = useState(false);
@@ -25,20 +28,26 @@ const Calendar = () => {
   ];
 
   const [slots, setSlots] = useState([
-    { id: 1, spotId: '1', date: '2024-01-15', startTime: '9:00 AM', endTime: '5:00 PM', available: true },
-    { id: 2, spotId: '1', date: '2024-01-15', startTime: '6:00 PM', endTime: '10:00 PM', available: false },
-    { id: 3, spotId: '1', date: '2024-01-16', startTime: '8:00 AM', endTime: '6:00 PM', available: true },
-    { id: 4, spotId: '2', date: '2024-01-15', startTime: '10:00 AM', endTime: '4:00 PM', available: true },
-    { id: 5, spotId: '2', date: '2024-01-17', startTime: '9:00 AM', endTime: '3:00 PM', available: true },
+    { id: 1, spotId: '1', date: '2024-01-15', startTime: '9:00 AM', endTime: '5:00 PM', available: true, booked: false },
+    { id: 2, spotId: '1', date: '2024-01-15', startTime: '6:00 PM', endTime: '10:00 PM', available: true, booked: true },
+    { id: 3, spotId: '1', date: '2024-01-16', startTime: '8:00 AM', endTime: '6:00 PM', available: true, booked: false },
+    { id: 4, spotId: '2', date: '2024-01-15', startTime: '10:00 AM', endTime: '4:00 PM', available: false, booked: false },
+    { id: 5, spotId: '2', date: '2024-01-17', startTime: '9:00 AM', endTime: '3:00 PM', available: true, booked: true },
   ]);
 
   const toggleAvailability = (slotId: number) => {
+    const slot = slots.find(s => s.id === slotId);
+    if (slot?.booked) return; // Prevent toggling booked slots
+    
     setSlots(prev => prev.map(slot => 
       slot.id === slotId ? { ...slot, available: !slot.available } : slot
     ));
   };
 
   const deleteSlot = (slotId: number) => {
+    const slot = slots.find(s => s.id === slotId);
+    if (slot?.booked) return; // Prevent deleting booked slots
+    
     setSlots(prev => prev.filter(slot => slot.id !== slotId));
   };
 
@@ -51,12 +60,23 @@ const Calendar = () => {
       date: selectedDate,
       startTime: newSlot.startTime,
       endTime: newSlot.endTime,
-      available: true
+      available: true,
+      booked: false
     };
 
     setSlots(prev => [...prev, newSlotData]);
     setNewSlot({ startTime: '', endTime: '' });
     setIsAddSlotOpen(false);
+  };
+
+  const getSlotStatusBadge = (slot: any) => {
+    if (slot.booked) {
+      return <Badge variant="secondary" className="bg-gray-100 text-gray-700">🔒 Booked</Badge>;
+    } else if (slot.available) {
+      return <Badge variant="default" className="bg-green-100 text-green-700">🟩 Available</Badge>;
+    } else {
+      return <Badge variant="destructive" className="bg-red-100 text-red-700">🟥 Unavailable</Badge>;
+    }
   };
 
   const selectedDateSlots = slots.filter(slot => 
@@ -70,6 +90,17 @@ const Calendar = () => {
   return (
     <Layout title="Manage Availability">
       <div className="space-y-6">
+        {/* Back Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/dashboard-host')}
+          className="flex items-center space-x-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back</span>
+        </Button>
+
         {/* Parking Spot Selection */}
         <Card>
           <CardHeader>
@@ -179,27 +210,36 @@ const Calendar = () => {
                       <div key={slot.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex-1">
                           <p className="font-medium">{slot.startTime} - {slot.endTime}</p>
-                          <p className={`text-sm ${slot.available ? 'text-green-600' : 'text-red-600'}`}>
-                            {slot.available ? 'Available' : 'Unavailable'}
-                          </p>
+                          <div className="mt-1">
+                            {getSlotStatusBadge(slot)}
+                          </div>
                         </div>
                         <div className="flex space-x-2">
-                          <Button size="sm" variant="outline">
-                            <Edit className="h-4 w-4" />
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            disabled={slot.booked}
+                            className={slot.booked ? 'opacity-50' : ''}
+                          >
+                            {slot.booked ? <Lock className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
                           </Button>
                           <Button 
                             size="sm" 
                             variant={slot.available ? "destructive" : "default"}
                             onClick={() => toggleAvailability(slot.id)}
+                            disabled={slot.booked}
+                            className={slot.booked ? 'opacity-50' : ''}
                           >
-                            {slot.available ? 'Disable' : 'Enable'}
+                            {slot.booked ? 'Booked' : (slot.available ? 'Disable' : 'Enable')}
                           </Button>
                           <Button 
                             size="sm" 
                             variant="destructive"
                             onClick={() => deleteSlot(slot.id)}
+                            disabled={slot.booked}
+                            className={slot.booked ? 'opacity-50' : ''}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {slot.booked ? <Lock className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
                           </Button>
                         </div>
                       </div>
@@ -224,27 +264,36 @@ const Calendar = () => {
                     <div className="flex-1">
                       <p className="font-medium">{slot.date}</p>
                       <p className="text-sm text-gray-600">{slot.startTime} - {slot.endTime}</p>
-                      <p className={`text-sm ${slot.available ? 'text-green-600' : 'text-red-600'}`}>
-                        {slot.available ? 'Available' : 'Unavailable'}
-                      </p>
+                      <div className="mt-1">
+                        {getSlotStatusBadge(slot)}
+                      </div>
                     </div>
                     <div className="flex space-x-2">
-                      <Button size="sm" variant="outline">
-                        <Edit className="h-4 w-4" />
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        disabled={slot.booked}
+                        className={slot.booked ? 'opacity-50' : ''}
+                      >
+                        {slot.booked ? <Lock className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
                       </Button>
                       <Button 
                         size="sm" 
                         variant={slot.available ? "destructive" : "default"}
                         onClick={() => toggleAvailability(slot.id)}
+                        disabled={slot.booked}
+                        className={slot.booked ? 'opacity-50' : ''}
                       >
-                        {slot.available ? 'Disable' : 'Enable'}
+                        {slot.booked ? 'Booked' : (slot.available ? 'Disable' : 'Enable')}
                       </Button>
                       <Button 
                         size="sm" 
                         variant="destructive"
                         onClick={() => deleteSlot(slot.id)}
+                        disabled={slot.booked}
+                        className={slot.booked ? 'opacity-50' : ''}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {slot.booked ? <Lock className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
                       </Button>
                     </div>
                   </div>
