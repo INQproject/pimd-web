@@ -34,22 +34,30 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const success = await login(loginData.email, loginData.password);
+      
+      if (success) {
+        toast({
+          title: "Welcome back!",
+          description: "You have been successfully logged in.",
+        });
+        navigate(returnTo);
+      } else {
+        toast({
+          title: "Login failed",
+          description: "Invalid email or password.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred during login.",
+        variant: "destructive"
+      });
+    }
     
-    login({
-      id: '1',
-      name: loginData.email.split('@')[0],
-      email: loginData.email,
-      role: 'user'
-    });
-
-    toast({
-      title: "Welcome back!",
-      description: "You have been successfully logged in.",
-    });
-
-    navigate(returnTo);
     setIsLoading(false);
   };
 
@@ -67,22 +75,30 @@ const Login = () => {
 
     setIsLoading(true);
     
-    // Simulate registration
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const success = await login(registerData.email, registerData.password);
+      
+      if (success) {
+        toast({
+          title: "Account created!",
+          description: "Welcome to Park In My Driveway.",
+        });
+        navigate(returnTo);
+      } else {
+        toast({
+          title: "Registration failed",
+          description: "Unable to create account.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred during registration.",
+        variant: "destructive"
+      });
+    }
     
-    login({
-      id: '1',
-      name: registerData.name,
-      email: registerData.email,
-      role: 'user'
-    });
-
-    toast({
-      title: "Account created!",
-      description: "Welcome to Park In My Driveway.",
-    });
-
-    navigate(returnTo);
     setIsLoading(false);
   };
 
