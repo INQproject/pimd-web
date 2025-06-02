@@ -21,8 +21,16 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success && email === 'admin@parkdriveway.com') {
+      // Check admin credentials
+      if (email === 'admin@parkdriveway.com' && password === 'admin123') {
+        // Login with admin user data
+        login({
+          id: 'admin-1',
+          name: 'Admin User',
+          email: email,
+          role: 'admin'
+        });
+        
         navigate('/admin-dashboard');
       } else {
         toast({
