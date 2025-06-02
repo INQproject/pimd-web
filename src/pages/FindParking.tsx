@@ -92,6 +92,7 @@ const FindParking = () => {
   const [showBookingSummary, setShowBookingSummary] = useState(false);
   const [showSlotBookingModal, setShowSlotBookingModal] = useState(false);
   const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<any>(null);
+  const [selectedSpot, setSelectedSpot] = useState<any>(null);
 
   const updateVehicleCount = (count: number) => {
     setNumVehicles(count);
