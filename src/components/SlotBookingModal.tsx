@@ -8,6 +8,7 @@ import { Car, Clock, AlertCircle } from 'lucide-react';
 
 interface TimeSlot {
   id: number;
+  name: string;
   time: string;
   price: number;
   available: boolean;
@@ -16,6 +17,8 @@ interface TimeSlot {
 
 interface Vehicle {
   id: number;
+  slotId: number | null;
+  slotName: string;
   startTime: string;
   endTime: string;
   duration: number;
@@ -25,19 +28,19 @@ interface Vehicle {
 interface SlotBookingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  slot: TimeSlot;
+  slots: TimeSlot[];
   onConfirm: (vehicles: Vehicle[]) => void;
 }
 
 const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
   open,
   onOpenChange,
-  slot,
+  slots,
   onConfirm
 }) => {
   const [numVehicles, setNumVehicles] = useState(1);
   const [vehicles, setVehicles] = useState<Vehicle[]>([
-    { id: 1, startTime: '', endTime: '', duration: 0, price: 0 }
+    { id: 1, slotId: null, slotName: '', startTime: '', endTime: '', duration: 0, price: 0 }
   ]);
 
   // Parse slot time range (e.g., "9:00 AM - 11:00 AM")
@@ -47,8 +50,8 @@ const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
   };
 
   // Generate time options within slot range
-  const generateTimeOptions = () => {
-    const { start, end } = parseSlotTime(slot.time);
+  const generateTimeOptions = (slotTime: string) => {
+    const { start, end } = parseSlotTime(slotTime);
     const options = [];
     
     const startHour = convertTo24Hour(start);
@@ -89,28 +92,41 @@ const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
   const updateVehicleCount = (count: number) => {
     setNumVehicles(count);
     const newVehicles = Array.from({ length: count }, (_, i) => 
-      vehicles[i] || { id: i + 1, startTime: '', endTime: '', duration: 0, price: 0 }
+      vehicles[i] || { id: i + 1, slotId: null, slotName: '', startTime: '', endTime: '', duration: 0, price: 0 }
     );
     setVehicles(newVehicles);
   };
 
-  const updateVehicle = (vehicleId: number, field: 'startTime' | 'endTime', value: string) => {
+  const updateVehicle = (vehicleId: number, field: keyof Vehicle, value: any) => {
     setVehicles(prev => prev.map(v => {
       if (v.id === vehicleId) {
         const updated = { ...v, [field]: value };
         
-        // Calculate duration and price
-        if (updated.startTime && updated.endTime) {
+        // If slot is changed, reset times and find slot details
+        if (field === 'slotId') {
+          const selectedSlot = slots.find(s => s.id === value);
+          updated.slotName = selectedSlot ? `${selectedSlot.name} (${selectedSlot.time})` : '';
+          updated.startTime = '';
+          updated.endTime = '';
+          updated.duration = 0;
+          updated.price = 0;
+        }
+        
+        // Calculate duration and price when times are set
+        if (updated.startTime && updated.endTime && updated.slotId) {
           const startHour = convertTo24Hour(updated.startTime);
           const endHour = convertTo24Hour(updated.endTime);
           const duration = endHour - startHour;
           
           if (duration > 0) {
             updated.duration = duration;
-            // Calculate proportional price based on slot duration
-            const slotDuration = 2; // Default 2-hour slots
-            const pricePerHour = slot.price / slotDuration;
-            updated.price = Math.round(pricePerHour * duration);
+            const selectedSlot = slots.find(s => s.id === updated.slotId);
+            if (selectedSlot) {
+              // Calculate proportional price based on slot duration
+              const slotDuration = 2; // Default 2-hour slots
+              const pricePerHour = selectedSlot.price / slotDuration;
+              updated.price = Math.round(pricePerHour * duration);
+            }
           }
         }
         
@@ -120,13 +136,31 @@ const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
     }));
   };
 
+  const getAvailableTimeOptions = (vehicleId: number, timeType: 'start' | 'end') => {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (!vehicle || !vehicle.slotId) return [];
+
+    const selectedSlot = slots.find(s => s.id === vehicle.slotId);
+    if (!selectedSlot) return [];
+
+    const timeOptions = generateTimeOptions(selectedSlot.time);
+    
+    if (timeType === 'end') {
+      return timeOptions.filter(time => 
+        !vehicle.startTime || convertTo24Hour(time) > convertTo24Hour(vehicle.startTime)
+      );
+    }
+    
+    return timeOptions.slice(0, -1); // Remove last option for start time
+  };
+
   const calculateTotalPrice = () => {
     return vehicles.reduce((total, vehicle) => total + vehicle.price, 0);
   };
 
   const isValidBooking = () => {
-    return vehicles.every(v => v.startTime && v.endTime && v.duration > 0) && 
-           numVehicles <= slot.maxVehicles;
+    return vehicles.every(v => v.slotId && v.startTime && v.endTime && v.duration > 0) && 
+           numVehicles >= 1;
   };
 
   const handleConfirm = () => {
@@ -136,22 +170,50 @@ const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
     }
   };
 
-  const timeOptions = generateTimeOptions();
+  const groupedVehiclesBySlot = vehicles.reduce((acc, vehicle) => {
+    if (vehicle.slotId && vehicle.duration > 0) {
+      const slotName = vehicle.slotName;
+      if (!acc[slotName]) {
+        acc[slotName] = [];
+      }
+      acc[slotName].push(vehicle);
+    }
+    return acc;
+  }, {} as Record<string, Vehicle[]>);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Clock className="h-5 w-5 text-[#FF6B00]" />
-            <span>Book Slot: {slot.time}</span>
+            <span>Book Multiple Vehicles Across Slots</span>
           </DialogTitle>
           <DialogDescription>
-            Customize booking times for multiple vehicles within this slot
+            Select different time slots for each vehicle from available host slots
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">
+          {/* Available Slots Display */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h3 className="font-semibold text-lg mb-3">Available Slots</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {slots.map((slot) => (
+                <div key={slot.id} className="bg-white p-3 rounded border">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{slot.name}</span>
+                    <span className="text-sm text-gray-600">{slot.time}</span>
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-sm text-gray-500">Max {slot.maxVehicles} vehicles</span>
+                    <span className="font-semibold text-[#FF6B00]">${slot.price}/slot</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Vehicle Count Selection */}
           <div className="space-y-2">
             <Label htmlFor="num-vehicles">How many vehicles are you booking for?</Label>
@@ -160,17 +222,11 @@ const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Array.from({ length: Math.min(5, slot.maxVehicles) }, (_, i) => i + 1).map(num => (
+                {[1, 2, 3, 4, 5].map(num => (
                   <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {numVehicles > slot.maxVehicles && (
-              <div className="flex items-center space-x-2 text-red-600 text-sm">
-                <AlertCircle className="h-4 w-4" />
-                <span>This slot supports maximum {slot.maxVehicles} vehicles</span>
-              </div>
-            )}
           </div>
 
           {/* Vehicle Forms */}
@@ -182,18 +238,38 @@ const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
                   <span className="font-medium">Car {vehicle.id}</span>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Select Slot</Label>
+                    <Select 
+                      value={vehicle.slotId?.toString() || ''} 
+                      onValueChange={(value) => updateVehicle(vehicle.id, 'slotId', parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a slot" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {slots.map((slot) => (
+                          <SelectItem key={slot.id} value={slot.id.toString()}>
+                            {slot.name} ({slot.time})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="space-y-2">
                     <Label>Start Time</Label>
                     <Select 
                       value={vehicle.startTime} 
                       onValueChange={(value) => updateVehicle(vehicle.id, 'startTime', value)}
+                      disabled={!vehicle.slotId}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select start time" />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeOptions.slice(0, -1).map((time) => (
+                        {getAvailableTimeOptions(vehicle.id, 'start').map((time) => (
                           <SelectItem key={time} value={time}>
                             {time}
                           </SelectItem>
@@ -207,18 +283,17 @@ const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
                     <Select 
                       value={vehicle.endTime} 
                       onValueChange={(value) => updateVehicle(vehicle.id, 'endTime', value)}
+                      disabled={!vehicle.slotId || !vehicle.startTime}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select end time" />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeOptions
-                          .filter((time) => !vehicle.startTime || convertTo24Hour(time) > convertTo24Hour(vehicle.startTime))
-                          .map((time) => (
-                            <SelectItem key={time} value={time}>
-                              {time}
-                            </SelectItem>
-                          ))}
+                        {getAvailableTimeOptions(vehicle.id, 'end').map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -237,21 +312,26 @@ const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
           </div>
 
           {/* Booking Summary */}
-          {vehicles.some(v => v.duration > 0) && (
+          {Object.keys(groupedVehiclesBySlot).length > 0 && (
             <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
               <h3 className="font-semibold text-lg mb-3">Booking Summary</h3>
-              <div className="space-y-2">
-                {vehicles.map((vehicle) => (
-                  vehicle.duration > 0 && (
-                    <div key={vehicle.id} className="flex justify-between items-center">
-                      <span>Car {vehicle.id}: {vehicle.startTime} - {vehicle.endTime}</span>
-                      <span className="font-semibold">${vehicle.price}</span>
+              <div className="space-y-3">
+                {Object.entries(groupedVehiclesBySlot).map(([slotName, slotVehicles]) => (
+                  <div key={slotName} className="bg-white p-3 rounded border">
+                    <div className="font-medium text-[#FF6B00] mb-2">{slotName}</div>
+                    <div className="space-y-1">
+                      {slotVehicles.map((vehicle) => (
+                        <div key={vehicle.id} className="flex justify-between items-center text-sm">
+                          <span>Car {vehicle.id}: {vehicle.startTime} - {vehicle.endTime}</span>
+                          <span className="font-semibold">${vehicle.price}</span>
+                        </div>
+                      ))}
                     </div>
-                  )
+                  </div>
                 ))}
-                <div className="border-t pt-2 mt-2">
+                <div className="border-t pt-3 mt-3">
                   <div className="flex justify-between items-center font-bold text-lg">
-                    <span>Total:</span>
+                    <span>Total Cost:</span>
                     <span className="text-[#FF6B00]">${calculateTotalPrice()}</span>
                   </div>
                 </div>
@@ -264,7 +344,7 @@ const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
             className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
             disabled={!isValidBooking()}
           >
-            Confirm Booking
+            Confirm Multi-Vehicle Booking
           </Button>
         </div>
       </DialogContent>

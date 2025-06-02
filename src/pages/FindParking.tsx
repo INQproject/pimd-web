@@ -33,7 +33,12 @@ const mockParkingSpots = [
     availability: '8:00 AM - 10:00 PM',
     city: 'austin',
     maxVehicles: 3,
-    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400'
+    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
+    slots: [
+      { id: 1, name: 'Morning Slot', time: '9:00 AM - 11:00 AM', price: 15, available: true, maxVehicles: 3 },
+      { id: 2, name: 'Afternoon Slot', time: '12:00 PM - 2:00 PM', price: 15, available: true, maxVehicles: 3 },
+      { id: 3, name: 'Evening Slot', time: '5:00 PM - 7:00 PM', price: 15, available: true, maxVehicles: 3 }
+    ]
   },
   {
     id: 2,
@@ -43,7 +48,12 @@ const mockParkingSpots = [
     availability: '6:00 AM - 11:00 PM',
     city: 'dallas',
     maxVehicles: 2,
-    image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400'
+    image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
+    slots: [
+      { id: 4, name: 'Early Morning', time: '8:00 AM - 10:00 AM', price: 12, available: true, maxVehicles: 2 },
+      { id: 5, name: 'Late Morning', time: '10:00 AM - 12:00 PM', price: 12, available: true, maxVehicles: 2 },
+      { id: 6, name: 'Afternoon', time: '1:00 PM - 3:00 PM', price: 12, available: true, maxVehicles: 2 }
+    ]
   },
   {
     id: 3,
@@ -53,7 +63,11 @@ const mockParkingSpots = [
     availability: '7:00 AM - 9:00 PM',
     city: 'austin',
     maxVehicles: 4,
-    image: 'https://images.unsplash.com/photo-1496307653780-42ee777d4833?w=400'
+    image: 'https://images.unsplash.com/photo-1496307653780-42ee777d4833?w=400',
+    slots: [
+      { id: 7, name: 'Morning Block', time: '9:00 AM - 12:00 PM', price: 18, available: true, maxVehicles: 4 },
+      { id: 8, name: 'Afternoon Block', time: '1:00 PM - 4:00 PM', price: 18, available: true, maxVehicles: 4 }
+    ]
   },
   {
     id: 4,
@@ -63,7 +77,10 @@ const mockParkingSpots = [
     availability: '9:00 AM - 8:00 PM',
     city: 'dallas',
     maxVehicles: 1,
-    image: 'https://images.unsplash.com/photo-1473177104440-ffee2f376098?w=400'
+    image: 'https://images.unsplash.com/photo-1473177104440-ffee2f376098?w=400',
+    slots: [
+      { id: 9, name: 'Full Day', time: '9:00 AM - 5:00 PM', price: 14, available: true, maxVehicles: 1 }
+    ]
   }
 ];
 
@@ -150,7 +167,7 @@ const FindParking = () => {
       setSelectedSpot(spot);
       setShowBookingSummary(true);
     } else {
-      // For single booking, show slot selection modal
+      // For single booking, show slot selection modal with multiple slots
       setSelectedSlotForBooking(spot);
       setShowSlotBookingModal(true);
     }
@@ -370,7 +387,7 @@ const FindParking = () => {
                     />
                     <div className="absolute top-3 right-3">
                       <span className="bg-white px-2 py-1 rounded-full text-sm font-semibold text-[#FF6B00]">
-                        ${calculateTotalPrice(spot)} total
+                        {spot.slots.length} slots available
                       </span>
                     </div>
                     {isGroupBooking && (
@@ -403,12 +420,27 @@ const FindParking = () => {
                   </CardHeader>
                   
                   <CardContent>
-                    <Button 
-                      onClick={() => handleBookParking(spot)}
-                      className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
-                    >
-                      {isGroupBooking ? 'Book Group Parking' : 'Select Time Slot'}
-                    </Button>
+                    <div className="space-y-3">
+                      {/* Show available slots */}
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <h4 className="font-medium text-sm mb-2">Available Time Slots:</h4>
+                        <div className="space-y-1">
+                          {spot.slots.map((slot: any) => (
+                            <div key={slot.id} className="flex justify-between items-center text-xs">
+                              <span>{slot.name}: {slot.time}</span>
+                              <span className="font-semibold">${slot.price}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <Button 
+                        onClick={() => handleBookParking(spot)}
+                        className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
+                      >
+                        {isGroupBooking ? 'Book Group Parking' : 'Select Time Slots'}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -420,13 +452,7 @@ const FindParking = () => {
         <SlotBookingModal
           open={showSlotBookingModal}
           onOpenChange={setShowSlotBookingModal}
-          slot={{
-            id: selectedSlotForBooking?.id || 1,
-            time: "9:00 AM - 11:00 AM",
-            price: selectedSlotForBooking?.price || 15,
-            available: true,
-            maxVehicles: selectedSlotForBooking?.maxVehicles || 3
-          }}
+          slots={selectedSlotForBooking?.slots || []}
           onConfirm={handleSlotBookingConfirm}
         />
 
@@ -464,7 +490,7 @@ const FindParking = () => {
                   ) : selectedSpot.vehicleBookings ? (
                     selectedSpot.vehicleBookings.map((vehicle: any) => (
                       <div key={vehicle.id} className="flex justify-between items-center p-2 border rounded">
-                        <span>Car {vehicle.id}: {vehicle.startTime} - {vehicle.endTime}</span>
+                        <span>Car {vehicle.id}: {vehicle.slotName} ({vehicle.startTime} - {vehicle.endTime})</span>
                         <span className="font-semibold">${vehicle.price}</span>
                       </div>
                     ))
