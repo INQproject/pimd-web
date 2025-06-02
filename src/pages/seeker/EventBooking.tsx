@@ -18,8 +18,8 @@ const mockParkingSpots = [
     distance: '0.2 miles from event',
     price: 15,
     slots: [
-      { id: 1, name: 'Slot 1', timeRange: '9:00 AM - 11:00 AM', capacity: 2, available: 2 },
-      { id: 2, name: 'Slot 2', timeRange: '12:00 PM - 2:00 PM', capacity: 1, available: 1 }
+      { id: 1, name: 'Slot 1', timeRange: '9:00 AM - 11:00 AM', capacity: 2, available: 2, startTime: '9:00 AM', endTime: '11:00 AM' },
+      { id: 2, name: 'Slot 2', timeRange: '12:00 PM - 2:00 PM', capacity: 1, available: 1, startTime: '12:00 PM', endTime: '2:00 PM' }
     ]
   },
   {
@@ -29,10 +29,15 @@ const mockParkingSpots = [
     distance: '0.4 miles from event',
     price: 12,
     slots: [
-      { id: 3, name: 'Slot A', timeRange: '10:00 AM - 1:00 PM', capacity: 3, available: 3 },
-      { id: 4, name: 'Slot B', timeRange: '2:00 PM - 6:00 PM', capacity: 2, available: 1 }
+      { id: 3, name: 'Slot A', timeRange: '10:00 AM - 1:00 PM', capacity: 3, available: 3, startTime: '10:00 AM', endTime: '1:00 PM' },
+      { id: 4, name: 'Slot B', timeRange: '2:00 PM - 6:00 PM', capacity: 2, available: 1, startTime: '2:00 PM', endTime: '6:00 PM' }
     ]
   }
+];
+
+const allTimeOptions = [
+  '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+  '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'
 ];
 
 const EventBooking = () => {
@@ -68,25 +73,6 @@ const EventBooking = () => {
     setVehicleBookings(newBookings);
   };
 
-  const updateVehicleBooking = (index: number, field: string, value: string) => {
-    const newBookings = [...vehicleBookings];
-    newBookings[index] = { ...newBookings[index], [field]: value };
-    
-    // Calculate price if we have both times and spot
-    if ((field === 'endTime' || field === 'startTime') && newBookings[index].spotId) {
-      const booking = newBookings[index];
-      const spot = mockParkingSpots.find(s => s.id.toString() === booking.spotId);
-      if (booking.startTime && booking.endTime && spot) {
-        const start = new Date(`2024-01-01 ${booking.startTime}`);
-        const end = new Date(`2024-01-01 ${booking.endTime}`);
-        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-        newBookings[index].price = Math.max(hours * spot.price, 0);
-      }
-    }
-    
-    setVehicleBookings(newBookings);
-  };
-
   const getSpotById = (spotId: string) => {
     return mockParkingSpots.find(spot => spot.id.toString() === spotId);
   };
@@ -96,35 +82,80 @@ const EventBooking = () => {
     return spot?.slots.find(slot => slot.id.toString() === slotId);
   };
 
+  const getAvailableStartTimes = (spotId: string, slotId: string) => {
+    const slot = getSlotById(spotId, slotId);
+    if (!slot) return [];
+    
+    const slotStartIndex = allTimeOptions.indexOf(slot.startTime);
+    const slotEndIndex = allTimeOptions.indexOf(slot.endTime);
+    
+    return allTimeOptions.slice(slotStartIndex, slotEndIndex);
+  };
+
+  const getAvailableEndTimes = (spotId: string, slotId: string, startTime: string) => {
+    const slot = getSlotById(spotId, slotId);
+    if (!slot || !startTime) return [];
+    
+    const startIndex = allTimeOptions.indexOf(startTime);
+    const slotEndIndex = allTimeOptions.indexOf(slot.endTime);
+    
+    return allTimeOptions.slice(startIndex + 1, slotEndIndex + 1);
+  };
+
+  const updateVehicleBooking = (index: number, field: string, value: string) => {
+    const newBookings = [...vehicleBookings];
+    newBookings[index] = { ...newBookings[index], [field]: value };
+    
+    // Reset slot, start and end times if spot changes
+    if (field === 'spotId') {
+      newBookings[index].slotId = '';
+      newBookings[index].startTime = '';
+      newBookings[index].endTime = '';
+      newBookings[index].price = 0;
+    }
+    
+    // Reset start and end times if slot changes
+    if (field === 'slotId') {
+      newBookings[index].startTime = '';
+      newBookings[index].endTime = '';
+      newBookings[index].price = 0;
+    }
+    
+    // Reset end time if start time changes
+    if (field === 'startTime') {
+      newBookings[index].endTime = '';
+      newBookings[index].price = 0;
+    }
+    
+    // Calculate price if we have both times and spot
+    if ((field === 'endTime' || field === 'startTime') && newBookings[index].spotId) {
+      const booking = newBookings[index];
+      const spot = getSpotById(booking.spotId);
+      if (booking.startTime && booking.endTime && spot) {
+        const startIndex = allTimeOptions.indexOf(booking.startTime);
+        const endIndex = allTimeOptions.indexOf(booking.endTime);
+        const hours = endIndex - startIndex;
+        newBookings[index].price = Math.max(hours * spot.price, 0);
+      }
+    }
+    
+    setVehicleBookings(newBookings);
+  };
+
   const handleProceedToPayment = () => {
     const totalPrice = vehicleBookings.reduce((sum, booking) => sum + booking.price, 0);
     
-    // Create booking summary
-    const summary = vehicleBookings.map((booking, index) => {
-      const spot = getSpotById(booking.spotId);
-      const slot = getSlotById(booking.spotId, booking.slotId);
-      return {
-        car: index + 1,
-        spot: spot?.name || 'Unknown',
-        slot: slot?.name || 'Unknown',
-        time: `${booking.startTime} - ${booking.endTime}`,
-        price: booking.price
-      };
-    });
-
     toast({
       title: "Event Parking Booked!",
       description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s) at ${event.name}`,
     });
 
-    // In a real app, this would navigate to payment/confirmation
     navigate('/profile');
   };
 
-  const timeOptions = [
-    '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-    '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'
-  ];
+  const isBookingValid = vehicleBookings.every(booking => 
+    booking.spotId && booking.slotId && booking.startTime && booking.endTime && booking.price > 0
+  );
 
   return (
     <Layout title={`Parking for ${event.name}`} showBackButton={true}>
@@ -276,12 +307,13 @@ const EventBooking = () => {
                     <Select 
                       value={booking.startTime} 
                       onValueChange={(value) => updateVehicleBooking(index, 'startTime', value)}
+                      disabled={!booking.slotId}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Start" />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeOptions.map(time => (
+                        {getAvailableStartTimes(booking.spotId, booking.slotId).map(time => (
                           <SelectItem key={time} value={time}>{time}</SelectItem>
                         ))}
                       </SelectContent>
@@ -293,12 +325,13 @@ const EventBooking = () => {
                     <Select 
                       value={booking.endTime} 
                       onValueChange={(value) => updateVehicleBooking(index, 'endTime', value)}
+                      disabled={!booking.startTime}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="End" />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeOptions.map(time => (
+                        {getAvailableEndTimes(booking.spotId, booking.slotId, booking.startTime).map(time => (
                           <SelectItem key={time} value={time}>{time}</SelectItem>
                         ))}
                       </SelectContent>
@@ -328,7 +361,7 @@ const EventBooking = () => {
                     <div key={index} className="flex justify-between items-center py-2">
                       <div className="text-sm">
                         <span className="font-medium">Car {index + 1}</span>
-                        {spot && slot && (
+                        {spot && slot && booking.startTime && booking.endTime && (
                           <span className="text-[#606060]">
                             {' → '}{spot.name} → {slot.name} ({booking.startTime} - {booking.endTime})
                           </span>
@@ -350,7 +383,7 @@ const EventBooking = () => {
             <Button 
               onClick={handleProceedToPayment}
               className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-lg py-3"
-              disabled={vehicleBookings.some(b => !b.spotId || !b.slotId || !b.startTime || !b.endTime)}
+              disabled={!isBookingValid}
             >
               Proceed to Payment
             </Button>

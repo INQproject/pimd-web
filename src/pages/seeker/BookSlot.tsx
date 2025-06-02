@@ -1,364 +1,325 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { MapPin, Calendar, DollarSign, ArrowLeft, Clock } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MapPin, Car } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import CustomTimeBookingModal from '@/components/CustomTimeBookingModal';
 
-const mockTimeSlots = [
-  { id: 1, time: '9:00 AM - 11:00 AM', price: 24, available: true },
-  { id: 2, time: '11:00 AM - 1:00 PM', price: 24, available: true },
-  { id: 3, time: '1:00 PM - 3:00 PM', price: 24, available: false },
-  { id: 4, time: '3:00 PM - 5:00 PM', price: 30, available: true },
-  { id: 5, time: '5:00 PM - 7:00 PM', price: 30, available: true },
-  { id: 6, time: '7:00 PM - 9:00 PM', price: 20, available: true },
+const mockParkingSpots = [
+  {
+    id: 1,
+    name: 'Downtown Austin Driveway',
+    address: '123 Congress Ave, Austin, TX',
+    price: 15,
+    city: 'austin',
+    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
+    slots: [
+      { id: 1, name: 'Slot A', timeRange: '8:00 AM - 12:00 PM', capacity: 2, startTime: '8:00 AM', endTime: '12:00 PM' },
+      { id: 2, name: 'Slot B', timeRange: '1:00 PM - 6:00 PM', capacity: 1, startTime: '1:00 PM', endTime: '6:00 PM' }
+    ]
+  },
+  {
+    id: 2,
+    name: 'Deep Ellum Private Spot',
+    address: '456 Elm St, Dallas, TX',
+    price: 12,
+    city: 'dallas',
+    image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
+    slots: [
+      { id: 3, name: 'Slot A', timeRange: '9:00 AM - 2:00 PM', capacity: 3, startTime: '9:00 AM', endTime: '2:00 PM' },
+      { id: 4, name: 'Slot B', timeRange: '3:00 PM - 8:00 PM', capacity: 2, startTime: '3:00 PM', endTime: '8:00 PM' }
+    ]
+  }
 ];
 
-const parkingSpotDetails = {
-  name: 'Downtown Driveway - Sarah\'s Place',
-  address: '123 Main St, Downtown LA',
-  description: 'Secure driveway parking near the business district. Easy access and well-lit area.',
-  amenities: ['24/7 Access', 'CCTV Security', 'Well-lit', 'Easy Access'],
-  image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=600',
-};
+const allTimeOptions = [
+  '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+  '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'
+];
 
 const BookSlot = () => {
   const { spotId } = useParams();
   const navigate = useNavigate();
-  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
-  const [showPayment, setShowPayment] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [showCustomTime, setShowCustomTime] = useState(false);
-  const [customBooking, setCustomBooking] = useState<{
-    startTime: string;
-    endTime: string;
-    duration: number;
-    price: number;
-  } | null>(null);
-  const [paymentForm, setPaymentForm] = useState({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    nameOnCard: '',
-  });
+  const { user } = useAuth();
+  
+  const [vehicleCount, setVehicleCount] = useState('1');
+  const [vehicleBookings, setVehicleBookings] = useState([
+    { slotId: '', startTime: '', endTime: '', price: 0 }
+  ]);
 
-  const selectedSlotData = selectedSlot ? mockTimeSlots.find(slot => slot.id === selectedSlot) : null;
-  const displayPrice = customBooking ? customBooking.price : selectedSlotData?.price || 0;
-  const serviceFee = Math.round(displayPrice * 0.1);
-  const total = displayPrice + serviceFee;
+  const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
 
-  // Calculate the display time range
-  const displayTimeRange = customBooking 
-    ? `${customBooking.startTime} - ${customBooking.endTime}`
-    : selectedSlotData?.time || '';
+  if (!spot) {
+    navigate('/find-parking');
+    return null;
+  }
 
-  const handleSlotSelect = (slotId: number) => {
-    setSelectedSlot(slotId);
-    setCustomBooking(null); // Reset custom booking when selecting a regular slot
+  if (!user) {
+    navigate('/login', { state: { returnTo: `/book-slot/${spotId}`, context: 'booking' } });
+    return null;
+  }
+
+  const handleVehicleCountChange = (count: string) => {
+    setVehicleCount(count);
+    const newBookings = Array(parseInt(count)).fill(null).map(() => ({
+      slotId: '',
+      startTime: '',
+      endTime: '',
+      price: 0
+    }));
+    setVehicleBookings(newBookings);
   };
 
-  const handleCustomTimeClick = (slotId: number) => {
-    setSelectedSlot(slotId);
-    setShowCustomTime(true);
+  const getSlotById = (slotId: string) => {
+    return spot.slots.find(slot => slot.id.toString() === slotId);
   };
 
-  const handleCustomTimeConfirm = (booking: {
-    startTime: string;
-    endTime: string;
-    duration: number;
-    price: number;
-  }) => {
-    setCustomBooking(booking);
-    setShowCustomTime(false);
+  const getAvailableStartTimes = (slotId: string) => {
+    const slot = getSlotById(slotId);
+    if (!slot) return [];
+    
+    const slotStartIndex = allTimeOptions.indexOf(slot.startTime);
+    const slotEndIndex = allTimeOptions.indexOf(slot.endTime);
+    
+    return allTimeOptions.slice(slotStartIndex, slotEndIndex);
+  };
+
+  const getAvailableEndTimes = (slotId: string, startTime: string) => {
+    const slot = getSlotById(slotId);
+    if (!slot || !startTime) return [];
+    
+    const startIndex = allTimeOptions.indexOf(startTime);
+    const slotEndIndex = allTimeOptions.indexOf(slot.endTime);
+    
+    return allTimeOptions.slice(startIndex + 1, slotEndIndex + 1);
+  };
+
+  const updateVehicleBooking = (index: number, field: string, value: string) => {
+    const newBookings = [...vehicleBookings];
+    newBookings[index] = { ...newBookings[index], [field]: value };
+    
+    // Reset end time if start time changes
+    if (field === 'startTime') {
+      newBookings[index].endTime = '';
+      newBookings[index].price = 0;
+    }
+    
+    // Reset start and end times if slot changes
+    if (field === 'slotId') {
+      newBookings[index].startTime = '';
+      newBookings[index].endTime = '';
+      newBookings[index].price = 0;
+    }
+    
+    // Calculate price if we have both times
+    if (field === 'endTime' || (field === 'startTime' && newBookings[index].endTime)) {
+      const booking = newBookings[index];
+      if (booking.startTime && booking.endTime) {
+        const startIndex = allTimeOptions.indexOf(booking.startTime);
+        const endIndex = allTimeOptions.indexOf(booking.endTime);
+        const hours = endIndex - startIndex;
+        newBookings[index].price = Math.max(hours * spot.price, 0);
+      }
+    }
+    
+    setVehicleBookings(newBookings);
   };
 
   const handleProceedToPayment = () => {
-    if (selectedSlot) {
-      setShowPayment(true);
-    }
+    const totalPrice = vehicleBookings.reduce((sum, booking) => sum + booking.price, 0);
+    
+    toast({
+      title: "Booking Confirmed",
+      description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s) at ${spot.name}`,
+    });
+    
+    navigate('/profile');
   };
 
-  const handlePaymentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simulate payment processing
-    setTimeout(() => {
-      setShowPayment(false);
-      setShowSuccess(true);
-      toast({
-        title: "Booking Confirmed!",
-        description: "Your parking spot has been reserved successfully.",
-      });
-    }, 1500);
-  };
-
-  const handleCloseSuccess = () => {
-    setShowSuccess(false);
-    navigate('/bookings');
-  };
+  const isBookingValid = vehicleBookings.every(booking => 
+    booking.slotId && booking.startTime && booking.endTime && booking.price > 0
+  );
 
   return (
-    <Layout title="Book Parking Slot">
-      {/* Back Button */}
-      <div className="mb-4">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/events')}
-          className="flex items-center space-x-2 text-primary hover:text-primary/80"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Events</span>
-        </Button>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-8 animate-fade-in">
+    <Layout title={`Book Parking at ${spot.name}`} showBackButton={true}>
+      <div className="space-y-8">
         {/* Spot Details */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="card-shadow">
-            <div className="aspect-video relative overflow-hidden rounded-t-lg">
-              <img 
-                src={parkingSpotDetails.image} 
-                alt={parkingSpotDetails.name}
-                className="w-full h-full object-cover"
-              />
+        <Card>
+          <div className="aspect-video relative overflow-hidden rounded-t-lg">
+            <img 
+              src={spot.image} 
+              alt={spot.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute top-3 right-3">
+              <span className="bg-white px-2 py-1 rounded-full text-sm font-semibold text-[#FF6B00]">
+                ${spot.price}/hr
+              </span>
             </div>
-            <CardHeader>
-              <CardTitle className="text-xl">{parkingSpotDetails.name}</CardTitle>
-              <CardDescription>
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>{parkingSpotDetails.address}</span>
+          </div>
+          
+          <CardHeader>
+            <CardTitle className="text-xl">{spot.name}</CardTitle>
+            <div className="flex items-center space-x-2 text-[#606060]">
+              <MapPin className="w-4 h-4" />
+              <span>{spot.address}</span>
+            </div>
+          </CardHeader>
+          
+          <CardContent>
+            <div className="space-y-2">
+              <p className="font-medium">Available Slots:</p>
+              {spot.slots.map(slot => (
+                <div key={slot.id} className="text-sm text-[#606060] bg-gray-50 p-2 rounded">
+                  {slot.name}: {slot.timeRange} (Capacity: {slot.capacity})
                 </div>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-text-secondary mb-4">{parkingSpotDetails.description}</p>
-              <div>
-                <h4 className="font-semibold mb-2">Amenities:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {parkingSpotDetails.amenities.map((amenity, index) => (
-                    <span key={index} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                      {amenity}
-                    </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Vehicle Booking Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Book Your Parking</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Vehicle Count */}
+            <div className="space-y-2">
+              <Label>How many vehicles are you booking for?</Label>
+              <Select value={vehicleCount} onValueChange={handleVehicleCountChange}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5].map(num => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} vehicle{num > 1 ? 's' : ''}
+                    </SelectItem>
                   ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Available Time Slots */}
-          <Card className="card-shadow">
-            <CardHeader>
-              <CardTitle>Available Time Slots</CardTitle>
-              <CardDescription>Select your preferred parking time</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                {mockTimeSlots.map((slot) => (
-                  <div key={slot.id} className="space-y-3">
-                    <div
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        !slot.available 
-                          ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50' 
-                          : selectedSlot === slot.id && !customBooking
-                            ? 'border-primary bg-primary/10' 
-                            : 'border-gray-200 hover:border-primary/50'
-                      }`}
-                      onClick={() => slot.available && handleSlotSelect(slot.id)}
+            {/* Vehicle Assignments */}
+            {vehicleBookings.map((booking, index) => (
+              <Card key={index} className="p-4 bg-gray-50">
+                <h4 className="font-semibold mb-3 flex items-center space-x-2">
+                  <Car className="w-4 h-4" />
+                  <span>Vehicle {index + 1}</span>
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div>
+                    <Label>Select Slot</Label>
+                    <Select 
+                      value={booking.slotId} 
+                      onValueChange={(value) => updateVehicleBooking(index, 'slotId', value)}
                     >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="font-semibold">{slot.time}</div>
-                          <div className="text-sm text-text-secondary">
-                            {slot.available ? 'Available' : 'Booked'}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-primary">${slot.price}</div>
-                          <div className="text-xs text-text-secondary">2 hours</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Custom Time Button */}
-                    {slot.available && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCustomTimeClick(slot.id)}
-                        className="w-full flex items-center space-x-2"
-                      >
-                        <Clock className="w-4 h-4" />
-                        <span>Book Custom Time</span>
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Booking Summary */}
-        <div>
-          <Card className="card-shadow sticky top-4">
-            <CardHeader>
-              <CardTitle>Booking Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {selectedSlot ? (
-                <>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span>Time Slot:</span>
-                      <span className="font-semibold">{displayTimeRange}</span>
-                    </div>
-                    {customBooking && (
-                      <div className="flex justify-between">
-                        <span>Duration:</span>
-                        <span>{customBooking.duration} hour{customBooking.duration > 1 ? 's' : ''}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span>Parking Fee:</span>
-                      <span>${displayPrice}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Service Fee:</span>
-                      <span>${serviceFee}</span>
-                    </div>
-                    <hr />
-                    <div className="flex justify-between font-semibold text-lg">
-                      <span>Total:</span>
-                      <span className="text-primary">${total}</span>
-                    </div>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose slot" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {spot.slots.map((slot) => (
+                          <SelectItem key={slot.id} value={slot.id.toString()}>
+                            {slot.name} ({slot.timeRange})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   
-                  <Button 
-                    onClick={handleProceedToPayment}
-                    className="w-full btn-primary"
-                  >
-                    Proceed to Payment
-                  </Button>
-                </>
-              ) : (
-                <div className="text-center text-text-secondary py-8">
-                  Select a time slot to see pricing
+                  <div>
+                    <Label>Start Time</Label>
+                    <Select 
+                      value={booking.startTime} 
+                      onValueChange={(value) => updateVehicleBooking(index, 'startTime', value)}
+                      disabled={!booking.slotId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Start" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableStartTimes(booking.slotId).map(time => (
+                          <SelectItem key={time} value={time}>{time}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label>End Time</Label>
+                    <Select 
+                      value={booking.endTime} 
+                      onValueChange={(value) => updateVehicleBooking(index, 'endTime', value)}
+                      disabled={!booking.startTime}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="End" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableEndTimes(booking.slotId, booking.startTime).map(time => (
+                          <SelectItem key={time} value={time}>{time}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label>Price</Label>
+                    <div className="p-2 bg-white border rounded text-center font-semibold">
+                      ${booking.price.toFixed(2)}
+                    </div>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </Card>
+            ))}
+
+            {/* Booking Summary */}
+            <Card className="bg-[#F9FAFB] border-[#FF6B00]">
+              <CardHeader>
+                <CardTitle className="text-lg">Booking Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {vehicleBookings.map((booking, index) => {
+                  const slot = getSlotById(booking.slotId);
+                  return (
+                    <div key={index} className="flex justify-between items-center py-2">
+                      <div className="text-sm">
+                        <span className="font-medium">Vehicle {index + 1}</span>
+                        {slot && booking.startTime && booking.endTime && (
+                          <span className="text-[#606060]">
+                            {' → '}{slot.name} ({booking.startTime} - {booking.endTime})
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-semibold">${booking.price.toFixed(2)}</span>
+                    </div>
+                  );
+                })}
+                <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
+                  <span>Total:</span>
+                  <span className="text-[#FF6B00]">
+                    ${vehicleBookings.reduce((sum, b) => sum + b.price, 0).toFixed(2)}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button 
+              onClick={handleProceedToPayment}
+              className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-lg py-3"
+              disabled={!isBookingValid}
+            >
+              Proceed to Payment
+            </Button>
+          </CardContent>
+        </Card>
       </div>
-
-      {/* Custom Time Booking Modal */}
-      {selectedSlotData && (
-        <CustomTimeBookingModal
-          open={showCustomTime}
-          onOpenChange={setShowCustomTime}
-          slot={selectedSlotData}
-          onConfirm={handleCustomTimeConfirm}
-        />
-      )}
-
-      {/* Payment Modal */}
-      <Dialog open={showPayment} onOpenChange={setShowPayment}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Payment Details</DialogTitle>
-            <DialogDescription>
-              Complete your booking by providing payment information
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handlePaymentSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="cardNumber">Card Number</Label>
-              <Input
-                id="cardNumber"
-                placeholder="1234 5678 9012 3456"
-                value={paymentForm.cardNumber}
-                onChange={(e) => setPaymentForm({...paymentForm, cardNumber: e.target.value})}
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="expiryDate">Expiry Date</Label>
-                <Input
-                  id="expiryDate"
-                  placeholder="MM/YY"
-                  value={paymentForm.expiryDate}
-                  onChange={(e) => setPaymentForm({...paymentForm, expiryDate: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cvv">CVV</Label>
-                <Input
-                  id="cvv"
-                  placeholder="123"
-                  value={paymentForm.cvv}
-                  onChange={(e) => setPaymentForm({...paymentForm, cvv: e.target.value})}
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="nameOnCard">Name on Card</Label>
-              <Input
-                id="nameOnCard"
-                placeholder="John Doe"
-                value={paymentForm.nameOnCard}
-                onChange={(e) => setPaymentForm({...paymentForm, nameOnCard: e.target.value})}
-                required
-              />
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex justify-between font-semibold">
-                <span>Total Amount:</span>
-                <span className="text-primary">${total}</span>
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full btn-primary">
-              Confirm Payment
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Success Modal */}
-      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
-        <DialogContent className="max-w-md text-center">
-          <DialogHeader>
-            <DialogTitle className="text-2xl text-primary">Booking Confirmed!</DialogTitle>
-            <DialogDescription>
-              Your parking spot has been successfully reserved
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-green-800">Booking Details:</h4>
-              <p className="text-green-700">{selectedSlotData?.time}</p>
-              <p className="text-green-700">{parkingSpotDetails.address}</p>
-              <p className="text-green-700">Booking ID: #PD{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
-            </div>
-            
-            <Button onClick={handleCloseSuccess} className="w-full btn-primary">
-              View My Bookings
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </Layout>
   );
 };

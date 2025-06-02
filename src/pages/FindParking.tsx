@@ -8,9 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { MapPin, Calendar, Clock, Filter, Car } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
 
 const mockParkingSpots = [
   {
@@ -46,11 +44,6 @@ const FindParking = () => {
   const [startTime, setStartTime] = useState('');
   const [duration, setDuration] = useState('');
   const [cityFilter, setCityFilter] = useState<'all' | 'austin' | 'dallas'>('all');
-  
-  // Multi-vehicle booking state
-  const [bookingSpot, setBookingSpot] = useState<any>(null);
-  const [vehicleCount, setVehicleCount] = useState('1');
-  const [vehicleBookings, setVehicleBookings] = useState<any[]>([]);
 
   const filteredSpots = mockParkingSpots.filter(spot => {
     if (cityFilter !== 'all' && spot.city !== cityFilter) return false;
@@ -62,47 +55,7 @@ const FindParking = () => {
       navigate('/login', { state: { returnTo: `/book-slot/${spot.id}`, context: 'booking' } });
       return;
     }
-    setBookingSpot(spot);
-    setVehicleCount('1');
-    setVehicleBookings([{ slotId: '', startTime: '', endTime: '', price: 0 }]);
-  };
-
-  const handleVehicleCountChange = (count: string) => {
-    setVehicleCount(count);
-    const newBookings = Array(parseInt(count)).fill(null).map(() => ({
-      slotId: '',
-      startTime: '',
-      endTime: '',
-      price: 0
-    }));
-    setVehicleBookings(newBookings);
-  };
-
-  const updateVehicleBooking = (index: number, field: string, value: string) => {
-    const newBookings = [...vehicleBookings];
-    newBookings[index] = { ...newBookings[index], [field]: value };
-    
-    // Calculate price if we have both times
-    if (field === 'endTime' || field === 'startTime') {
-      const booking = newBookings[index];
-      if (booking.startTime && booking.endTime) {
-        const start = new Date(`2024-01-01 ${booking.startTime}`);
-        const end = new Date(`2024-01-01 ${booking.endTime}`);
-        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-        newBookings[index].price = Math.max(hours * (bookingSpot?.price || 15), 0);
-      }
-    }
-    
-    setVehicleBookings(newBookings);
-  };
-
-  const handleProceedToPayment = () => {
-    const totalPrice = vehicleBookings.reduce((sum, booking) => sum + booking.price, 0);
-    toast({
-      title: "Booking Confirmed",
-      description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s)`,
-    });
-    setBookingSpot(null);
+    navigate(`/book-slot/${spot.id}`);
   };
 
   const timeOptions = [
@@ -218,124 +171,13 @@ const FindParking = () => {
                 </CardHeader>
                 
                 <CardContent>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button 
-                        onClick={() => handleBookParking(spot)}
-                        className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
-                      >
-                        <Car className="w-4 h-4 mr-2" />
-                        Book Parking
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>Book Parking at {bookingSpot?.name}</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-6">
-                        <div className="space-y-2">
-                          <Label>How many vehicles are you booking for?</Label>
-                          <Select value={vehicleCount} onValueChange={handleVehicleCountChange}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[1, 2, 3, 4, 5].map(num => (
-                                <SelectItem key={num} value={num.toString()}>
-                                  {num} vehicle{num > 1 ? 's' : ''}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {vehicleBookings.map((booking, index) => (
-                          <Card key={index} className="p-4">
-                            <h4 className="font-semibold mb-3">Car {index + 1}</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                              <div>
-                                <Label>Select Slot</Label>
-                                <Select 
-                                  value={booking.slotId} 
-                                  onValueChange={(value) => updateVehicleBooking(index, 'slotId', value)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Choose slot" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {bookingSpot?.slots.map((slot: any) => (
-                                      <SelectItem key={slot.id} value={slot.id.toString()}>
-                                        {slot.name} ({slot.timeRange})
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div>
-                                <Label>Start Time</Label>
-                                <Select 
-                                  value={booking.startTime} 
-                                  onValueChange={(value) => updateVehicleBooking(index, 'startTime', value)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Start" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {timeOptions.map(time => (
-                                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div>
-                                <Label>End Time</Label>
-                                <Select 
-                                  value={booking.endTime} 
-                                  onValueChange={(value) => updateVehicleBooking(index, 'endTime', value)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="End" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {timeOptions.map(time => (
-                                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div>
-                                <Label>Price</Label>
-                                <div className="p-2 bg-gray-100 rounded text-center font-semibold">
-                                  ${booking.price.toFixed(2)}
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-
-                        <div className="bg-[#F9FAFB] p-4 rounded-lg">
-                          <h4 className="font-semibold mb-2">Booking Summary</h4>
-                          {vehicleBookings.map((booking, index) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span>Car {index + 1}:</span>
-                              <span>${booking.price.toFixed(2)}</span>
-                            </div>
-                          ))}
-                          <div className="border-t pt-2 mt-2 flex justify-between font-semibold">
-                            <span>Total:</span>
-                            <span>${vehicleBookings.reduce((sum, b) => sum + b.price, 0).toFixed(2)}</span>
-                          </div>
-                        </div>
-
-                        <Button 
-                          onClick={handleProceedToPayment}
-                          className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90"
-                        >
-                          Proceed to Payment
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <Button 
+                    onClick={() => handleBookParking(spot)}
+                    className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
+                  >
+                    <Car className="w-4 h-4 mr-2" />
+                    Book Parking
+                  </Button>
                 </CardContent>
               </Card>
             ))}
