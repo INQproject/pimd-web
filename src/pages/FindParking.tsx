@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -18,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import SlotBookingModal from '@/components/SlotBookingModal';
 
 interface Vehicle {
   id: number;
@@ -90,7 +90,8 @@ const FindParking = () => {
   const [numVehicles, setNumVehicles] = useState(1);
   const [vehicles, setVehicles] = useState<Vehicle[]>([{ id: 1, duration: '' }]);
   const [showBookingSummary, setShowBookingSummary] = useState(false);
-  const [selectedSpot, setSelectedSpot] = useState<any>(null);
+  const [showSlotBookingModal, setShowSlotBookingModal] = useState(false);
+  const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<any>(null);
 
   const updateVehicleCount = (count: number) => {
     setNumVehicles(count);
@@ -143,7 +144,23 @@ const FindParking = () => {
       return;
     }
 
-    setSelectedSpot(spot);
+    // For group booking, go straight to summary
+    if (isGroupBooking) {
+      setSelectedSpot(spot);
+      setShowBookingSummary(true);
+    } else {
+      // For single booking, show slot selection modal
+      setSelectedSlotForBooking(spot);
+      setShowSlotBookingModal(true);
+    }
+  };
+
+  const handleSlotBookingConfirm = (vehicleBookings: any[]) => {
+    // Update selected spot with vehicle details
+    setSelectedSpot({
+      ...selectedSlotForBooking,
+      vehicleBookings
+    });
     setShowBookingSummary(true);
   };
 
@@ -389,7 +406,7 @@ const FindParking = () => {
                       onClick={() => handleBookParking(spot)}
                       className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
                     >
-                      Book Parking
+                      {isGroupBooking ? 'Book Group Parking' : 'Select Time Slot'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -397,6 +414,20 @@ const FindParking = () => {
             </div>
           </div>
         )}
+
+        {/* Slot Booking Modal */}
+        <SlotBookingModal
+          open={showSlotBookingModal}
+          onOpenChange={setShowSlotBookingModal}
+          slot={{
+            id: selectedSlotForBooking?.id || 1,
+            time: "9:00 AM - 11:00 AM",
+            price: selectedSlotForBooking?.price || 15,
+            available: true,
+            maxVehicles: selectedSlotForBooking?.maxVehicles || 3
+          }}
+          onConfirm={handleSlotBookingConfirm}
+        />
 
         {/* Booking Summary Modal */}
         <Dialog open={showBookingSummary} onOpenChange={setShowBookingSummary}>
@@ -429,6 +460,13 @@ const FindParking = () => {
                         </div>
                       );
                     })
+                  ) : selectedSpot.vehicleBookings ? (
+                    selectedSpot.vehicleBookings.map((vehicle: any) => (
+                      <div key={vehicle.id} className="flex justify-between items-center p-2 border rounded">
+                        <span>Car {vehicle.id}: {vehicle.startTime} - {vehicle.endTime}</span>
+                        <span className="font-semibold">${vehicle.price}</span>
+                      </div>
+                    ))
                   ) : (
                     <div className="flex justify-between items-center p-2 border rounded">
                       <span>Single Vehicle: {durationOptions.find(d => d.value === duration)?.label}</span>
@@ -440,7 +478,9 @@ const FindParking = () => {
                 <div className="border-t pt-2">
                   <div className="flex justify-between items-center font-bold">
                     <span>Total:</span>
-                    <span>${calculateTotalPrice(selectedSpot)}</span>
+                    <span>${selectedSpot.vehicleBookings ? 
+                      selectedSpot.vehicleBookings.reduce((sum: number, v: any) => sum + v.price, 0) : 
+                      calculateTotalPrice(selectedSpot)}</span>
                   </div>
                 </div>
 
