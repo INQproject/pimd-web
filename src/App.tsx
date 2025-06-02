@@ -14,7 +14,6 @@ import Events from "./pages/seeker/Events";
 import ListDriveway from "./pages/ListDriveway";
 import AreasWeServe from "./pages/AreasWeServe";
 import About from "./pages/About";
-import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import HostDashboard from "./pages/host/HostDashboard";
 import BookSlot from "./pages/seeker/BookSlot";
@@ -37,7 +36,6 @@ const App = () => (
             <Route path="/list-driveway" element={<ListDriveway />} />
             <Route path="/areas" element={<AreasWeServe />} />
             <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/host-dashboard" element={<HostDashboard />} />
             <Route path="/book-slot/:spotId" element={<BookSlot />} />

@@ -1,266 +1,182 @@
 
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapPin } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { Info } from 'lucide-react';
 
 const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showRoleChoice, setShowRoleChoice] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: ''
-  });
-
-  const [registerData, setRegisterData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
-
-  // Get the return path and action context
-  const returnTo = location.state?.returnTo || '/profile';
-  const fromAction = location.state?.fromAction;
-
-  // Determine contextual message based on where user came from
-  const getContextualMessage = () => {
-    if (fromAction === 'booking') {
-      return "You'll be returned to your booking after logging in";
-    }
-    if (fromAction === 'listing') {
-      return "You'll be returned to listing your driveway after logging in";
-    }
-    if (fromAction === 'profile') {
-      return "Access your bookings, uploads, and account information";
-    }
-    return "Access your account to continue";
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
-      const success = await login(loginData.email, loginData.password);
-      
+      const success = await login(email, password);
       if (success) {
-        toast({
-          title: "Welcome back!",
-          description: "You have been successfully logged in.",
-        });
-        navigate(returnTo);
+        // Check if it's admin login
+        if (email === 'admin@parkdriveway.com') {
+          navigate('/admin-dashboard');
+        } else {
+          setShowRoleChoice(true);
+        }
       } else {
         toast({
-          title: "Login failed",
-          description: "Invalid email or password.",
-          variant: "destructive"
+          title: "Login Failed",
+          description: "Invalid email or password. Please try again.",
+          variant: "destructive",
         });
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "An error occurred during login.",
-        variant: "destructive"
+        variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (registerData.password !== registerData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match.",
-        variant: "destructive"
-      });
-      return;
+  const handleRoleChoice = (role: 'seeker' | 'host') => {
+    if (role === 'seeker') {
+      navigate('/dashboard-seeker');
+    } else {
+      navigate('/dashboard-host');
     }
-
-    setIsLoading(true);
-    
-    try {
-      const success = await login(registerData.email, registerData.password);
-      
-      if (success) {
-        toast({
-          title: "Account created!",
-          description: "Welcome to Park In My Driveway.",
-        });
-        navigate(returnTo);
-      } else {
-        toast({
-          title: "Registration failed",
-          description: "Unable to create account.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred during registration.",
-        variant: "destructive"
-      });
-    }
-    
-    setIsLoading(false);
   };
 
-  return (
-    <Layout showBackButton={true}>
-      <div className="max-w-md mx-auto">
-        {/* Hero Section */}
-        <div 
-          className="relative h-48 bg-cover bg-center rounded-2xl mb-8 overflow-hidden"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1496307653780-42ee777d4833?w=800')"
-          }}
-        >
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="text-center text-white">
-              <h1 className="text-2xl font-bold">Join Park In My Driveway</h1>
-              <p className="text-sm">Access exclusive parking deals</p>
-            </div>
-          </div>
-        </div>
+  const requestLocationPermission = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          console.log('Location permission granted');
+          // Location granted, continue with role choice
+        },
+        (error) => {
+          console.log('Location permission denied');
+          // Continue anyway
+        }
+      );
+    }
+  };
 
-        {/* Contextual Message */}
-        {fromAction && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-start space-x-3">
-              <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-              <p className="text-sm text-blue-800">{getContextualMessage()}</p>
-            </div>
-          </div>
-        )}
-
-        <Card>
+  if (showRoleChoice) {
+    return (
+      <div className="min-h-screen bg-light-bg flex items-center justify-center p-4">
+        <Card className="w-full max-w-md card-shadow animate-scale-in">
           <CardHeader className="text-center">
-            <CardTitle>Welcome</CardTitle>
-            <CardDescription>
-              Login to book parking or list your driveway
-            </CardDescription>
+            <div className="flex justify-center mb-4">
+              <MapPin className="h-12 w-12 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">What would you like to do?</CardTitle>
+            <CardDescription>Choose your role to continue</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Sign Up</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={loginData.email}
-                      onChange={(e) => setLoginData({...loginData, email: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={loginData.password}
-                      onChange={(e) => setLoginData({...loginData, password: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Signing In...' : 'Sign In'}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="link" 
-                    className="w-full text-[#606060]"
-                  >
-                    Forgot Password?
-                  </Button>
-                </form>
-              </TabsContent>
-              
-              <TabsContent value="register">
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input
-                      id="name"
-                      placeholder="John Doe"
-                      value={registerData.name}
-                      onChange={(e) => setRegisterData({...registerData, name: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email">Email</Label>
-                    <Input
-                      id="register-email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={registerData.email}
-                      onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password">Password</Label>
-                    <Input
-                      id="register-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={registerData.password}
-                      onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={registerData.confirmPassword}
-                      onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Creating Account...' : 'Create Account'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+          <CardContent className="space-y-4">
+            <Button 
+              onClick={() => {
+                requestLocationPermission();
+                handleRoleChoice('seeker');
+              }}
+              className="w-full btn-primary py-6 text-lg"
+            >
+              Find a Spot to Park
+            </Button>
+            <Button 
+              onClick={() => {
+                requestLocationPermission();
+                handleRoleChoice('host');
+              }}
+              className="w-full btn-secondary py-6 text-lg"
+            >
+              List My Driveway
+            </Button>
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-light-bg flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-flex items-center space-x-2 mb-6">
+            <MapPin className="h-10 w-10 text-primary" />
+            <span className="text-2xl font-bold text-text-primary">ParkDriveway</span>
+          </Link>
+          <h1 className="text-2xl font-bold text-text-primary">Welcome Back</h1>
+          <p className="text-text-secondary">Sign in to your account</p>
+        </div>
+
+        <Card className="card-shadow animate-fade-in">
+          <CardHeader>
+            <CardTitle>Login</CardTitle>
+            <CardDescription>Enter your credentials to access your account</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <Button type="submit" className="w-full btn-primary" disabled={isLoading}>
+                {isLoading ? "Signing in..." : "Login"}
+              </Button>
+
+              <div className="flex flex-col space-y-2">
+                <Button type="button" variant="outline" className="w-full">
+                  Register
+                </Button>
+                <Button type="button" variant="link" className="text-sm">
+                  Forgot Password?
+                </Button>
+              </div>
+            </form>
+
+            {/* Sample Credentials */}
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm font-medium text-gray-700 mb-2">Sample Credentials:</p>
+              <div className="text-xs text-gray-600 space-y-1">
+                <p><strong>Seeker:</strong> seeker@example.com / seeker123</p>
+                <p><strong>Host:</strong> host@example.com / host123</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 
