@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
+import { Info } from 'lucide-react';
 
 const Login = () => {
   const { login } = useAuth();
@@ -28,7 +29,23 @@ const Login = () => {
     confirmPassword: ''
   });
 
+  // Get the return path and action context
   const returnTo = location.state?.returnTo || '/profile';
+  const fromAction = location.state?.fromAction;
+
+  // Determine contextual message based on where user came from
+  const getContextualMessage = () => {
+    if (fromAction === 'booking') {
+      return "You'll be returned to your booking after logging in";
+    }
+    if (fromAction === 'listing') {
+      return "You'll be returned to listing your driveway after logging in";
+    }
+    if (fromAction === 'profile') {
+      return "Access your bookings, uploads, and account information";
+    }
+    return "Access your account to continue";
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,6 +136,16 @@ const Login = () => {
             </div>
           </div>
         </div>
+
+        {/* Contextual Message */}
+        {fromAction && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+              <p className="text-sm text-blue-800">{getContextualMessage()}</p>
+            </div>
+          </div>
+        )}
 
         <Card>
           <CardHeader className="text-center">

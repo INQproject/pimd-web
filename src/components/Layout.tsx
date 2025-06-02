@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { MapPin, ArrowLeft } from 'lucide-react';
+import { createLoginRedirect } from '@/utils/authRedirect';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -91,7 +91,7 @@ export default function Layout({
                     </Button>
                   </>
                 ) : (
-                  <Link to="/login">
+                  <Link to={createLoginRedirect('profile')}>
                     <Button className="bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white">
                       Login / Sign Up
                     </Button>
