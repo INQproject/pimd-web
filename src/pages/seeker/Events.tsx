@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -7,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Calendar, MapPin, Users, Car } from 'lucide-react';
+import { Calendar, MapPin, Users, Car, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const mockEvents = [
   {
@@ -78,43 +78,88 @@ const mockEvents = [
   },
 ];
 
+interface EventParkingSpot {
+  id: number;
+  name: string;
+  address: string;
+  distance: string;
+  totalSlots: number;
+  slots: {
+    id: number;
+    name: string;
+    time: string;
+    price: number;
+    maxVehicles: number;
+    available: boolean;
+  }[];
+}
+
+interface VehicleBooking {
+  id: number;
+  spotId: number | null;
+  spotName: string;
+  slotId: number | null;
+  slotName: string;
+  slotTime: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  price: number;
+}
+
+const mockEventParkingSpots: EventParkingSpot[] = [
+  {
+    id: 1,
+    name: 'Downtown Event Parking',
+    address: '150 Congress Ave, Austin, TX',
+    distance: '0.2 miles from event',
+    totalSlots: 3,
+    slots: [
+      { id: 1, name: 'Morning Slot', time: '8:00 AM - 12:00 PM', price: 20, maxVehicles: 4, available: true },
+      { id: 2, name: 'Afternoon Slot', time: '12:00 PM - 6:00 PM', price: 25, maxVehicles: 3, available: true },
+      { id: 3, name: 'Evening Slot', time: '6:00 PM - 11:00 PM', price: 30, maxVehicles: 2, available: true }
+    ]
+  },
+  {
+    id: 2,
+    name: 'Event Center Driveway',
+    address: '200 Zilker Dr, Austin, TX',
+    distance: '0.1 miles from event',
+    totalSlots: 2,
+    slots: [
+      { id: 4, name: 'All Day', time: '6:00 AM - 11:00 PM', price: 45, maxVehicles: 2, available: true },
+      { id: 5, name: 'Event Hours', time: '1:00 PM - 11:00 PM', price: 35, maxVehicles: 3, available: true }
+    ]
+  },
+  {
+    id: 3,
+    name: 'Festival Grounds Parking',
+    address: '300 Barton Springs Rd, Austin, TX',
+    distance: '0.3 miles from event',
+    totalSlots: 4,
+    slots: [
+      { id: 6, name: 'Early Bird', time: '7:00 AM - 11:00 AM', price: 15, maxVehicles: 5, available: true },
+      { id: 7, name: 'Mid Day', time: '11:00 AM - 3:00 PM', price: 20, maxVehicles: 4, available: true },
+      { id: 8, name: 'Peak Hours', time: '3:00 PM - 8:00 PM', price: 30, maxVehicles: 3, available: true },
+      { id: 9, name: 'Late Night', time: '8:00 PM - 1:00 AM', price: 25, maxVehicles: 2, available: true }
+    ]
+  }
+];
+
 const Events = () => {
   const navigate = useNavigate();
   const [selectedCity, setSelectedCity] = useState<'all' | 'austin' | 'dallas'>('all');
-  const [groupBookingEvent, setGroupBookingEvent] = useState<any>(null);
-  const [vehicleCount, setVehicleCount] = useState('1');
-  const [vehicleDurations, setVehicleDurations] = useState<string[]>(['2']);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [expandedSpots, setExpandedSpots] = useState<number[]>([]);
+  const [numVehicles, setNumVehicles] = useState(1);
+  const [vehicles, setVehicles] = useState<VehicleBooking[]>([
+    { id: 1, spotId: null, spotName: '', slotId: null, slotName: '', slotTime: '', startTime: '', endTime: '', duration: 0, price: 0 }
+  ]);
+  const [showBookingSummary, setShowBookingSummary] = useState(false);
 
   const filteredEvents = selectedCity === 'all' 
     ? mockEvents 
     : mockEvents.filter(event => event.city === selectedCity);
-
-  const handleFindParking = (event: any) => {
-    setGroupBookingEvent(event);
-  };
-
-  const handleVehicleCountChange = (count: string) => {
-    setVehicleCount(count);
-    setVehicleDurations(Array(parseInt(count)).fill('2'));
-  };
-
-  const handleDurationChange = (index: number, duration: string) => {
-    const newDurations = [...vehicleDurations];
-    newDurations[index] = duration;
-    setVehicleDurations(newDurations);
-  };
-
-  const handleProceedToBooking = () => {
-    // Navigate to find parking with event and group details
-    navigate('/find-parking', { 
-      state: { 
-        eventLocation: groupBookingEvent.location,
-        vehicleCount: parseInt(vehicleCount),
-        durations: vehicleDurations
-      } 
-    });
-    setGroupBookingEvent(null);
-  };
 
   const getCategoryColor = (category: string) => {
     const colors = {
@@ -138,6 +183,189 @@ const Events = () => {
     };
     return durationMap[hours] || `${hours} hours`;
   };
+
+  const toggleSpotExpansion = (spotId: number) => {
+    setExpandedSpots(prev => 
+      prev.includes(spotId) 
+        ? prev.filter(id => id !== spotId)
+        : [...prev, spotId]
+    );
+  };
+
+  const handleVehicleCountChange = (count: string) => {
+    const numCount = parseInt(count);
+    setNumVehicles(numCount);
+    
+    const newVehicles = Array.from({ length: numCount }, (_, i) => 
+      vehicles[i] || { 
+        id: i + 1, 
+        spotId: null, 
+        spotName: '', 
+        slotId: null, 
+        slotName: '', 
+        slotTime: '', 
+        startTime: '', 
+        endTime: '', 
+        duration: 0, 
+        price: 0 
+      }
+    );
+    setVehicles(newVehicles);
+  };
+
+  const updateVehicle = (vehicleId: number, field: keyof VehicleBooking, value: any) => {
+    setVehicles(prev => prev.map(v => {
+      if (v.id === vehicleId) {
+        const updated = { ...v, [field]: value };
+        
+        // Reset dependent fields when spot changes
+        if (field === 'spotId') {
+          const selectedSpot = mockEventParkingSpots.find(s => s.id === value);
+          updated.spotName = selectedSpot?.name || '';
+          updated.slotId = null;
+          updated.slotName = '';
+          updated.slotTime = '';
+          updated.startTime = '';
+          updated.endTime = '';
+          updated.duration = 0;
+          updated.price = 0;
+        }
+        
+        // Reset dependent fields when slot changes
+        if (field === 'slotId') {
+          const selectedSpot = mockEventParkingSpots.find(s => s.id === updated.spotId);
+          const selectedSlot = selectedSpot?.slots.find(slot => slot.id === value);
+          if (selectedSlot) {
+            updated.slotName = selectedSlot.name;
+            updated.slotTime = selectedSlot.time;
+            updated.startTime = '';
+            updated.endTime = '';
+            updated.duration = 0;
+            updated.price = 0;
+          }
+        }
+        
+        // Calculate duration and price when times are set
+        if (updated.startTime && updated.endTime && updated.slotId) {
+          const startHour = convertTo24Hour(updated.startTime);
+          const endHour = convertTo24Hour(updated.endTime);
+          const duration = endHour - startHour;
+          
+          if (duration > 0) {
+            updated.duration = duration;
+            const selectedSpot = mockEventParkingSpots.find(s => s.id === updated.spotId);
+            const selectedSlot = selectedSpot?.slots.find(slot => slot.id === updated.slotId);
+            if (selectedSlot) {
+              const slotDuration = getSlotDurationHours(selectedSlot.time);
+              const pricePerHour = selectedSlot.price / slotDuration;
+              updated.price = Math.round(pricePerHour * duration);
+            }
+          }
+        }
+        
+        return updated;
+      }
+      return v;
+    }));
+  };
+
+  const convertTo24Hour = (time12: string) => {
+    const [time, period] = time12.split(' ');
+    let [hours, minutes = '0'] = time.split(':');
+    let hour = parseInt(hours);
+    
+    if (period === 'PM' && hour !== 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+    
+    return hour + parseInt(minutes) / 60;
+  };
+
+  const convertTo12Hour = (hour24: number, minute: number = 0) => {
+    const hour = Math.floor(hour24);
+    const min = minute || (hour24 % 1) * 60;
+    
+    if (hour === 0) return `12:${min.toString().padStart(2, '0')} AM`;
+    if (hour < 12) return `${hour}:${min.toString().padStart(2, '0')} AM`;
+    if (hour === 12) return `12:${min.toString().padStart(2, '0')} PM`;
+    return `${hour - 12}:${min.toString().padStart(2, '0')} PM`;
+  };
+
+  const getSlotDurationHours = (timeString: string) => {
+    const [start, end] = timeString.split(' - ');
+    const startHour = convertTo24Hour(start.trim());
+    const endHour = convertTo24Hour(end.trim());
+    return endHour - startHour;
+  };
+
+  const generateTimeOptions = (slotTime: string) => {
+    const [start, end] = slotTime.split(' - ');
+    const options = [];
+    
+    const startHour = convertTo24Hour(start.trim());
+    const endHour = convertTo24Hour(end.trim());
+    
+    for (let hour = startHour; hour <= endHour; hour += 0.5) {
+      if (hour >= endHour) break;
+      const time12 = convertTo12Hour(hour);
+      options.push(time12);
+    }
+    
+    return options;
+  };
+
+  const getAvailableTimeOptions = (vehicleId: number, timeType: 'start' | 'end') => {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (!vehicle || !vehicle.slotTime) return [];
+
+    const timeOptions = generateTimeOptions(vehicle.slotTime);
+    
+    if (timeType === 'end') {
+      return timeOptions.filter(time => 
+        !vehicle.startTime || convertTo24Hour(time) > convertTo24Hour(vehicle.startTime)
+      );
+    }
+    
+    return timeOptions.slice(0, -1);
+  };
+
+  const getAvailableSlotsForSpot = (spotId: number) => {
+    const spot = mockEventParkingSpots.find(s => s.id === spotId);
+    return spot?.slots || [];
+  };
+
+  const calculateTotalPrice = () => {
+    return vehicles.reduce((total, vehicle) => total + vehicle.price, 0);
+  };
+
+  const isValidBooking = () => {
+    return vehicles.every(v => v.spotId && v.slotId && v.startTime && v.endTime && v.duration > 0) && 
+           numVehicles >= 1;
+  };
+
+  const handleProceedToPayment = () => {
+    // Navigate to payment or show success
+    setShowBookingSummary(false);
+    navigate('/profile');
+  };
+
+  const handleFindParking = (event: any) => {
+    setSelectedEvent(event);
+    // Reset state
+    setNumVehicles(1);
+    setVehicles([{ id: 1, spotId: null, spotName: '', slotId: null, slotName: '', slotTime: '', startTime: '', endTime: '', duration: 0, price: 0 }]);
+    setExpandedSpots([]);
+  };
+
+  const groupedBookingsBySpot = vehicles.reduce((acc, vehicle) => {
+    if (vehicle.spotId && vehicle.duration > 0) {
+      const spotName = vehicle.spotName;
+      if (!acc[spotName]) {
+        acc[spotName] = [];
+      }
+      acc[spotName].push(vehicle);
+    }
+    return acc;
+  }, {} as Record<string, VehicleBooking[]>);
 
   return (
     <Layout title="Upcoming Events">
@@ -228,18 +456,20 @@ const Events = () => {
                       Find Parking
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
+                  <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle className="flex items-center space-x-2">
-                        <Users className="w-5 h-5 text-[#FF6B00]" />
-                        <span>Group Parking for {event.name}</span>
+                        <MapPin className="w-5 h-5 text-[#FF6B00]" />
+                        <span>Event Parking for {event.name}</span>
                       </DialogTitle>
                     </DialogHeader>
+                    
                     <div className="space-y-6">
-                      <div className="space-y-2">
+                      {/* Vehicle Count Selection */}
+                      <div className="space-y-2 p-4 bg-orange-50 rounded-lg border border-orange-200">
                         <Label htmlFor="vehicleCount">How many vehicles are you booking for?</Label>
-                        <Select value={vehicleCount} onValueChange={handleVehicleCountChange}>
-                          <SelectTrigger>
+                        <Select value={numVehicles.toString()} onValueChange={handleVehicleCountChange}>
+                          <SelectTrigger className="w-32">
                             <SelectValue placeholder="Select number of vehicles" />
                           </SelectTrigger>
                           <SelectContent>
@@ -252,43 +482,200 @@ const Events = () => {
                         </Select>
                       </div>
 
-                      {Array.from({ length: parseInt(vehicleCount) }, (_, index) => (
-                        <div key={index} className="space-y-2">
-                          <Label>Vehicle {index + 1} - Duration needed</Label>
-                          <Select 
-                            value={vehicleDurations[index]} 
-                            onValueChange={(value) => handleDurationChange(index, value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select duration" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="0.5">30 minutes</SelectItem>
-                              <SelectItem value="1">1 hour</SelectItem>
-                              <SelectItem value="2">2 hours</SelectItem>
-                              <SelectItem value="3">3 hours</SelectItem>
-                              <SelectItem value="4">4 hours</SelectItem>
-                              <SelectItem value="8">Full day</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ))}
-
-                      <div className="bg-[#F9FAFB] p-4 rounded-lg">
-                        <h4 className="font-semibold mb-2">Booking Summary:</h4>
-                        {vehicleDurations.map((duration, index) => (
-                          <div key={index} className="flex justify-between text-sm">
-                            <span>Car {index + 1}:</span>
-                            <span>{getDurationLabel(duration)}</span>
-                          </div>
+                      {/* Available Parking Spots */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Available Parking Spots Near Event</h3>
+                        {mockEventParkingSpots.map((spot) => (
+                          <Card key={spot.id} className="border-2">
+                            <CardHeader>
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <CardTitle className="text-lg">{spot.name}</CardTitle>
+                                  <CardDescription className="space-y-1">
+                                    <div className="flex items-center space-x-2">
+                                      <MapPin className="w-4 h-4" />
+                                      <span>{spot.address}</span>
+                                    </div>
+                                    <div className="text-sm text-green-600 font-medium">
+                                      {spot.distance}
+                                    </div>
+                                  </CardDescription>
+                                </div>
+                                <Collapsible>
+                                  <CollapsibleTrigger
+                                    onClick={() => toggleSpotExpansion(spot.id)}
+                                    className="flex items-center space-x-2 text-sm text-[#FF6B00] hover:text-[#FF6B00]/80"
+                                  >
+                                    <span>{spot.totalSlots} slots available</span>
+                                    {expandedSpots.includes(spot.id) ? 
+                                      <ChevronUp className="w-4 h-4" /> : 
+                                      <ChevronDown className="w-4 h-4" />
+                                    }
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div className="mt-3 space-y-2">
+                                      {spot.slots.map((slot) => (
+                                        <div key={slot.id} className="p-3 bg-gray-50 rounded border">
+                                          <div className="flex justify-between items-center">
+                                            <div>
+                                              <span className="font-medium">{slot.name}</span>
+                                              <div className="text-sm text-gray-600">{slot.time}</div>
+                                            </div>
+                                            <div className="text-right">
+                                              <div className="font-semibold text-[#FF6B00]">${slot.price}</div>
+                                              <div className="text-xs text-gray-500">Max {slot.maxVehicles} cars</div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              </div>
+                            </CardHeader>
+                          </Card>
                         ))}
                       </div>
 
+                      {/* Vehicle Assignment Forms */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Assign Vehicles to Slots</h3>
+                        {vehicles.map((vehicle) => (
+                          <Card key={vehicle.id} className="p-4 bg-gray-50">
+                            <div className="space-y-4">
+                              <div className="flex items-center space-x-2">
+                                <Car className="h-4 w-4 text-[#FF6B00]" />
+                                <span className="font-medium">Car {vehicle.id}</span>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Select Parking Spot</Label>
+                                  <Select 
+                                    value={vehicle.spotId?.toString() || ''} 
+                                    onValueChange={(value) => updateVehicle(vehicle.id, 'spotId', parseInt(value))}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Choose spot" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {mockEventParkingSpots.map((spot) => (
+                                        <SelectItem key={spot.id} value={spot.id.toString()}>
+                                          {spot.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label>Select Slot</Label>
+                                  <Select 
+                                    value={vehicle.slotId?.toString() || ''} 
+                                    onValueChange={(value) => updateVehicle(vehicle.id, 'slotId', parseInt(value))}
+                                    disabled={!vehicle.spotId}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Choose slot" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {getAvailableSlotsForSpot(vehicle.spotId || 0).map((slot) => (
+                                        <SelectItem key={slot.id} value={slot.id.toString()}>
+                                          {slot.name} ({slot.time})
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label>Start Time</Label>
+                                  <Select 
+                                    value={vehicle.startTime} 
+                                    onValueChange={(value) => updateVehicle(vehicle.id, 'startTime', value)}
+                                    disabled={!vehicle.slotId}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Start time" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {getAvailableTimeOptions(vehicle.id, 'start').map((time) => (
+                                        <SelectItem key={time} value={time}>
+                                          {time}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <Label>End Time</Label>
+                                  <Select 
+                                    value={vehicle.endTime} 
+                                    onValueChange={(value) => updateVehicle(vehicle.id, 'endTime', value)}
+                                    disabled={!vehicle.slotId || !vehicle.startTime}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="End time" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {getAvailableTimeOptions(vehicle.id, 'end').map((time) => (
+                                        <SelectItem key={time} value={time}>
+                                          {time}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+
+                              {vehicle.duration > 0 && (
+                                <div className="bg-white p-3 rounded border">
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span>Duration: {vehicle.duration} hour{vehicle.duration !== 1 ? 's' : ''}</span>
+                                    <span className="font-semibold text-[#FF6B00]">${vehicle.price}</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+
+                      {/* Booking Summary */}
+                      {Object.keys(groupedBookingsBySpot).length > 0 && (
+                        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                          <h3 className="font-semibold text-lg mb-3">Booking Summary</h3>
+                          <div className="space-y-3">
+                            {Object.entries(groupedBookingsBySpot).map(([spotName, spotVehicles]) => (
+                              <div key={spotName} className="bg-white p-3 rounded border">
+                                <div className="font-medium text-[#FF6B00] mb-2">{spotName}</div>
+                                <div className="space-y-1">
+                                  {spotVehicles.map((vehicle) => (
+                                    <div key={vehicle.id} className="flex justify-between items-center text-sm">
+                                      <span>Car {vehicle.id}: {vehicle.slotName} ({vehicle.startTime} - {vehicle.endTime})</span>
+                                      <span className="font-semibold">${vehicle.price}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                            <div className="border-t pt-3 mt-3">
+                              <div className="flex justify-between items-center font-bold text-lg">
+                                <span>Total Cost:</span>
+                                <span className="text-[#FF6B00]">${calculateTotalPrice()}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <Button 
-                        onClick={handleProceedToBooking}
+                        onClick={handleProceedToPayment} 
                         className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
+                        disabled={!isValidBooking()}
                       >
-                        Find Available Parking
+                        Proceed to Payment
                       </Button>
                     </div>
                   </DialogContent>
