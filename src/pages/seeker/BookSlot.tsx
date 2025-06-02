@@ -52,6 +52,11 @@ const BookSlot = () => {
   const serviceFee = Math.round(displayPrice * 0.1);
   const total = displayPrice + serviceFee;
 
+  // Calculate the display time range
+  const displayTimeRange = customBooking 
+    ? `${customBooking.startTime} - ${customBooking.endTime}`
+    : selectedSlotData?.time || '';
+
   const handleSlotSelect = (slotId: number) => {
     setSelectedSlot(slotId);
     setCustomBooking(null); // Reset custom booking when selecting a regular slot
