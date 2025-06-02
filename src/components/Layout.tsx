@@ -8,10 +8,11 @@ import { MapPin } from 'lucide-react';
 interface LayoutProps {
   children: React.ReactNode;
   title?: string;
+  showNavigation?: boolean;
 }
 
-export default function Layout({ children, title }: LayoutProps) {
-  const { user, logout, switchRole } = useAuth();
+export default function Layout({ children, title, showNavigation = true }: LayoutProps) {
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -20,60 +21,26 @@ export default function Layout({ children, title }: LayoutProps) {
     navigate('/');
   };
 
-  const handleSwitchRole = () => {
-    if (user?.role === 'seeker') {
-      switchRole('host');
-      navigate('/dashboard-host');
-    } else if (user?.role === 'host') {
-      switchRole('seeker');
-      navigate('/dashboard-seeker');
-    }
-  };
-
-  const getNavItems = () => {
-    if (!user) return [];
-
-    switch (user.role) {
-      case 'seeker':
-        return [
-          { path: '/dashboard-seeker', label: 'Dashboard' },
-          { path: '/events', label: 'Events' },
-          { path: '/explore', label: 'Explore' },
-          { path: '/bookings', label: 'My Bookings' },
-        ];
-      case 'host':
-        return [
-          { path: '/dashboard-host', label: 'Dashboard' },
-          { path: '/add-parking', label: 'Add Parking' },
-          { path: '/calendar', label: 'Availability' },
-          { path: '/host-bookings', label: 'Booking History' },
-          { path: '/transactions', label: 'Transactions' },
-        ];
-      case 'admin':
-        return [
-          { path: '/admin-dashboard', label: 'Dashboard' },
-          { path: '/admin-parking', label: 'Manage Listings' },
-          { path: '/admin-users', label: 'Users' },
-          { path: '/admin-transactions', label: 'Transactions' },
-          { path: '/admin-reports', label: 'Reports' },
-        ];
-      default:
-        return [];
-    }
-  };
-
-  const navItems = getNavItems();
+  // Unified navigation items for all users
+  const navItems = [
+    { path: '/', label: 'Home' },
+    { path: '/find-parking', label: 'Find Parking' },
+    { path: '/events', label: 'Events' },
+    { path: '/list-driveway', label: 'List My Driveway' },
+    { path: '/areas', label: 'Areas We Serve' },
+    { path: '/about', label: 'About Us' },
+  ];
 
   return (
     <div className="min-h-screen bg-light-bg">
-      {user && (
+      {showNavigation && (
         <nav className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex items-center">
                 <Link to="/" className="flex items-center space-x-2">
                   <MapPin className="h-8 w-8 text-primary" />
-                  <span className="text-xl font-bold text-text-primary">ParkDriveway</span>
+                  <span className="text-xl font-bold text-text-primary">Park In My Driveway</span>
                 </Link>
                 
                 <div className="hidden md:ml-8 md:flex md:space-x-8">
@@ -94,24 +61,25 @@ export default function Layout({ children, title }: LayoutProps) {
               </div>
 
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-text-secondary">
-                  Welcome, {user.name}
-                </span>
-                
-                {user.role !== 'admin' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSwitchRole}
-                    className="hidden md:inline-flex"
-                  >
-                    Switch to {user.role === 'seeker' ? 'Host' : 'Seeker'}
-                  </Button>
+                {user ? (
+                  <>
+                    <Link
+                      to="/profile"
+                      className="text-sm text-text-secondary hover:text-primary transition-colors"
+                    >
+                      Welcome, {user.name}
+                    </Link>
+                    <Button variant="outline" size="sm" onClick={handleLogout}>
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <Link to="/login">
+                    <Button className="bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white">
+                      Login / Register
+                    </Button>
+                  </Link>
                 )}
-                
-                <Button variant="outline" size="sm" onClick={handleLogout}>
-                  Logout
-                </Button>
               </div>
             </div>
           </div>
