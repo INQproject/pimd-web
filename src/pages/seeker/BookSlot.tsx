@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -7,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { MapPin, Calendar, DollarSign } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, ArrowLeft, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import CustomTimeBookingModal from '@/components/CustomTimeBookingModal';
 
 const mockTimeSlots = [
   { id: 1, time: '9:00 AM - 11:00 AM', price: 24, available: true },
@@ -33,6 +33,13 @@ const BookSlot = () => {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [showPayment, setShowPayment] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showCustomTime, setShowCustomTime] = useState(false);
+  const [customBooking, setCustomBooking] = useState<{
+    startTime: string;
+    endTime: string;
+    duration: number;
+    price: number;
+  } | null>(null);
   const [paymentForm, setPaymentForm] = useState({
     cardNumber: '',
     expiryDate: '',
@@ -41,11 +48,28 @@ const BookSlot = () => {
   });
 
   const selectedSlotData = selectedSlot ? mockTimeSlots.find(slot => slot.id === selectedSlot) : null;
-  const serviceFee = selectedSlotData ? Math.round(selectedSlotData.price * 0.1) : 0;
-  const total = selectedSlotData ? selectedSlotData.price + serviceFee : 0;
+  const displayPrice = customBooking ? customBooking.price : selectedSlotData?.price || 0;
+  const serviceFee = Math.round(displayPrice * 0.1);
+  const total = displayPrice + serviceFee;
 
   const handleSlotSelect = (slotId: number) => {
     setSelectedSlot(slotId);
+    setCustomBooking(null); // Reset custom booking when selecting a regular slot
+  };
+
+  const handleCustomTimeClick = (slotId: number) => {
+    setSelectedSlot(slotId);
+    setShowCustomTime(true);
+  };
+
+  const handleCustomTimeConfirm = (booking: {
+    startTime: string;
+    endTime: string;
+    duration: number;
+    price: number;
+  }) => {
+    setCustomBooking(booking);
+    setShowCustomTime(false);
   };
 
   const handleProceedToPayment = () => {
@@ -74,6 +98,18 @@ const BookSlot = () => {
 
   return (
     <Layout title="Book Parking Slot">
+      {/* Back Button */}
+      <div className="mb-4">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/events')}
+          className="flex items-center space-x-2 text-primary hover:text-primary/80"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Events</span>
+        </Button>
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-8 animate-fade-in">
         {/* Spot Details */}
         <div className="lg:col-span-2 space-y-6">
@@ -118,29 +154,43 @@ const BookSlot = () => {
             <CardContent>
               <div className="grid md:grid-cols-2 gap-4">
                 {mockTimeSlots.map((slot) => (
-                  <div
-                    key={slot.id}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      !slot.available 
-                        ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50' 
-                        : selectedSlot === slot.id 
-                          ? 'border-primary bg-primary/10' 
-                          : 'border-gray-200 hover:border-primary/50'
-                    }`}
-                    onClick={() => slot.available && handleSlotSelect(slot.id)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="font-semibold">{slot.time}</div>
-                        <div className="text-sm text-text-secondary">
-                          {slot.available ? 'Available' : 'Booked'}
+                  <div key={slot.id} className="space-y-3">
+                    <div
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        !slot.available 
+                          ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50' 
+                          : selectedSlot === slot.id && !customBooking
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-gray-200 hover:border-primary/50'
+                      }`}
+                      onClick={() => slot.available && handleSlotSelect(slot.id)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-semibold">{slot.time}</div>
+                          <div className="text-sm text-text-secondary">
+                            {slot.available ? 'Available' : 'Booked'}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-primary">${slot.price}</div>
+                          <div className="text-xs text-text-secondary">2 hours</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-bold text-primary">${slot.price}</div>
-                        <div className="text-xs text-text-secondary">2 hours</div>
-                      </div>
                     </div>
+                    
+                    {/* Custom Time Button */}
+                    {slot.available && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCustomTimeClick(slot.id)}
+                        className="w-full flex items-center space-x-2"
+                      >
+                        <Clock className="w-4 h-4" />
+                        <span>Book Custom Time</span>
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -155,16 +205,22 @@ const BookSlot = () => {
               <CardTitle>Booking Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {selectedSlotData ? (
+              {selectedSlot ? (
                 <>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span>Time Slot:</span>
-                      <span className="font-semibold">{selectedSlotData.time}</span>
+                      <span className="font-semibold">{displayTimeRange}</span>
                     </div>
+                    {customBooking && (
+                      <div className="flex justify-between">
+                        <span>Duration:</span>
+                        <span>{customBooking.duration} hour{customBooking.duration > 1 ? 's' : ''}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span>Parking Fee:</span>
-                      <span>${selectedSlotData.price}</span>
+                      <span>${displayPrice}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Service Fee:</span>
@@ -193,6 +249,16 @@ const BookSlot = () => {
           </Card>
         </div>
       </div>
+
+      {/* Custom Time Booking Modal */}
+      {selectedSlotData && (
+        <CustomTimeBookingModal
+          open={showCustomTime}
+          onOpenChange={setShowCustomTime}
+          slot={selectedSlotData}
+          onConfirm={handleCustomTimeConfirm}
+        />
+      )}
 
       {/* Payment Modal */}
       <Dialog open={showPayment} onOpenChange={setShowPayment}>
