@@ -1,182 +1,223 @@
 
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showRoleChoice, setShowRoleChoice] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: ''
+  });
+
+  const [registerData, setRegisterData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+
+  const returnTo = location.state?.returnTo || '/profile';
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
+    // Simulate login
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    login({
+      id: '1',
+      name: loginData.email.split('@')[0],
+      email: loginData.email,
+      role: 'user'
+    });
 
-    try {
-      const success = await login(email, password);
-      if (success) {
-        // Check if it's admin login
-        if (email === 'admin@parkdriveway.com') {
-          navigate('/admin-dashboard');
-        } else {
-          setShowRoleChoice(true);
-        }
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Invalid email or password. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+    toast({
+      title: "Welcome back!",
+      description: "You have been successfully logged in.",
+    });
+
+    navigate(returnTo);
+    setIsLoading(false);
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (registerData.password !== registerData.confirmPassword) {
       toast({
         title: "Error",
-        description: "An error occurred during login.",
-        variant: "destructive",
+        description: "Passwords do not match.",
+        variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
 
-  const handleRoleChoice = (role: 'seeker' | 'host') => {
-    if (role === 'seeker') {
-      navigate('/dashboard-seeker');
-    } else {
-      navigate('/dashboard-host');
-    }
-  };
+    setIsLoading(true);
+    
+    // Simulate registration
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    login({
+      id: '1',
+      name: registerData.name,
+      email: registerData.email,
+      role: 'user'
+    });
 
-  const requestLocationPermission = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          console.log('Location permission granted');
-          // Location granted, continue with role choice
-        },
-        (error) => {
-          console.log('Location permission denied');
-          // Continue anyway
-        }
-      );
-    }
-  };
+    toast({
+      title: "Account created!",
+      description: "Welcome to Park In My Driveway.",
+    });
 
-  if (showRoleChoice) {
-    return (
-      <div className="min-h-screen bg-light-bg flex items-center justify-center p-4">
-        <Card className="w-full max-w-md card-shadow animate-scale-in">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <MapPin className="h-12 w-12 text-primary" />
-            </div>
-            <CardTitle className="text-2xl">What would you like to do?</CardTitle>
-            <CardDescription>Choose your role to continue</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button 
-              onClick={() => {
-                requestLocationPermission();
-                handleRoleChoice('seeker');
-              }}
-              className="w-full btn-primary py-6 text-lg"
-            >
-              Find a Spot to Park
-            </Button>
-            <Button 
-              onClick={() => {
-                requestLocationPermission();
-                handleRoleChoice('host');
-              }}
-              className="w-full btn-secondary py-6 text-lg"
-            >
-              List My Driveway
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+    navigate(returnTo);
+    setIsLoading(false);
+  };
 
   return (
-    <div className="min-h-screen bg-light-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2 mb-6">
-            <MapPin className="h-10 w-10 text-primary" />
-            <span className="text-2xl font-bold text-text-primary">ParkDriveway</span>
-          </Link>
-          <h1 className="text-2xl font-bold text-text-primary">Welcome Back</h1>
-          <p className="text-text-secondary">Sign in to your account</p>
+    <Layout showBackButton={true}>
+      <div className="max-w-md mx-auto">
+        {/* Hero Section */}
+        <div 
+          className="relative h-48 bg-cover bg-center rounded-2xl mb-8 overflow-hidden"
+          style={{
+            backgroundImage: "url('https://images.unsplash.com/photo-1496307653780-42ee777d4833?w=800')"
+          }}
+        >
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="text-center text-white">
+              <h1 className="text-2xl font-bold">Join Park In My Driveway</h1>
+              <p className="text-sm">Access exclusive parking deals</p>
+            </div>
+          </div>
         </div>
 
-        <Card className="card-shadow animate-fade-in">
-          <CardHeader>
-            <CardTitle>Login</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle>Welcome</CardTitle>
+            <CardDescription>
+              Login to book parking or list your driveway
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="register">Sign Up</TabsTrigger>
+              </TabsList>
               
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-
-              <Button type="submit" className="w-full btn-primary" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Login"}
-              </Button>
-
-              <div className="flex flex-col space-y-2">
-                <Button type="button" variant="outline" className="w-full">
-                  Register
-                </Button>
-                <Button type="button" variant="link" className="text-sm">
-                  Forgot Password?
-                </Button>
-              </div>
-            </form>
-
-            {/* Sample Credentials */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-700 mb-2">Sample Credentials:</p>
-              <div className="text-xs text-gray-600 space-y-1">
-                <p><strong>Seeker:</strong> seeker@example.com / seeker123</p>
-                <p><strong>Host:</strong> host@example.com / host123</p>
-              </div>
-            </div>
+              <TabsContent value="login">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={loginData.email}
+                      onChange={(e) => setLoginData({...loginData, email: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={loginData.password}
+                      onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Signing In...' : 'Sign In'}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="w-full text-[#606060]"
+                  >
+                    Forgot Password?
+                  </Button>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="register">
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="John Doe"
+                      value={registerData.name}
+                      onChange={(e) => setRegisterData({...registerData, name: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-email">Email</Label>
+                    <Input
+                      id="register-email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={registerData.email}
+                      onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-password">Password</Label>
+                    <Input
+                      id="register-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={registerData.password}
+                      onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Confirm Password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={registerData.confirmPassword}
+                      onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Creating Account...' : 'Create Account'}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
-    </div>
+    </Layout>
   );
 };
 
