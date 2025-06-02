@@ -1,63 +1,46 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Car, DollarSign, Calendar, Star, Shield, Clock, Users, CheckCircle } from 'lucide-react';
-
-const mockEvents = [
-  {
-    id: 1,
-    name: 'Austin City Limits Music Festival',
-    date: 'Oct 6-8, 2024',
-    location: 'Zilker Park, Austin',
-    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=500',
-    city: 'austin'
-  },
-  {
-    id: 2,
-    name: 'Dallas Cowboys vs Giants',
-    date: 'Nov 24, 2024',
-    location: 'AT&T Stadium, Dallas',
-    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=500',
-    city: 'dallas'
-  },
-  {
-    id: 3,
-    name: 'South by Southwest (SXSW)',
-    date: 'Mar 10-19, 2025',
-    location: 'Downtown Austin',
-    image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=500',
-    city: 'austin'
-  }
-];
-
+const mockEvents = [{
+  id: 1,
+  name: 'Austin City Limits Music Festival',
+  date: 'Oct 6-8, 2024',
+  location: 'Zilker Park, Austin',
+  image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=500',
+  city: 'austin'
+}, {
+  id: 2,
+  name: 'Dallas Cowboys vs Giants',
+  date: 'Nov 24, 2024',
+  location: 'AT&T Stadium, Dallas',
+  image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=500',
+  city: 'dallas'
+}, {
+  id: 3,
+  name: 'South by Southwest (SXSW)',
+  date: 'Mar 10-19, 2025',
+  location: 'Downtown Austin',
+  image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=500',
+  city: 'austin'
+}];
 const Index = () => {
   const navigate = useNavigate();
   const [selectedCity, setSelectedCity] = useState<'all' | 'austin' | 'dallas'>('all');
-
-  const filteredEvents = selectedCity === 'all' 
-    ? mockEvents 
-    : mockEvents.filter(event => event.city === selectedCity);
-
+  const filteredEvents = selectedCity === 'all' ? mockEvents : mockEvents.filter(event => event.city === selectedCity);
   const handleFindParking = () => {
     navigate('/find-parking');
   };
-
   const handleListDriveway = () => {
     navigate('/list-driveway');
   };
-
-  return (
-    <Layout showNavigation={true}>
+  return <Layout showNavigation={true}>
       {/* Hero Banner Section */}
-      <section 
-        className="relative h-96 bg-cover bg-center rounded-2xl mb-12 overflow-hidden"
-        style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=1200')"
-        }}
-      >
+      <section className="relative h-96 bg-cover bg-center rounded-2xl mb-12 overflow-hidden" style={{
+      backgroundImage: "url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=1200')"
+    }}>
         <div className="absolute inset-0 bg-black bg-opacity-50" />
         <div className="relative h-full flex items-center justify-center text-center text-white px-4">
           <div>
@@ -70,18 +53,11 @@ const Index = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                onClick={handleFindParking}
-                className="bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white text-lg px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transition-all"
-              >
+              <Button onClick={handleFindParking} className="bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white text-lg px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transition-all">
                 <MapPin className="mr-2 h-5 w-5" />
                 Find Parking
               </Button>
-              <Button 
-                onClick={handleListDriveway}
-                variant="outline" 
-                className="text-lg px-8 py-4 rounded-lg border-2 border-white text-white hover:bg-white hover:text-[#1C1C1C] transition-all"
-              >
+              <Button onClick={handleListDriveway} variant="outline" className="text-lg px-8 py-4 rounded-lg border-2 border-white hover:bg-white transition-all text-zinc-950">
                 <DollarSign className="mr-2 h-5 w-5" />
                 List My Driveway
               </Button>
@@ -134,39 +110,22 @@ const Index = () => {
           
           {/* City Filter Buttons */}
           <div className="flex justify-center space-x-4 mb-8">
-            <Button
-              variant={selectedCity === 'all' ? 'default' : 'outline'}
-              onClick={() => setSelectedCity('all')}
-              className={selectedCity === 'all' ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90' : ''}
-            >
+            <Button variant={selectedCity === 'all' ? 'default' : 'outline'} onClick={() => setSelectedCity('all')} className={selectedCity === 'all' ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90' : ''}>
               All Cities
             </Button>
-            <Button
-              variant={selectedCity === 'austin' ? 'default' : 'outline'}
-              onClick={() => setSelectedCity('austin')}
-              className={selectedCity === 'austin' ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90' : ''}
-            >
+            <Button variant={selectedCity === 'austin' ? 'default' : 'outline'} onClick={() => setSelectedCity('austin')} className={selectedCity === 'austin' ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90' : ''}>
               Austin
             </Button>
-            <Button
-              variant={selectedCity === 'dallas' ? 'default' : 'outline'}
-              onClick={() => setSelectedCity('dallas')}
-              className={selectedCity === 'dallas' ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90' : ''}
-            >
+            <Button variant={selectedCity === 'dallas' ? 'default' : 'outline'} onClick={() => setSelectedCity('dallas')} className={selectedCity === 'dallas' ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90' : ''}>
               Dallas
             </Button>
           </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {filteredEvents.map((event) => (
-            <Card key={event.id} className="hover:shadow-lg transition-all duration-200 group">
+          {filteredEvents.map(event => <Card key={event.id} className="hover:shadow-lg transition-all duration-200 group">
               <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                <img 
-                  src={event.image} 
-                  alt={event.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                />
+                <img src={event.image} alt={event.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
               </div>
               
               <CardHeader>
@@ -184,15 +143,11 @@ const Index = () => {
               </CardHeader>
               
               <CardContent>
-                <Button 
-                  onClick={() => navigate('/events')}
-                  className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
-                >
+                <Button onClick={() => navigate('/events')} className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white">
                   Find Parking
                 </Button>
               </CardContent>
-            </Card>
-          ))}
+            </Card>)}
         </div>
       </section>
 
@@ -231,12 +186,9 @@ const Index = () => {
 
       {/* Statistics Section */}
       <section className="py-12 mb-12">
-        <div 
-          className="relative bg-cover bg-center rounded-2xl overflow-hidden"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=1200')"
-          }}
-        >
+        <div className="relative bg-cover bg-center rounded-2xl overflow-hidden" style={{
+        backgroundImage: "url('https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=1200')"
+      }}>
           <div className="absolute inset-0 bg-black bg-opacity-70" />
           <div className="relative p-12 text-white">
             <h2 className="text-3xl font-bold text-center mb-12">Our Impact</h2>
@@ -311,8 +263,6 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </Layout>
-  );
+    </Layout>;
 };
-
 export default Index;
