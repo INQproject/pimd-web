@@ -37,7 +37,7 @@ export default function Layout({
     }
   };
 
-  // Updated navigation items in the requested order
+  // Navigation items without host dashboard
   const navItems = [
     { path: '/', label: 'Home' },
     { path: '/about', label: 'About Us' },

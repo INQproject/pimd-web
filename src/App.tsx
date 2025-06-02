@@ -16,8 +16,8 @@ import AreasWeServe from "./pages/AreasWeServe";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
-import HostDashboard from "./pages/host/HostDashboard";
 import BookSlot from "./pages/seeker/BookSlot";
+import EventBooking from "./pages/seeker/EventBooking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,8 +39,8 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/host-dashboard" element={<HostDashboard />} />
             <Route path="/book-slot/:spotId" element={<BookSlot />} />
+            <Route path="/event-booking/:eventId" element={<EventBooking />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

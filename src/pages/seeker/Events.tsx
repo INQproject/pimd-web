@@ -4,10 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Calendar, MapPin, Users, Car } from 'lucide-react';
+import { Calendar, MapPin, Car } from 'lucide-react';
 
 const mockEvents = [
   {
@@ -42,78 +39,19 @@ const mockEvents = [
     image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=500',
     description: 'The ultimate music, interactive, and film festival.',
     city: 'austin'
-  },
-  {
-    id: 4,
-    name: 'Dallas Art Fair',
-    date: 'Apr 18-21, 2024',
-    time: '10:00 AM - 7:00 PM',
-    location: 'Fashion Industry Gallery, Dallas',
-    category: 'Arts',
-    image: 'https://images.unsplash.com/photo-1472396961693-142e6e269027?w=500',
-    description: 'Contemporary art from emerging and established artists.',
-    city: 'dallas'
-  },
-  {
-    id: 5,
-    name: 'Austin Food & Wine Festival',
-    date: 'May 1-3, 2024',
-    time: '11:00 AM - 9:00 PM',
-    location: 'Republic Square, Austin',
-    category: 'Food',
-    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=500',
-    description: 'Taste the finest cuisine from local chefs and wineries.',
-    city: 'austin'
-  },
-  {
-    id: 6,
-    name: 'Dallas Marathon',
-    date: 'Dec 8, 2024',
-    time: '6:00 AM',
-    location: 'Downtown Dallas',
-    category: 'Sports',
-    image: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=500',
-    description: 'Join thousands of runners in this scenic city marathon.',
-    city: 'dallas'
-  },
+  }
 ];
 
 const Events = () => {
   const navigate = useNavigate();
   const [selectedCity, setSelectedCity] = useState<'all' | 'austin' | 'dallas'>('all');
-  const [groupBookingEvent, setGroupBookingEvent] = useState<any>(null);
-  const [vehicleCount, setVehicleCount] = useState('1');
-  const [vehicleDurations, setVehicleDurations] = useState<string[]>(['2']);
 
   const filteredEvents = selectedCity === 'all' 
     ? mockEvents 
     : mockEvents.filter(event => event.city === selectedCity);
 
   const handleFindParking = (event: any) => {
-    setGroupBookingEvent(event);
-  };
-
-  const handleVehicleCountChange = (count: string) => {
-    setVehicleCount(count);
-    setVehicleDurations(Array(parseInt(count)).fill('2'));
-  };
-
-  const handleDurationChange = (index: number, duration: string) => {
-    const newDurations = [...vehicleDurations];
-    newDurations[index] = duration;
-    setVehicleDurations(newDurations);
-  };
-
-  const handleProceedToBooking = () => {
-    // Navigate to find parking with event and group details
-    navigate('/find-parking', { 
-      state: { 
-        eventLocation: groupBookingEvent.location,
-        vehicleCount: parseInt(vehicleCount),
-        durations: vehicleDurations
-      } 
-    });
-    setGroupBookingEvent(null);
+    navigate(`/event-booking/${event.id}`, { state: { event } });
   };
 
   const getCategoryColor = (category: string) => {
@@ -125,18 +63,6 @@ const Events = () => {
       'Arts': 'bg-pink-100 text-pink-800',
     };
     return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getDurationLabel = (hours: string) => {
-    const durationMap: { [key: string]: string } = {
-      '0.5': '30 minutes',
-      '1': '1 hour',
-      '2': '2 hours',
-      '3': '3 hours',
-      '4': '4 hours',
-      '8': 'Full day'
-    };
-    return durationMap[hours] || `${hours} hours`;
   };
 
   return (
@@ -218,81 +144,13 @@ const Events = () => {
                   {event.description}
                 </p>
                 
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button 
-                      onClick={() => handleFindParking(event)}
-                      className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
-                    >
-                      <Car className="w-4 h-4 mr-2" />
-                      Find Parking
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center space-x-2">
-                        <Users className="w-5 h-5 text-[#FF6B00]" />
-                        <span>Group Parking for {event.name}</span>
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="vehicleCount">How many vehicles are you booking for?</Label>
-                        <Select value={vehicleCount} onValueChange={handleVehicleCountChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select number of vehicles" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[1, 2, 3, 4, 5].map((num) => (
-                              <SelectItem key={num} value={num.toString()}>
-                                {num} vehicle{num > 1 ? 's' : ''}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {Array.from({ length: parseInt(vehicleCount) }, (_, index) => (
-                        <div key={index} className="space-y-2">
-                          <Label>Vehicle {index + 1} - Duration needed</Label>
-                          <Select 
-                            value={vehicleDurations[index]} 
-                            onValueChange={(value) => handleDurationChange(index, value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select duration" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="0.5">30 minutes</SelectItem>
-                              <SelectItem value="1">1 hour</SelectItem>
-                              <SelectItem value="2">2 hours</SelectItem>
-                              <SelectItem value="3">3 hours</SelectItem>
-                              <SelectItem value="4">4 hours</SelectItem>
-                              <SelectItem value="8">Full day</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ))}
-
-                      <div className="bg-[#F9FAFB] p-4 rounded-lg">
-                        <h4 className="font-semibold mb-2">Booking Summary:</h4>
-                        {vehicleDurations.map((duration, index) => (
-                          <div key={index} className="flex justify-between text-sm">
-                            <span>Car {index + 1}:</span>
-                            <span>{getDurationLabel(duration)}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <Button 
-                        onClick={handleProceedToBooking}
-                        className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
-                      >
-                        Find Available Parking
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <Button 
+                  onClick={() => handleFindParking(event)}
+                  className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
+                >
+                  <Car className="w-4 h-4 mr-2" />
+                  Find Parking
+                </Button>
               </CardContent>
             </Card>
           ))}
