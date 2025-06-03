@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -11,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Toggle } from '@/components/ui/toggle';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Slot {
   id: string;
@@ -23,7 +23,7 @@ interface Slot {
   isBooked: boolean;
 }
 
-type SlotMode = 'day' | 'week' | 'month';
+type SlotMode = 'day' | 'week' | 'month' | 'range';
 
 const ManageAvailability = () => {
   const { listingId } = useParams();
@@ -33,6 +33,11 @@ const ManageAvailability = () => {
   const [showSlotForm, setShowSlotForm] = useState(false);
   const [slotMode, setSlotMode] = useState<SlotMode>('day');
   const [selectedWeekdays, setSelectedWeekdays] = useState<boolean[]>(new Array(7).fill(false)); // Sun-Sat
+  
+  // Custom Range state
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [selectedRangeDates, setSelectedRangeDates] = useState<string[]>([]);
   
   const [slots, setSlots] = useState<Slot[]>([
     {
@@ -81,6 +86,49 @@ const ManageAvailability = () => {
 
   const weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  // Generate date range for custom range mode
+  const generateDateRange = (start: string, end: string): string[] => {
+    if (!start || !end) return [];
+    
+    const startDateObj = new Date(start + 'T00:00:00');
+    const endDateObj = new Date(end + 'T00:00:00');
+    const dates: string[] = [];
+    
+    const currentDate = new Date(startDateObj);
+    while (currentDate <= endDateObj) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      dates.push(dateStr);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return dates;
+  };
+
+  // Update selected range dates when start/end dates change
+  React.useEffect(() => {
+    if (slotMode === 'range' && startDate && endDate) {
+      const dateRange = generateDateRange(startDate, endDate);
+      setSelectedRangeDates(dateRange);
+    }
+  }, [startDate, endDate, slotMode]);
+
+  const toggleRangeDate = (date: string) => {
+    setSelectedRangeDates(prev => 
+      prev.includes(date) 
+        ? prev.filter(d => d !== date)
+        : [...prev, date]
+    );
+  };
+
+  const selectAllRangeDates = () => {
+    const dateRange = generateDateRange(startDate, endDate);
+    setSelectedRangeDates(dateRange);
+  };
+
+  const unselectAllRangeDates = () => {
+    setSelectedRangeDates([]);
+  };
+
   // Generate compact calendar days
   const generateCalendarDays = () => {
     const year = currentMonth.getFullYear();
@@ -124,6 +172,11 @@ const ManageAvailability = () => {
     if (mode !== 'week') {
       setSelectedWeekdays(new Array(7).fill(false));
     }
+    if (mode !== 'range') {
+      setStartDate('');
+      setEndDate('');
+      setSelectedRangeDates([]);
+    }
   };
 
   const toggleWeekday = (index: number) => {
@@ -158,6 +211,10 @@ const ManageAvailability = () => {
         const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         dates.push(dateStr);
       }
+    }
+
+    if (slotMode === 'range') {
+      return selectedRangeDates;
     }
 
     return dates;
@@ -212,9 +269,13 @@ const ManageAvailability = () => {
     const targetDates = generateDatesForMode();
     
     if (targetDates.length === 0) {
+      let errorMessage = "Please select a date.";
+      if (slotMode === 'week') errorMessage = "Please select at least one weekday.";
+      if (slotMode === 'range') errorMessage = "Please select start and end dates, and at least one day.";
+      
       toast({
         title: "Error",
-        description: slotMode === 'week' ? "Please select at least one weekday." : "Please select a date.",
+        description: errorMessage,
         variant: "destructive"
       });
       return;
@@ -243,11 +304,13 @@ const ManageAvailability = () => {
     setNewSlot({ startTime: '', endTime: '', totalSpots: '1', notes: '' });
     setShowSlotForm(false);
     setSelectedWeekdays(new Array(7).fill(false));
+    setSelectedRangeDates([]);
     
     const modeText = slotMode === 'day' ? 'slot' : `${newSlots.length} slots`;
+    const periodText = slotMode === 'range' ? 'selected dates' : monthNames[currentMonth.getMonth()];
     toast({
       title: "Slots Added",
-      description: `${modeText} added successfully for ${monthNames[currentMonth.getMonth()]}.`,
+      description: `${modeText} added successfully for ${periodText}.`,
     });
   };
 
@@ -327,6 +390,7 @@ const ManageAvailability = () => {
               {slotMode === 'day' && 'Click any date to add availability slots'}
               {slotMode === 'week' && 'Select weekdays to apply slots across the month'}
               {slotMode === 'month' && 'Add slots to every day of the month'}
+              {slotMode === 'range' && 'Select a date range and customize which days to include'}
             </p>
           </CardHeader>
         </Card>
@@ -359,6 +423,13 @@ const ManageAvailability = () => {
               >
                 Month
               </Toggle>
+              <Toggle
+                pressed={slotMode === 'range'}
+                onPressedChange={() => handleModeClick('range')}
+                variant="outline"
+              >
+                Custom Range
+              </Toggle>
             </div>
             
             {/* Weekday Selection for Week Mode */}
@@ -378,6 +449,81 @@ const ManageAvailability = () => {
                     </Toggle>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Custom Range Selection */}
+            {slotMode === 'range' && (
+              <div className="mt-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="startDate">Start Date</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="endDate">End Date</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                {startDate && endDate && generateDateRange(startDate, endDate).length > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="text-sm font-medium">Select dates to include:</Label>
+                      <div className="flex space-x-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={selectAllRangeDates}
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={unselectAllRangeDates}
+                        >
+                          Unselect All
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto border rounded-lg p-3 bg-gray-50">
+                      <div className="space-y-2">
+                        {generateDateRange(startDate, endDate).map(date => (
+                          <div key={date} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`date-${date}`}
+                              checked={selectedRangeDates.includes(date)}
+                              onCheckedChange={() => toggleRangeDate(date)}
+                            />
+                            <Label htmlFor={`date-${date}`} className="text-sm">
+                              {formatDate(date)}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {selectedRangeDates.length > 0 && (
+                      <p className="text-sm text-blue-600 mt-2">
+                        Slots will be created on {selectedRangeDates.length} day{selectedRangeDates.length !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -469,6 +615,13 @@ const ManageAvailability = () => {
                 <div className="p-3 bg-green-50 rounded-lg border">
                   <p className="text-sm font-medium text-green-800">
                     Will apply to entire month: {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                  </p>
+                </div>
+              )}
+              {slotMode === 'range' && selectedRangeDates.length > 0 && (
+                <div className="p-3 bg-purple-50 rounded-lg border">
+                  <p className="text-sm font-medium text-purple-800">
+                    Selected {selectedRangeDates.length} date{selectedRangeDates.length !== 1 ? 's' : ''} in range
                   </p>
                 </div>
               )}
