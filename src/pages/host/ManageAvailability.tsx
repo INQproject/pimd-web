@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,8 +29,6 @@ const ManageAvailability = () => {
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [showSlotForm, setShowSlotForm] = useState(false);
-  const slotFormRef = useRef<HTMLDivElement>(null);
-  const startTimeRef = useRef<HTMLSelectElement>(null);
   
   const [slots, setSlots] = useState<Slot[]>([
     {
@@ -248,37 +246,11 @@ const ManageAvailability = () => {
       setSelectedDates([dateStr]);
       setShowSlotForm(true);
       setNewSlot({ startTime: '', endTime: '', totalSpots: '1', notes: '' });
-      // Scroll to form and focus
-      setTimeout(() => {
-        scrollToSlotForm();
-      }, 100);
     }
   };
 
   const clearAllSelectedDates = () => {
     setSelectedDates([]);
-  };
-
-  const scrollToSlotForm = () => {
-    if (slotFormRef.current) {
-      slotFormRef.current.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-      });
-      // Auto-focus on start time field
-      setTimeout(() => {
-        if (startTimeRef.current) {
-          startTimeRef.current.focus();
-        }
-      }, 500);
-    }
-  };
-
-  const handleCreateSlotClick = () => {
-    setShowSlotForm(true);
-    setTimeout(() => {
-      scrollToSlotForm();
-    }, 100);
   };
 
   const validateSlot = (targetDates: string[]) => {
@@ -422,26 +394,6 @@ const ManageAvailability = () => {
     });
   };
 
-  const formatDateShort = (dateStr: string) => {
-    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const getSortedSelectedDates = () => {
-    return [...selectedDates].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-  };
-
-  const getSelectedDatesPreview = () => {
-    const sortedDates = getSortedSelectedDates();
-    if (sortedDates.length <= 3) {
-      return sortedDates.map(date => formatDateShort(date)).join(', ');
-    }
-    return `${formatDateShort(sortedDates[0])}, ${formatDateShort(sortedDates[1])}, ${formatDateShort(sortedDates[2])}, ...`;
-  };
-
   const getSlotsByDate = () => {
     const groupedSlots: { [key: string]: Slot[] } = {};
     slots.forEach(slot => {
@@ -457,7 +409,6 @@ const ManageAvailability = () => {
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
   const slotsByDate = getSlotsByDate();
-  const sortedSelectedDates = getSortedSelectedDates();
 
   return (
     <TooltipProvider>
@@ -650,16 +601,16 @@ const ManageAvailability = () => {
                       <p className="text-sm text-gray-500">No dates selected</p>
                     ) : (
                       <div className="space-y-2 max-h-32 overflow-y-auto">
-                        {sortedSelectedDates.map(date => (
+                        {selectedDates.map(date => (
                           <div key={date} className="flex items-center justify-between p-2 bg-orange-50 rounded-md">
-                            <span className="text-sm font-medium">{formatDateShort(date)}</span>
+                            <span className="text-sm">{formatDate(date).split(',')[0]}</span>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => setSelectedDates(prev => prev.filter(d => d !== date))}
-                              className="h-6 w-6 p-0 hover:bg-red-100"
+                              className="h-6 w-6 p-0"
                             >
-                              <X className="h-3 w-3 text-red-500" />
+                              <X className="h-3 w-3" />
                             </Button>
                           </div>
                         ))}
@@ -668,7 +619,7 @@ const ManageAvailability = () => {
                     
                     {selectedDates.length > 0 && (
                       <Button
-                        onClick={handleCreateSlotClick}
+                        onClick={() => setShowSlotForm(true)}
                         className="w-full mt-3 bg-orange-500 hover:bg-orange-600 text-white"
                         size="sm"
                       >
@@ -712,31 +663,22 @@ const ManageAvailability = () => {
 
           {/* Slot Creation Form */}
           {showSlotForm && selectedDates.length > 0 && (
-            <Card 
-              ref={slotFormRef}
-              className="shadow-md border-orange-200 border-2 animate-fade-in"
-            >
+            <Card className="shadow-md border-orange-200 border-2">
               <CardHeader className="pb-3 bg-orange-50">
                 <CardTitle className="text-lg flex items-center">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Slot to {selectedDates.length} Date{selectedDates.length !== 1 ? 's' : ''}
                 </CardTitle>
-                {selectedDates.length > 0 && (
-                  <p className="text-sm text-orange-700 mt-1">
-                    Editing slots for {selectedDates.length} date{selectedDates.length !== 1 ? 's' : ''}: {getSelectedDatesPreview()}
-                  </p>
-                )}
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="startTime">Start Time</Label>
                     <select
-                      ref={startTimeRef}
                       id="startTime"
                       value={newSlot.startTime}
                       onChange={(e) => setNewSlot(prev => ({ ...prev, startTime: e.target.value }))}
-                      className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      className="w-full mt-1 p-2 border border-gray-300 rounded-md"
                     >
                       <option value="">Select start time</option>
                       {timeOptions.map(time => (
@@ -750,7 +692,7 @@ const ManageAvailability = () => {
                       id="endTime"
                       value={newSlot.endTime}
                       onChange={(e) => setNewSlot(prev => ({ ...prev, endTime: e.target.value }))}
-                      className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      className="w-full mt-1 p-2 border border-gray-300 rounded-md"
                     >
                       <option value="">Select end time</option>
                       {timeOptions.map(time => (
@@ -769,7 +711,7 @@ const ManageAvailability = () => {
                       placeholder="1"
                       value={newSlot.totalSpots}
                       onChange={(e) => setNewSlot(prev => ({ ...prev, totalSpots: e.target.value }))}
-                      className="mt-1 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      className="mt-1"
                     />
                   </div>
                   <div>
@@ -779,7 +721,7 @@ const ManageAvailability = () => {
                       placeholder="Special instructions"
                       value={newSlot.notes}
                       onChange={(e) => setNewSlot(prev => ({ ...prev, notes: e.target.value }))}
-                      className="mt-1 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      className="mt-1"
                     />
                   </div>
                 </div>
