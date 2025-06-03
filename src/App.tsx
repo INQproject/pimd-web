@@ -9,6 +9,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 // Pages
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import FindParking from "./pages/FindParking";
 import Events from "./pages/seeker/Events";
 import ListDriveway from "./pages/ListDriveway";
@@ -33,6 +34,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="/find-parking" element={<FindParking />} />
             <Route path="/events" element={<Events />} />
             <Route path="/list-driveway" element={<ListDriveway />} />
