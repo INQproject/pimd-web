@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,7 +18,7 @@ const mockParkingSpots = [
     price: 15,
     city: 'austin',
     image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
-    coordinates: { x: 35, y: 40 }, // Position on static map (percentage)
+    coordinates: { x: 25, y: 45 }, // Position on static map (percentage)
     slots: [
       { id: 1, name: 'Slot A', timeRange: '8:00 AM - 12:00 PM', capacity: 2 },
       { id: 2, name: 'Slot B', timeRange: '1:00 PM - 6:00 PM', capacity: 1 }
@@ -32,7 +31,7 @@ const mockParkingSpots = [
     price: 12,
     city: 'dallas',
     image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
-    coordinates: { x: 65, y: 25 },
+    coordinates: { x: 50, y: 35 },
     slots: [
       { id: 3, name: 'Slot A', timeRange: '9:00 AM - 2:00 PM', capacity: 3 },
       { id: 4, name: 'Slot B', timeRange: '3:00 PM - 8:00 PM', capacity: 2 }
@@ -45,7 +44,7 @@ const mockParkingSpots = [
     price: 8,
     city: 'austin',
     image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
-    coordinates: { x: 50, y: 60 },
+    coordinates: { x: 70, y: 55 },
     slots: [
       { id: 5, name: 'Slot A', timeRange: '10:00 AM - 4:00 PM', capacity: 5 },
       { id: 6, name: 'Slot B', timeRange: '5:00 PM - 10:00 PM', capacity: 3 }
@@ -285,12 +284,12 @@ const FindParking = () => {
           </CardContent>
         </Card>
 
-        {/* Map View */}
+        {/* Custom Static Map View */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <MapPin className="h-5 w-5 text-[#FF6B00]" />
-              <span>Map View</span>
+              <span>Available Parking Nearby</span>
               {userLocation && (
                 <div className="flex items-center space-x-1 text-sm text-green-600">
                   <Navigation className="h-4 w-4" />
@@ -300,28 +299,14 @@ const FindParking = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ height: '400px' }}>
-              {/* Static Map Background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100">
-                {/* Grid pattern to simulate map */}
-                <div className="absolute inset-0 opacity-20">
-                  <svg width="100%" height="100%">
-                    <defs>
-                      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="gray" strokeWidth="1"/>
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grid)" />
-                  </svg>
-                </div>
-                
-                {/* Streets simulation */}
-                <div className="absolute top-1/3 left-0 right-0 h-2 bg-gray-300 opacity-50"></div>
-                <div className="absolute top-2/3 left-0 right-0 h-2 bg-gray-300 opacity-50"></div>
-                <div className="absolute left-1/4 top-0 bottom-0 w-2 bg-gray-300 opacity-50"></div>
-                <div className="absolute left-3/4 top-0 bottom-0 w-2 bg-gray-300 opacity-50"></div>
-              </div>
-
+            <div className="relative rounded-lg overflow-hidden" style={{ height: '400px' }}>
+              {/* Custom Static Map Background */}
+              <img 
+                src="/lovable-uploads/0e031f32-a542-4ab9-b992-ea48131ba135.png"
+                alt="World Map"
+                className="w-full h-full object-cover"
+              />
+              
               {/* Parking Spot Pins */}
               {filteredSpots.map((spot) => (
                 <div
@@ -337,15 +322,28 @@ const FindParking = () => {
                   title={`${spot.name} - $${spot.price}/hr`}
                 >
                   <div className={`relative ${selectedSpotId === spot.id ? 'animate-bounce' : ''}`}>
-                    {/* Pin Icon */}
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg ${
-                      selectedSpotId === spot.id ? 'bg-[#FF6B00] ring-4 ring-orange-200' : 'bg-[#FF6B00] hover:bg-[#FF6B00]/90'
+                    {/* Orange Price Pin - matching the uploaded image style */}
+                    <div className={`bg-[#FF6B00] text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg border-2 border-white ${
+                      selectedSpotId === spot.id ? 'ring-4 ring-orange-200' : ''
                     }`}>
-                      <DollarSign className="w-4 h-4" />
+                      ${spot.price}
                     </div>
-                    {/* Price Label */}
-                    <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded shadow-md text-xs font-semibold text-[#FF6B00] whitespace-nowrap">
-                      ${spot.price}/hr
+                    
+                    {/* Tooltip on hover */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                      <div className="bg-black text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                        <div className="font-semibold">{spot.name}</div>
+                        <div>${spot.price}/hr</div>
+                        <button 
+                          className="mt-1 bg-[#FF6B00] text-white px-2 py-1 rounded text-xs pointer-events-auto"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBookParking(spot);
+                          }}
+                        >
+                          Book Now
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
