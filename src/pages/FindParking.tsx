@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -388,58 +387,59 @@ const FindParking = () => {
               </div>
             </Card>
           ) : (
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {filteredSpots.map((spot) => (
                 <Card 
                   key={spot.id} 
                   id={`spot-card-${spot.id}`}
-                  className={`hover:shadow-lg transition-all duration-200 cursor-pointer ${
+                  className={`max-w-full md:max-w-[300px] hover:shadow-lg transition-all duration-200 cursor-pointer ${
                     selectedSpotId === spot.id ? 'ring-2 ring-[#FF6B00] shadow-lg' : ''
                   }`}
                   onClick={() => handleCardClick(spot.id)}
                 >
-                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                    <img 
-                      src={spot.image} 
-                      alt={spot.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-3 right-3">
-                      <span className="bg-white px-2 py-1 rounded-full text-sm font-semibold text-[#FF6B00]">
-                        ${spot.price}/hr
-                      </span>
+                  <CardContent className="p-3">
+                    {/* Header with name and price */}
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-sm text-[#1C1C1C] truncate">{spot.name}</h3>
+                        <div className="flex items-center space-x-1 text-xs text-gray-500 mt-1">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{spot.address.split(',')[0]}</span>
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0 ml-2">
+                        <span className="text-sm font-bold text-[#FF6B00]">${spot.price}/hr</span>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <CardHeader>
-                    <CardTitle className="text-lg">{spot.name}</CardTitle>
-                    <CardDescription className="space-y-2">
-                      <div className="flex items-center space-x-2 text-[#606060]">
-                        <MapPin className="w-4 h-4" />
-                        <span>{spot.address}</span>
+
+                    {/* Available times */}
+                    <div className="mb-3">
+                      <div className="flex items-center space-x-1 text-xs text-gray-600 mb-1">
+                        <Clock className="w-3 h-3 flex-shrink-0" />
+                        <span className="font-medium">Available Times:</span>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">Available Slots:</p>
                         {spot.slots.map(slot => (
-                          <div key={slot.id} className="text-sm text-[#606060]">
-                            {slot.name}: {slot.timeRange} (Capacity: {slot.capacity})
+                          <div key={slot.id} className="text-xs text-gray-500">
+                            {slot.timeRange} (Cap: {slot.capacity})
                           </div>
                         ))}
                       </div>
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent>
-                    <Button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleBookParking(spot);
-                      }}
-                      className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
-                    >
-                      <Car className="w-4 h-4 mr-2" />
-                      Book Parking
-                    </Button>
+                    </div>
+
+                    {/* Book button */}
+                    <div className="flex justify-end">
+                      <Button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBookParking(spot);
+                        }}
+                        size="sm"
+                        className="bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white text-xs px-3 py-1 h-7"
+                      >
+                        Book Now
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
