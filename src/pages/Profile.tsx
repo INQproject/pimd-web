@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, DollarSign, Settings, Plus } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Calendar, MapPin, DollarSign, Plus, Lock } from 'lucide-react';
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -57,6 +58,10 @@ const Profile = () => {
       earnings: '$0'
     }
   ];
+
+  const handleManageAvailability = (listingId: number) => {
+    navigate(`/manage-availability/${listingId}`);
+  };
 
   return (
     <Layout title="My Profile">
@@ -156,9 +161,32 @@ const Profile = () => {
                         >
                           {upload.status}
                         </Badge>
-                        <Button size="sm" variant="outline">
-                          <Settings className="h-3 w-3" />
-                        </Button>
+                        
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleManageAvailability(upload.id)}
+                                disabled={upload.status === 'pending'}
+                                className={upload.status === 'pending' ? 'opacity-50' : ''}
+                              >
+                                {upload.status === 'pending' ? (
+                                  <Lock className="h-3 w-3" />
+                                ) : (
+                                  <Calendar className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {upload.status === 'pending' 
+                                ? 'Approval required to add slots' 
+                                : 'Manage Availability'
+                              }
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </div>
                   </CardContent>
