@@ -54,6 +54,14 @@ const EventBooking = () => {
     { spotId: '', slotId: '', startTime: '', endTime: '', price: 0 }
   ]);
 
+  // Get event date or default to today
+  const eventDate = event?.date || new Date().toLocaleDateString('en-US', { 
+    weekday: 'long',
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+
   if (!event) {
     navigate('/events');
     return null;
@@ -149,7 +157,8 @@ const EventBooking = () => {
     navigate(`/book-slot/${spotId}`, { 
       state: { 
         returnTo: `/event-booking/${event.id}`,
-        event: event 
+        event: event,
+        selectedDate: event.date 
       } 
     });
   };
@@ -186,13 +195,26 @@ const EventBooking = () => {
                 <div className="flex items-center space-x-4 text-[#606060] mt-2">
                   <div className="flex items-center space-x-1">
                     <Calendar className="w-4 h-4" />
-                    <span>{event.date}</span>
+                    <span className="font-semibold">{eventDate}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <MapPin className="w-4 h-4" />
                     <span>{event.location}</span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Selected Date Display for Event Parking */}
+        <Card className="bg-gradient-to-r from-[#FF6B00]/5 to-[#002F5F]/5 border-[#FF6B00]/20">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <Calendar className="w-6 h-6 text-[#FF6B00]" />
+              <div>
+                <div className="text-sm font-medium text-[#606060]">Parking Date:</div>
+                <div className="text-xl font-bold text-[#1C1C1C]">{eventDate}</div>
               </div>
             </div>
           </CardContent>
@@ -284,6 +306,10 @@ const EventBooking = () => {
                               <span className="text-sm">{spot.address}</span>
                             </div>
                             <p className="text-sm text-[#FF6B00] font-medium">{spot.distance}</p>
+                            <div className="text-sm text-[#606060] mt-2 flex items-center space-x-2">
+                              <Calendar className="w-4 h-4" />
+                              <span>For: {eventDate}</span>
+                            </div>
                           </div>
                           <span className="bg-[#FF6B00] text-white px-3 py-1 rounded-lg text-sm font-semibold">
                             ${spot.price}/hr
