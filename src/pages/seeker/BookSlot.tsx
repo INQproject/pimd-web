@@ -10,65 +10,85 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { MapPin, Car, Shield, Sun, Clock, Circle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-
-const mockParkingSpots = [
-  {
+const mockParkingSpots = [{
+  id: 1,
+  name: 'Downtown Austin Driveway',
+  address: '123 Congress Ave, Austin, TX',
+  price: 15,
+  city: 'austin',
+  image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
+  description: 'Secure private driveway in the heart of downtown Austin. Perfect for business meetings and shopping.',
+  amenities: ['CCTV', 'Well-lit', '24/7 Access'],
+  slots: [{
     id: 1,
-    name: 'Downtown Austin Driveway',
-    address: '123 Congress Ave, Austin, TX',
-    price: 15,
-    city: 'austin',
-    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
-    description: 'Secure private driveway in the heart of downtown Austin. Perfect for business meetings and shopping.',
-    amenities: ['CCTV', 'Well-lit', '24/7 Access'],
-    slots: [
-      { id: 1, name: 'Slot A', timeRange: '8:00 AM - 12:00 PM', capacity: 2, startTime: '8:00 AM', endTime: '12:00 PM' },
-      { id: 2, name: 'Slot B', timeRange: '1:00 PM - 6:00 PM', capacity: 1, startTime: '1:00 PM', endTime: '6:00 PM' }
-    ]
-  },
-  {
+    name: 'Slot A',
+    timeRange: '8:00 AM - 12:00 PM',
+    capacity: 2,
+    startTime: '8:00 AM',
+    endTime: '12:00 PM'
+  }, {
     id: 2,
-    name: 'Deep Ellum Private Spot',
-    address: '456 Elm St, Dallas, TX',
-    price: 12,
-    city: 'dallas',
-    image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
-    description: 'Private parking spot in trendy Deep Ellum district. Walking distance to restaurants and nightlife.',
-    amenities: ['CCTV', 'Covered'],
-    slots: [
-      { id: 3, name: 'Slot A', timeRange: '9:00 AM - 2:00 PM', capacity: 3, startTime: '9:00 AM', endTime: '2:00 PM' },
-      { id: 4, name: 'Slot B', timeRange: '3:00 PM - 8:00 PM', capacity: 2, startTime: '3:00 PM', endTime: '8:00 PM' }
-    ]
-  }
-];
-
-const allTimeOptions = [
-  '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-  '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'
-];
-
+    name: 'Slot B',
+    timeRange: '1:00 PM - 6:00 PM',
+    capacity: 1,
+    startTime: '1:00 PM',
+    endTime: '6:00 PM'
+  }]
+}, {
+  id: 2,
+  name: 'Deep Ellum Private Spot',
+  address: '456 Elm St, Dallas, TX',
+  price: 12,
+  city: 'dallas',
+  image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
+  description: 'Private parking spot in trendy Deep Ellum district. Walking distance to restaurants and nightlife.',
+  amenities: ['CCTV', 'Covered'],
+  slots: [{
+    id: 3,
+    name: 'Slot A',
+    timeRange: '9:00 AM - 2:00 PM',
+    capacity: 3,
+    startTime: '9:00 AM',
+    endTime: '2:00 PM'
+  }, {
+    id: 4,
+    name: 'Slot B',
+    timeRange: '3:00 PM - 8:00 PM',
+    capacity: 2,
+    startTime: '3:00 PM',
+    endTime: '8:00 PM'
+  }]
+}];
+const allTimeOptions = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'];
 const BookSlot = () => {
-  const { spotId } = useParams();
+  const {
+    spotId
+  } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  
+  const {
+    user
+  } = useAuth();
   const [vehicleCount, setVehicleCount] = useState('1');
-  const [vehicleBookings, setVehicleBookings] = useState([
-    { slotId: '', startTime: '', endTime: '', price: 0 }
-  ]);
-
+  const [vehicleBookings, setVehicleBookings] = useState([{
+    slotId: '',
+    startTime: '',
+    endTime: '',
+    price: 0
+  }]);
   const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
-
   if (!spot) {
     navigate('/find-parking');
     return null;
   }
-
   if (!user) {
-    navigate('/login', { state: { returnTo: `/book-slot/${spotId}`, context: 'booking' } });
+    navigate('/login', {
+      state: {
+        returnTo: `/book-slot/${spotId}`,
+        context: 'booking'
+      }
+    });
     return null;
   }
-
   const handleVehicleCountChange = (count: string) => {
     setVehicleCount(count);
     const newBookings = Array(parseInt(count)).fill(null).map(() => ({
@@ -79,47 +99,39 @@ const BookSlot = () => {
     }));
     setVehicleBookings(newBookings);
   };
-
   const getSlotById = (slotId: string) => {
     return spot.slots.find(slot => slot.id.toString() === slotId);
   };
-
   const getAvailableStartTimes = (slotId: string) => {
     const slot = getSlotById(slotId);
     if (!slot) return [];
-    
     const slotStartIndex = allTimeOptions.indexOf(slot.startTime);
     const slotEndIndex = allTimeOptions.indexOf(slot.endTime);
-    
     return allTimeOptions.slice(slotStartIndex, slotEndIndex);
   };
-
   const getAvailableEndTimes = (slotId: string, startTime: string) => {
     const slot = getSlotById(slotId);
     if (!slot || !startTime) return [];
-    
     const startIndex = allTimeOptions.indexOf(startTime);
     const slotEndIndex = allTimeOptions.indexOf(slot.endTime);
-    
     return allTimeOptions.slice(startIndex + 1, slotEndIndex + 1);
   };
-
   const updateVehicleBooking = (index: number, field: string, value: string) => {
     const newBookings = [...vehicleBookings];
-    newBookings[index] = { ...newBookings[index], [field]: value };
-    
+    newBookings[index] = {
+      ...newBookings[index],
+      [field]: value
+    };
     if (field === 'startTime') {
       newBookings[index].endTime = '';
       newBookings[index].price = 0;
     }
-    
     if (field === 'slotId') {
       newBookings[index].startTime = '';
       newBookings[index].endTime = '';
       newBookings[index].price = 0;
     }
-    
-    if (field === 'endTime' || (field === 'startTime' && newBookings[index].endTime)) {
+    if (field === 'endTime' || field === 'startTime' && newBookings[index].endTime) {
       const booking = newBookings[index];
       if (booking.startTime && booking.endTime) {
         const startIndex = allTimeOptions.indexOf(booking.startTime);
@@ -128,47 +140,39 @@ const BookSlot = () => {
         newBookings[index].price = Math.max(hours * spot.price, 0);
       }
     }
-    
     setVehicleBookings(newBookings);
   };
-
   const handleProceedToPayment = () => {
     const totalPrice = vehicleBookings.reduce((sum, booking) => sum + booking.price, 0);
-    
     toast({
       title: "Booking Confirmed",
-      description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s) at ${spot.name}`,
+      description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s) at ${spot.name}`
     });
-    
     navigate('/profile');
   };
-
-  const isBookingValid = vehicleBookings.every(booking => 
-    booking.slotId && booking.startTime && booking.endTime && booking.price > 0
-  );
-
+  const isBookingValid = vehicleBookings.every(booking => booking.slotId && booking.startTime && booking.endTime && booking.price > 0);
   const getAmenityIcon = (amenity: string) => {
     switch (amenity.toLowerCase()) {
-      case 'cctv': return <Shield className="w-4 h-4" />;
-      case 'well-lit': return <Sun className="w-4 h-4" />;
-      case '24/7 access': return <Clock className="w-4 h-4" />;
-      default: return null;
+      case 'cctv':
+        return <Shield className="w-4 h-4" />;
+      case 'well-lit':
+        return <Sun className="w-4 h-4" />;
+      case '24/7 access':
+        return <Clock className="w-4 h-4" />;
+      default:
+        return null;
     }
   };
-
-  return (
-    <Layout title={`Book Parking at ${spot.name}`} showBackButton={true}>
+  return <Layout title={`Book Parking at ${spot.name}`} showBackButton={true}>
       <div className="space-y-4">
         {/* Compact Header Section */}
         <div className="max-w-4xl mx-auto">
           {/* Hero Image - Very Compact */}
           <div className="relative mb-4">
-            <div className="aspect-[16/9] max-w-[600px] mx-auto relative overflow-hidden rounded-lg border shadow-sm" style={{ maxHeight: '200px' }}>
-              <img 
-                src={spot.image} 
-                alt={spot.name}
-                className="w-full h-full object-cover"
-              />
+            <div className="aspect-[16/9] max-w-[600px] mx-auto relative overflow-hidden rounded-lg border shadow-sm" style={{
+            maxHeight: '200px'
+          }}>
+              <img src={spot.image} alt={spot.name} className="w-full h-full object-cover" />
               <div className="absolute top-3 left-3">
                 <span className="bg-[#FF6B00] text-white px-3 py-1.5 rounded-full text-sm font-semibold shadow-md">
                   ${spot.price}/hr
@@ -198,30 +202,17 @@ const BookSlot = () => {
               
               {/* Amenities/Features */}
               <div className="mb-5">
-                <h3 className="text-base font-semibold text-[#1C1C1C] mb-3">Features</h3>
+                
                 <div className="flex flex-wrap gap-2">
-                  {spot.amenities.map((amenity, index) => (
-                    <Badge 
-                      key={index} 
-                      variant="secondary" 
-                      className="h-8 text-sm flex items-center space-x-2 px-3 py-1 bg-white border border-gray-200 hover:bg-gray-50"
-                    >
-                      {getAmenityIcon(amenity)}
-                      <span>{amenity}</span>
-                    </Badge>
-                  ))}
+                  {spot.amenities.map((amenity, index) => {})}
                 </div>
               </div>
 
               {/* Available Slots */}
               <div>
-                <h3 className="text-base font-semibold text-[#1C1C1C] mb-3">Available Slots</h3>
+                <h3 className="text-base font-semibold text-[#1C1C1C] mb-3 mx-0 px-0 my-0 py-0">Available Slots</h3>
                 <div className="flex flex-wrap gap-3">
-                  {spot.slots.map((slot) => (
-                    <div 
-                      key={slot.id} 
-                      className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm"
-                    >
+                  {spot.slots.map(slot => <div key={slot.id} className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
                       <Circle className="w-3 h-3 fill-blue-500 text-blue-500" />
                       <div className="text-sm">
                         <span className="font-medium text-[#1C1C1C]">{slot.name}</span>
@@ -230,8 +221,7 @@ const BookSlot = () => {
                           {slot.capacity} spot{slot.capacity > 1 ? 's' : ''} available
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </div>
             </CardContent>
@@ -255,21 +245,15 @@ const BookSlot = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[1, 2, 3, 4, 5].map(num => (
-                        <SelectItem key={num} value={num.toString()}>
+                      {[1, 2, 3, 4, 5].map(num => <SelectItem key={num} value={num.toString()}>
                           {num} vehicle{num > 1 ? 's' : ''}
-                        </SelectItem>
-                      ))}
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Vehicle Assignments - Enhanced Cards */}
-                {vehicleBookings.map((booking, index) => (
-                  <Card 
-                    key={index} 
-                    className="p-4 bg-[#F8F9FA] border shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl"
-                  >
+                {vehicleBookings.map((booking, index) => <Card key={index} className="p-4 bg-[#F8F9FA] border shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl">
                     <div className="flex items-center space-x-2 mb-3">
                       <Car className="w-4 h-4 text-[#FF6B00]" />
                       <h4 className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</h4>
@@ -278,55 +262,38 @@ const BookSlot = () => {
                     <div className="flex flex-wrap gap-3 items-end">
                       <div className="flex-1 min-w-0">
                         <Label className="text-xs font-medium text-[#606060]">Time Slot</Label>
-                        <Select 
-                          value={booking.slotId} 
-                          onValueChange={(value) => updateVehicleBooking(index, 'slotId', value)}
-                        >
+                        <Select value={booking.slotId} onValueChange={value => updateVehicleBooking(index, 'slotId', value)}>
                           <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
                             <SelectValue placeholder="Choose slot" />
                           </SelectTrigger>
                           <SelectContent>
-                            {spot.slots.map((slot) => (
-                              <SelectItem key={slot.id} value={slot.id.toString()}>
+                            {spot.slots.map(slot => <SelectItem key={slot.id} value={slot.id.toString()}>
                                 {slot.name}
-                              </SelectItem>
-                            ))}
+                              </SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
                       
                       <div className="flex-1 min-w-0">
                         <Label className="text-xs font-medium text-[#606060]">Start Time</Label>
-                        <Select 
-                          value={booking.startTime} 
-                          onValueChange={(value) => updateVehicleBooking(index, 'startTime', value)}
-                          disabled={!booking.slotId}
-                        >
+                        <Select value={booking.startTime} onValueChange={value => updateVehicleBooking(index, 'startTime', value)} disabled={!booking.slotId}>
                           <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
                             <SelectValue placeholder="Start" />
                           </SelectTrigger>
                           <SelectContent>
-                            {getAvailableStartTimes(booking.slotId).map(time => (
-                              <SelectItem key={time} value={time}>{time}</SelectItem>
-                            ))}
+                            {getAvailableStartTimes(booking.slotId).map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
                       
                       <div className="flex-1 min-w-0">
                         <Label className="text-xs font-medium text-[#606060]">End Time</Label>
-                        <Select 
-                          value={booking.endTime} 
-                          onValueChange={(value) => updateVehicleBooking(index, 'endTime', value)}
-                          disabled={!booking.startTime}
-                        >
+                        <Select value={booking.endTime} onValueChange={value => updateVehicleBooking(index, 'endTime', value)} disabled={!booking.startTime}>
                           <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
                             <SelectValue placeholder="End" />
                           </SelectTrigger>
                           <SelectContent>
-                            {getAvailableEndTimes(booking.slotId, booking.startTime).map(time => (
-                              <SelectItem key={time} value={time}>{time}</SelectItem>
-                            ))}
+                            {getAvailableEndTimes(booking.slotId, booking.startTime).map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
@@ -338,8 +305,7 @@ const BookSlot = () => {
                         </div>
                       </div>
                     </div>
-                  </Card>
-                ))}
+                  </Card>)}
               </CardContent>
             </Card>
           </div>
@@ -353,24 +319,20 @@ const BookSlot = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {vehicleBookings.map((booking, index) => {
-                    const slot = getSlotById(booking.slotId);
-                    return (
-                      <div key={index} className="space-y-1">
+                  const slot = getSlotById(booking.slotId);
+                  return <div key={index} className="space-y-1">
                         <div className="flex justify-between items-start">
                           <div className="text-sm">
                             <span className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</span>
-                            {slot && booking.startTime && booking.endTime && (
-                              <div className="text-xs text-[#666]">
+                            {slot && booking.startTime && booking.endTime && <div className="text-xs text-[#666]">
                                 {slot.name}: {booking.startTime} - {booking.endTime}
-                              </div>
-                            )}
+                              </div>}
                           </div>
                           <span className="font-semibold text-sm text-[#1C1C1C]">${booking.price.toFixed(2)}</span>
                         </div>
                         {index < vehicleBookings.length - 1 && <Separator className="my-2" />}
-                      </div>
-                    );
-                  })}
+                      </div>;
+                })}
                   
                   <Separator className="my-3" />
                   
@@ -381,11 +343,7 @@ const BookSlot = () => {
                     </span>
                   </div>
 
-                  <Button 
-                    onClick={handleProceedToPayment}
-                    className="w-full bg-[#FF6B00] hover:bg-[#e55a00] text-white h-12 mt-4 font-semibold text-base rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-                    disabled={!isBookingValid}
-                  >
+                  <Button onClick={handleProceedToPayment} className="w-full bg-[#FF6B00] hover:bg-[#e55a00] text-white h-12 mt-4 font-semibold text-base rounded-lg shadow-md hover:shadow-lg transition-all duration-200" disabled={!isBookingValid}>
                     Proceed to Payment
                   </Button>
                 </CardContent>
@@ -394,8 +352,6 @@ const BookSlot = () => {
           </div>
         </div>
       </div>
-    </Layout>
-  );
+    </Layout>;
 };
-
 export default BookSlot;
