@@ -6,11 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Plus, Edit, Trash2, Lock, ChevronLeft, ChevronRight, Calendar, Clock, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Toggle } from '@/components/ui/toggle';
 
 interface Slot {
   id: string;
@@ -23,12 +23,16 @@ interface Slot {
   isBooked: boolean;
 }
 
+type SlotMode = 'day' | 'week' | 'month';
+
 const ManageAvailability = () => {
   const { listingId } = useParams();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [currentMonth, setCurrentMonth] = useState(new Date(2024, 0)); // January 2024
   const [showSlotForm, setShowSlotForm] = useState(false);
+  const [slotMode, setSlotMode] = useState<SlotMode>('day');
+  const [selectedWeekdays, setSelectedWeekdays] = useState<boolean[]>(new Array(7).fill(false)); // Sun-Sat
   
   const [slots, setSlots] = useState<Slot[]>([
     {
@@ -75,6 +79,8 @@ const ManageAvailability = () => {
     '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM', '11:00 PM'
   ];
 
+  const weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   // Generate compact calendar days
   const generateCalendarDays = () => {
     const year = currentMonth.getFullYear();
@@ -96,7 +102,8 @@ const ManageAvailability = () => {
       const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
       const hasSlots = slots.some(slot => slot.date === dateStr);
       const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
-      days.push({ day, dateStr, hasSlots, isToday });
+      const daySlots = slots.filter(slot => slot.date === dateStr);
+      days.push({ day, dateStr, hasSlots, isToday, daySlots });
     }
     
     return days;
@@ -104,12 +111,60 @@ const ManageAvailability = () => {
 
   const handleDateClick = (dateStr: string) => {
     setSelectedDate(dateStr);
-    setShowSlotForm(true);
-    setNewSlot({ startTime: '', endTime: '', totalSpots: '1', notes: '' });
+    if (slotMode === 'day') {
+      setShowSlotForm(true);
+      setNewSlot({ startTime: '', endTime: '', totalSpots: '1', notes: '' });
+    }
   };
 
-  const validateSlot = () => {
-    if (!selectedDate || !newSlot.startTime || !newSlot.endTime) {
+  const handleModeClick = (mode: SlotMode) => {
+    setSlotMode(mode);
+    setShowSlotForm(true);
+    setNewSlot({ startTime: '', endTime: '', totalSpots: '1', notes: '' });
+    if (mode !== 'week') {
+      setSelectedWeekdays(new Array(7).fill(false));
+    }
+  };
+
+  const toggleWeekday = (index: number) => {
+    const newSelection = [...selectedWeekdays];
+    newSelection[index] = !newSelection[index];
+    setSelectedWeekdays(newSelection);
+  };
+
+  const generateDatesForMode = (): string[] => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const dates: string[] = [];
+
+    if (slotMode === 'day') {
+      return selectedDate ? [selectedDate] : [];
+    }
+    
+    if (slotMode === 'week') {
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const weekday = date.getDay();
+        if (selectedWeekdays[weekday]) {
+          const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+          dates.push(dateStr);
+        }
+      }
+    }
+    
+    if (slotMode === 'month') {
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        dates.push(dateStr);
+      }
+    }
+
+    return dates;
+  };
+
+  const validateSlot = (targetDates: string[]) => {
+    if (!newSlot.startTime || !newSlot.endTime) {
       toast({
         title: "Error",
         description: "Please fill in start time and end time.",
@@ -132,48 +187,67 @@ const ManageAvailability = () => {
     }
 
     // Check for overlapping slots
-    const existingSlots = slots.filter(slot => slot.date === selectedDate);
-    const hasOverlap = existingSlots.some(slot => {
-      const existingStart = timeOptions.indexOf(slot.startTime);
-      const existingEnd = timeOptions.indexOf(slot.endTime);
-      return (startIndex < existingEnd && endIndex > existingStart);
-    });
-
-    if (hasOverlap) {
-      toast({
-        title: "Error",
-        description: "This time slot overlaps with an existing slot.",
-        variant: "destructive"
+    for (const date of targetDates) {
+      const existingSlots = slots.filter(slot => slot.date === date);
+      const hasOverlap = existingSlots.some(slot => {
+        const existingStart = timeOptions.indexOf(slot.startTime);
+        const existingEnd = timeOptions.indexOf(slot.endTime);
+        return (startIndex < existingEnd && endIndex > existingStart);
       });
-      return false;
+
+      if (hasOverlap) {
+        toast({
+          title: "Error",
+          description: `Time slot overlaps with existing slot on ${formatDate(date)}.`,
+          variant: "destructive"
+        });
+        return false;
+      }
     }
 
     return true;
   };
 
   const addNewSlot = () => {
-    if (!validateSlot()) return;
+    const targetDates = generateDatesForMode();
+    
+    if (targetDates.length === 0) {
+      toast({
+        title: "Error",
+        description: slotMode === 'week' ? "Please select at least one weekday." : "Please select a date.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!validateSlot(targetDates)) return;
 
     const totalSpots = parseInt(newSlot.totalSpots) || 1;
+    const newSlots: Slot[] = [];
     
-    const newSlotData: Slot = {
-      id: Math.random().toString(36).substr(2, 9),
-      date: selectedDate,
-      startTime: newSlot.startTime,
-      endTime: newSlot.endTime,
-      totalSpots,
-      availableSpots: totalSpots,
-      notes: newSlot.notes || undefined,
-      isBooked: false
-    };
+    targetDates.forEach(date => {
+      const newSlotData: Slot = {
+        id: Math.random().toString(36).substr(2, 9),
+        date,
+        startTime: newSlot.startTime,
+        endTime: newSlot.endTime,
+        totalSpots,
+        availableSpots: totalSpots,
+        notes: newSlot.notes || undefined,
+        isBooked: false
+      };
+      newSlots.push(newSlotData);
+    });
 
-    setSlots(prev => [...prev, newSlotData]);
+    setSlots(prev => [...prev, ...newSlots]);
     setNewSlot({ startTime: '', endTime: '', totalSpots: '1', notes: '' });
     setShowSlotForm(false);
+    setSelectedWeekdays(new Array(7).fill(false));
     
+    const modeText = slotMode === 'day' ? 'slot' : `${newSlots.length} slots`;
     toast({
-      title: "Slot Added",
-      description: "New time slot has been added successfully.",
+      title: "Slots Added",
+      description: `${modeText} added successfully for ${monthNames[currentMonth.getMonth()]}.`,
     });
   };
 
@@ -192,34 +266,6 @@ const ManageAvailability = () => {
     toast({
       title: "Slot Deleted",
       description: "Time slot has been removed.",
-    });
-  };
-
-  const markWholeDay = () => {
-    if (!selectedDate) {
-      toast({
-        title: "Error",
-        description: "Please select a date first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const defaultSlot: Slot = {
-      id: Math.random().toString(36).substr(2, 9),
-      date: selectedDate,
-      startTime: '8:00 AM',
-      endTime: '8:00 PM',
-      totalSpots: 2,
-      availableSpots: 2,
-      notes: 'All day availability',
-      isBooked: false
-    };
-
-    setSlots(prev => [...prev, defaultSlot]);
-    toast({
-      title: "Whole Day Added",
-      description: "8:00 AM - 8:00 PM slot added for the selected date.",
     });
   };
 
@@ -252,7 +298,6 @@ const ManageAvailability = () => {
   };
 
   const calendarDays = generateCalendarDays();
-  const selectedDateSlots = slots.filter(slot => slot.date === selectedDate);
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
   const slotsByDate = getSlotsByDate();
@@ -278,8 +323,64 @@ const ManageAvailability = () => {
               <Calendar className="mr-2 h-5 w-5" />
               Manage Availability - Listing #{listingId}
             </CardTitle>
-            <p className="text-sm text-gray-600">Click any date to add availability slots</p>
+            <p className="text-sm text-gray-600">
+              {slotMode === 'day' && 'Click any date to add availability slots'}
+              {slotMode === 'week' && 'Select weekdays to apply slots across the month'}
+              {slotMode === 'month' && 'Add slots to every day of the month'}
+            </p>
           </CardHeader>
+        </Card>
+
+        {/* Slot Creation Mode Toggle */}
+        <Card className="shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Apply To:</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex space-x-2">
+              <Toggle
+                pressed={slotMode === 'day'}
+                onPressedChange={() => handleModeClick('day')}
+                variant="outline"
+              >
+                Day
+              </Toggle>
+              <Toggle
+                pressed={slotMode === 'week'}
+                onPressedChange={() => handleModeClick('week')}
+                variant="outline"
+              >
+                Week
+              </Toggle>
+              <Toggle
+                pressed={slotMode === 'month'}
+                onPressedChange={() => handleModeClick('month')}
+                variant="outline"
+              >
+                Month
+              </Toggle>
+            </div>
+            
+            {/* Weekday Selection for Week Mode */}
+            {slotMode === 'week' && (
+              <div className="mt-4">
+                <Label className="text-sm font-medium mb-2 block">Select Weekdays:</Label>
+                <div className="flex space-x-2">
+                  {weekdayNames.map((day, index) => (
+                    <Toggle
+                      key={day}
+                      pressed={selectedWeekdays[index]}
+                      onPressedChange={() => toggleWeekday(index)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {day}
+                    </Toggle>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -314,13 +415,14 @@ const ManageAvailability = () => {
                       {dayData ? (
                         <button
                           onClick={() => handleDateClick(dayData.dateStr)}
-                          className={`w-full h-full text-sm rounded-md hover:bg-gray-100 relative border transition-colors flex flex-col items-center justify-center ${
+                          className={`w-full h-full text-sm rounded-md hover:bg-gray-100 relative border transition-colors flex flex-col items-center justify-center group ${
                             selectedDate === dayData.dateStr 
                               ? 'bg-orange-500 text-white border-orange-500' 
                               : dayData.isToday 
                               ? 'bg-blue-100 text-blue-800 border-blue-300'
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
+                          title={dayData.hasSlots ? `${dayData.daySlots.length} slot(s): ${dayData.daySlots.map(s => `${s.startTime}-${s.endTime} (${s.availableSpots}/${s.totalSpots})`).join(', ')}` : ''}
                         >
                           <span className="text-xs font-medium">{dayData.day}</span>
                           {dayData.hasSlots && (
@@ -342,39 +444,31 @@ const ManageAvailability = () => {
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
                 <Plus className="mr-2 h-4 w-4" />
-                Quick Add Availability
+                Quick Actions
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button 
-                onClick={markWholeDay}
-                variant="outline" 
-                className="w-full text-sm"
-                disabled={!selectedDate}
-              >
-                <Clock className="mr-2 h-4 w-4" />
-                Mark Whole Day
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full text-sm"
-                disabled={!selectedDate}
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                Repeat for Week
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full text-sm"
-                disabled={!selectedDate}
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                Repeat for Month
-              </Button>
-              {selectedDate && (
-                <div className="mt-4 p-3 bg-orange-50 rounded-lg border">
+              <p className="text-sm text-gray-600 mb-3">
+                Current mode: <Badge variant="outline">{slotMode.charAt(0).toUpperCase() + slotMode.slice(1)}</Badge>
+              </p>
+              {selectedDate && slotMode === 'day' && (
+                <div className="p-3 bg-orange-50 rounded-lg border">
                   <p className="text-sm font-medium text-orange-800">
                     Selected: {formatDate(selectedDate)}
+                  </p>
+                </div>
+              )}
+              {slotMode === 'week' && selectedWeekdays.some(Boolean) && (
+                <div className="p-3 bg-blue-50 rounded-lg border">
+                  <p className="text-sm font-medium text-blue-800">
+                    Selected weekdays: {weekdayNames.filter((_, i) => selectedWeekdays[i]).join(', ')}
+                  </p>
+                </div>
+              )}
+              {slotMode === 'month' && (
+                <div className="p-3 bg-green-50 rounded-lg border">
+                  <p className="text-sm font-medium text-green-800">
+                    Will apply to entire month: {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                   </p>
                 </div>
               )}
@@ -382,15 +476,15 @@ const ManageAvailability = () => {
           </Card>
         </div>
 
-        {/* Inline Slot Form */}
-        {showSlotForm && selectedDate && (
+        {/* Slot Creation Form */}
+        {showSlotForm && (
           <Collapsible open={showSlotForm} onOpenChange={setShowSlotForm}>
             <CollapsibleContent>
               <Card className="shadow-md rounded-lg border-orange-200 border-2">
                 <CardHeader className="pb-3 bg-orange-50">
                   <CardTitle className="text-lg flex items-center">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Slot for {formatDate(selectedDate)}
+                    Add Slot - {slotMode.charAt(0).toUpperCase() + slotMode.slice(1)} Mode
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
@@ -454,7 +548,7 @@ const ManageAvailability = () => {
                       className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
                     >
                       <Plus className="mr-2 h-4 w-4" />
-                      Add Slot
+                      Add Slot{slotMode !== 'day' ? 's' : ''}
                     </Button>
                     <Button 
                       variant="outline" 
@@ -478,7 +572,7 @@ const ManageAvailability = () => {
           <CardContent>
             <div className="space-y-6">
               {Object.keys(slotsByDate).length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No slots added yet. Click on a date above to add your first slot.</p>
+                <p className="text-gray-500 text-center py-8">No slots added yet. Use the mode selector and calendar above to add your first slots.</p>
               ) : (
                 Object.entries(slotsByDate)
                   .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
