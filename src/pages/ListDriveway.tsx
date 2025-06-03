@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { HelpCircle, Phone, Mail } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const ListDriveway = () => {
@@ -56,9 +57,27 @@ const ListDriveway = () => {
   if (!user) {
     return (
       <Layout title="List My Driveway">
-        <div className="max-w-2xl mx-auto text-center">
+        <div className="max-w-2xl mx-auto space-y-6">
+          {/* Support Message */}
+          <Alert className="bg-blue-50 border-blue-200">
+            <HelpCircle className="h-5 w-5 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <div className="font-medium mb-2">If you're facing any issues while listing your driveway or booking a parking spot, please contact our support team.</div>
+              <div className="flex flex-col sm:flex-row gap-2 text-sm">
+                <div className="flex items-center gap-1">
+                  <Phone className="h-4 w-4" />
+                  <span>Phone: (123) 456-7890</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Mail className="h-4 w-4" />
+                  <span>Email: support@parkinmydriveway.com</span>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+
           <Card>
-            <CardContent className="p-8">
+            <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold mb-4">Please Login First</h2>
               <p className="text-[#606060] mb-6">
                 You need to be logged in to list your parking space.
@@ -78,7 +97,25 @@ const ListDriveway = () => {
 
   return (
     <Layout title="List Your Parking Space">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Support Message */}
+        <Alert className="bg-blue-50 border-blue-200">
+          <HelpCircle className="h-5 w-5 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            <div className="font-medium mb-2">If you're facing any issues while listing your driveway or booking a parking spot, please contact our support team.</div>
+            <div className="flex flex-col sm:flex-row gap-2 text-sm">
+              <div className="flex items-center gap-1">
+                <Phone className="h-4 w-4" />
+                <span>Phone: (123) 456-7890</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Mail className="h-4 w-4" />
+                <span>Email: support@parkinmydriveway.com</span>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+
         <Card>
           <CardHeader>
             <CardTitle>Add Your Parking Space</CardTitle>

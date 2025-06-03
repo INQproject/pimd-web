@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Calendar, Clock, Filter, Car, Navigation, Search, DollarSign } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MapPin, Calendar, Clock, Filter, Car, Navigation, Search, DollarSign, HelpCircle, Phone, Mail } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const mockParkingSpots = [
@@ -196,6 +197,24 @@ const FindParking = () => {
   return (
     <Layout title="Find Parking">
       <div className="space-y-6">
+        {/* Support Message */}
+        <Alert className="bg-yellow-50 border-yellow-200">
+          <HelpCircle className="h-5 w-5 text-yellow-600" />
+          <AlertDescription className="text-yellow-800">
+            <div className="font-medium mb-2">If you're facing any issues while listing your driveway or booking a parking spot, please contact our support team.</div>
+            <div className="flex flex-col sm:flex-row gap-2 text-sm">
+              <div className="flex items-center gap-1">
+                <Phone className="h-4 w-4" />
+                <span>Phone: (123) 456-7890</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Mail className="h-4 w-4" />
+                <span>Email: support@parkinmydriveway.com</span>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+
         {/* Search and Filters */}
         <Card>
           <CardHeader>
