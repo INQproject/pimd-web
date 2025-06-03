@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -158,83 +159,78 @@ const BookSlot = () => {
 
   return (
     <Layout title={`Book Parking at ${spot.name}`} showBackButton={true}>
-      <div className="space-y-6">
-        {/* Hero Image */}
-        <div className="relative">
-          <div className="aspect-[3/1] relative overflow-hidden rounded-xl shadow-md">
-            <img 
-              src={spot.image} 
-              alt={spot.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute bottom-4 right-4">
-              <span className="bg-white px-3 py-2 rounded-full text-sm font-bold text-[#FF6B00] shadow-md">
-                ${spot.price}/hr
-              </span>
+      <div className="space-y-4">
+        {/* Compact Header Section */}
+        <div className="max-w-2xl mx-auto">
+          {/* Hero Image - Compact */}
+          <div className="relative mb-4">
+            <div className="aspect-video max-w-lg mx-auto relative overflow-hidden rounded-lg border shadow-sm">
+              <img 
+                src={spot.image} 
+                alt={spot.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-3 left-3">
+                <span className="bg-[#FF6B00] text-white px-2 py-1 rounded-full text-xs font-semibold">
+                  ${spot.price}/hr
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* Spot Info Card - Compact */}
+          <Card className="mb-4">
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h1 className="text-lg font-semibold text-[#1C1C1C]">{spot.name}</h1>
+                  <div className="flex items-center space-x-1 text-[#606060] text-sm">
+                    <MapPin className="w-3 h-3" />
+                    <span>{spot.address}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-sm text-[#606060] mb-3">{spot.description}</p>
+              
+              {/* Amenities - Compact */}
+              <div className="flex flex-wrap gap-1 mb-3">
+                {spot.amenities.map((amenity, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs flex items-center space-x-1 px-2 py-0.5">
+                    {getAmenityIcon(amenity)}
+                    <span>{amenity}</span>
+                  </Badge>
+                ))}
+              </div>
+
+              {/* Available Slots - Compact */}
+              <div className="text-sm">
+                <span className="font-medium text-[#1C1C1C]">Available: </span>
+                {spot.slots.map((slot, index) => (
+                  <span key={slot.id} className="text-[#606060]">
+                    {slot.name} ({slot.timeRange})
+                    {index < spot.slots.length - 1 && ', '}
+                  </span>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left Column - Spot Info & Booking Form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Spot Details */}
+        {/* Main Content Grid - Compact */}
+        <div className="grid lg:grid-cols-3 gap-4">
+          {/* Left Column - Booking Form */}
+          <div className="lg:col-span-2">
             <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-xl text-[#1C1C1C]">{spot.name}</CardTitle>
-                <div className="flex items-center space-x-2 text-[#606060]">
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-sm">{spot.address}</span>
-                </div>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Select Your Parking</CardTitle>
               </CardHeader>
-              
               <CardContent className="space-y-4">
+                {/* Vehicle Count - Compact */}
                 <div>
-                  <p className="text-sm text-[#606060] leading-relaxed">{spot.description}</p>
-                </div>
-                
-                {/* Amenities */}
-                <div>
-                  <p className="text-sm font-medium text-[#1C1C1C] mb-2">Amenities</p>
-                  <div className="flex flex-wrap gap-2">
-                    {spot.amenities.map((amenity, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs flex items-center space-x-1">
-                        {getAmenityIcon(amenity)}
-                        <span>{amenity}</span>
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Available Slots */}
-                <div>
-                  <p className="text-sm font-medium text-[#1C1C1C] mb-2">Available Time Slots</p>
-                  <div className="space-y-2">
-                    {spot.slots.map(slot => (
-                      <div key={slot.id} className="text-sm text-[#606060] bg-gray-50 p-3 rounded-lg">
-                        <span className="font-medium">{slot.name}:</span> {slot.timeRange} 
-                        <span className="text-xs ml-2">(Capacity: {slot.capacity})</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Vehicle Booking Form */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Select Your Parking</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Vehicle Count */}
-                <div className="space-y-2">
                   <Label className="text-sm font-medium">Number of vehicles</Label>
                   <Select value={vehicleCount} onValueChange={handleVehicleCountChange}>
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-40 h-8 mt-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -247,22 +243,22 @@ const BookSlot = () => {
                   </Select>
                 </div>
 
-                {/* Vehicle Assignments */}
+                {/* Vehicle Assignments - Compact */}
                 {vehicleBookings.map((booking, index) => (
-                  <Card key={index} className="p-4 bg-gray-50 border-gray-200">
-                    <h4 className="font-medium mb-3 flex items-center space-x-2 text-sm">
-                      <Car className="w-4 h-4" />
+                  <Card key={index} className="p-3 bg-gray-50 border-gray-200">
+                    <h4 className="font-medium mb-2 flex items-center space-x-2 text-sm">
+                      <Car className="w-3 h-3" />
                       <span>Vehicle {index + 1}</span>
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                       <div>
                         <Label className="text-xs">Time Slot</Label>
                         <Select 
                           value={booking.slotId} 
                           onValueChange={(value) => updateVehicleBooking(index, 'slotId', value)}
                         >
-                          <SelectTrigger className="h-9">
-                            <SelectValue placeholder="Choose slot" />
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="Choose" />
                           </SelectTrigger>
                           <SelectContent>
                             {spot.slots.map((slot) => (
@@ -275,13 +271,13 @@ const BookSlot = () => {
                       </div>
                       
                       <div>
-                        <Label className="text-xs">Start Time</Label>
+                        <Label className="text-xs">Start</Label>
                         <Select 
                           value={booking.startTime} 
                           onValueChange={(value) => updateVehicleBooking(index, 'startTime', value)}
                           disabled={!booking.slotId}
                         >
-                          <SelectTrigger className="h-9">
+                          <SelectTrigger className="h-8 text-xs">
                             <SelectValue placeholder="Start" />
                           </SelectTrigger>
                           <SelectContent>
@@ -293,13 +289,13 @@ const BookSlot = () => {
                       </div>
                       
                       <div>
-                        <Label className="text-xs">End Time</Label>
+                        <Label className="text-xs">End</Label>
                         <Select 
                           value={booking.endTime} 
                           onValueChange={(value) => updateVehicleBooking(index, 'endTime', value)}
                           disabled={!booking.startTime}
                         >
-                          <SelectTrigger className="h-9">
+                          <SelectTrigger className="h-8 text-xs">
                             <SelectValue placeholder="End" />
                           </SelectTrigger>
                           <SelectContent>
@@ -312,7 +308,7 @@ const BookSlot = () => {
                       
                       <div>
                         <Label className="text-xs">Price</Label>
-                        <div className="h-9 p-2 bg-white border rounded-md text-center font-semibold text-sm flex items-center justify-center">
+                        <div className="h-8 p-1 bg-white border rounded-md text-center font-semibold text-xs flex items-center justify-center">
                           ${booking.price.toFixed(2)}
                         </div>
                       </div>
@@ -323,14 +319,14 @@ const BookSlot = () => {
             </Card>
           </div>
 
-          {/* Right Column - Booking Summary */}
+          {/* Right Column - Compact Booking Summary */}
           <div className="lg:col-span-1">
-            <div className="sticky top-6">
+            <div className="sticky top-4">
               <Card className="bg-[#F9FAFB] border-[#FF6B00]/20">
-                <CardHeader>
-                  <CardTitle className="text-lg">Booking Summary</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Summary</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   {vehicleBookings.map((booking, index) => {
                     const slot = getSlotById(booking.slotId);
                     return (
@@ -339,21 +335,21 @@ const BookSlot = () => {
                           <div className="text-sm">
                             <span className="font-medium">Vehicle {index + 1}</span>
                             {slot && booking.startTime && booking.endTime && (
-                              <div className="text-xs text-[#606060] mt-1">
+                              <div className="text-xs text-[#606060]">
                                 {slot.name}: {booking.startTime} - {booking.endTime}
                               </div>
                             )}
                           </div>
                           <span className="font-semibold text-sm">${booking.price.toFixed(2)}</span>
                         </div>
-                        {index < vehicleBookings.length - 1 && <Separator className="my-2" />}
+                        {index < vehicleBookings.length - 1 && <Separator className="my-1" />}
                       </div>
                     );
                   })}
                   
                   <Separator />
                   
-                  <div className="flex justify-between font-bold text-lg">
+                  <div className="flex justify-between font-bold">
                     <span>Total:</span>
                     <span className="text-[#FF6B00]">
                       ${vehicleBookings.reduce((sum, b) => sum + b.price, 0).toFixed(2)}
@@ -362,7 +358,7 @@ const BookSlot = () => {
 
                   <Button 
                     onClick={handleProceedToPayment}
-                    className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white min-h-[44px] mt-4"
+                    className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white h-10 mt-3"
                     disabled={!isBookingValid}
                   >
                     Proceed to Payment
