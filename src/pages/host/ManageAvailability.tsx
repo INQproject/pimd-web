@@ -5,12 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Plus, Edit, Trash2, Lock, ChevronLeft, ChevronRight, Calendar, Clock, X, Eye, Filter } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Lock, ChevronLeft, ChevronRight, Calendar, Clock, X, Eye, Filter, CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import CancelSlotModal from '@/components/CancelSlotModal';
 
 interface Slot {
@@ -34,7 +38,8 @@ const ManageAvailability = () => {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [showSlotForm, setShowSlotForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [dateFilter, setDateFilter] = useState<string>('');
+  const [fromDate, setFromDate] = useState<Date | undefined>();
+  const [toDate, setToDate] = useState<Date | undefined>();
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [slotToCancel, setSlotToCancel] = useState<Slot | null>(null);
   
@@ -407,7 +412,7 @@ const ManageAvailability = () => {
 
   const deleteSlot = (slotId: string) => {
     const slot = slots.find(s => s.id === slotId);
-    if (slot?.status === 'cancelled' || !slot?.isBooked) {
+    if (slot?.status === 'cancelled' || (slot && !slot.isBooked)) {
       setSlots(prev => prev.filter(slot => slot.id !== slotId));
       toast({
         title: "Slot Deleted",
@@ -443,6 +448,23 @@ const ManageAvailability = () => {
     });
   };
 
+  const applyDateFilter = () => {
+    if (fromDate && toDate && fromDate > toDate) {
+      toast({
+        title: "Invalid Date Range",
+        description: "To Date must be equal or after From Date.",
+        variant: "destructive"
+      });
+      return;
+    }
+    // The filtering is handled in getSlotsByDate function
+  };
+
+  const resetDateFilter = () => {
+    setFromDate(undefined);
+    setToDate(undefined);
+  };
+
   const getSlotsByDate = () => {
     const groupedSlots: { [key: string]: Slot[] } = {};
     let filteredSlots = slots;
@@ -452,9 +474,21 @@ const ManageAvailability = () => {
       filteredSlots = filteredSlots.filter(slot => slot.status === statusFilter);
     }
 
-    // Apply date filter
-    if (dateFilter) {
-      filteredSlots = filteredSlots.filter(slot => slot.date === dateFilter);
+    // Apply date range filter
+    if (fromDate || toDate) {
+      filteredSlots = filteredSlots.filter(slot => {
+        const slotDate = new Date(slot.date + 'T00:00:00');
+        
+        if (fromDate && toDate) {
+          return slotDate >= fromDate && slotDate <= toDate;
+        } else if (fromDate) {
+          return slotDate >= fromDate;
+        } else if (toDate) {
+          return slotDate <= toDate;
+        }
+        
+        return true;
+      });
     }
 
     filteredSlots.forEach(slot => {
@@ -477,6 +511,17 @@ const ManageAvailability = () => {
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
+  };
+
+  const getDateRangeBadge = () => {
+    if (fromDate && toDate) {
+      return `Showing slots from ${format(fromDate, 'MMM d, yyyy')} to ${format(toDate, 'MMM d, yyyy')}`;
+    } else if (fromDate) {
+      return `Showing slots from ${format(fromDate, 'MMM d, yyyy')} onwards`;
+    } else if (toDate) {
+      return `Showing slots up to ${format(toDate, 'MMM d, yyyy')}`;
+    }
+    return null;
   };
 
   const calendarRows = generateCalendarRows();
@@ -830,46 +875,117 @@ const ManageAvailability = () => {
           {/* All Time Slots Section - Redesigned */}
           <Card className="shadow-md">
             <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+              <div className="flex flex-col space-y-4">
                 <CardTitle className="flex items-center">
                   <Calendar className="mr-2 h-5 w-5" />
                   All Time Slots
                 </CardTitle>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                  <div className="flex items-center space-x-2">
-                    <Filter className="h-4 w-4 text-gray-500" />
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="available">Available</SelectItem>
-                        <SelectItem value="booked">Booked</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
+                
+                {/* Date Range Filter */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">Filter by Date Range</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+                    <div>
+                      <Label className="text-xs text-gray-600">From Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !fromDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {fromDate ? format(fromDate, "MMM d, yyyy") : "Start Date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={fromDate}
+                            onSelect={setFromDate}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-xs text-gray-600">To Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !toDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {toDate ? format(toDate, "MMM d, yyyy") : "End Date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={toDate}
+                            onSelect={setToDate}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs text-gray-600">Status</Label>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="All Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="available">Available</SelectItem>
+                          <SelectItem value="booked">Booked</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex space-x-2">
+                      <Button onClick={applyDateFilter} className="flex-1">
+                        Apply
+                      </Button>
+                      <Button variant="outline" onClick={resetDateFilter} className="flex-1">
+                        Reset
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      type="date"
-                      value={dateFilter}
-                      onChange={(e) => setDateFilter(e.target.value)}
-                      className="w-40"
-                      placeholder="Filter by date"
-                    />
-                  </div>
+                  
+                  {getDateRangeBadge() && (
+                    <div className="mt-3">
+                      <Badge variant="outline" className="text-xs">
+                        {getDateRangeBadge()}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 {Object.keys(slotsByDate).length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">
-                    {statusFilter !== 'all' || dateFilter 
-                      ? 'No slots match the current filters.' 
-                      : 'No slots added yet. Use the calendar above to add your first slots.'}
-                  </p>
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">
+                      {(fromDate || toDate) 
+                        ? 'No slots available in this range' 
+                        : statusFilter !== 'all'
+                        ? 'No slots match the current filters.'
+                        : 'No slots added yet. Use the calendar above to add your first slots.'}
+                    </p>
+                  </div>
                 ) : (
                   Object.entries(slotsByDate)
                     .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
