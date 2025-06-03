@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Car, Shield, Sun, Clock } from 'lucide-react';
+import { MapPin, Car, Shield, Sun, Clock, Circle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const mockParkingSpots = [
@@ -149,75 +149,97 @@ const BookSlot = () => {
 
   const getAmenityIcon = (amenity: string) => {
     switch (amenity.toLowerCase()) {
-      case 'cctv': return <Shield className="w-3 h-3" />;
-      case 'well-lit': return <Sun className="w-3 h-3" />;
-      case '24/7 access': return <Clock className="w-3 h-3" />;
+      case 'cctv': return <Shield className="w-4 h-4" />;
+      case 'well-lit': return <Sun className="w-4 h-4" />;
+      case '24/7 access': return <Clock className="w-4 h-4" />;
       default: return null;
     }
   };
 
   return (
     <Layout title={`Book Parking at ${spot.name}`} showBackButton={true}>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* Compact Header Section */}
         <div className="max-w-4xl mx-auto">
           {/* Hero Image - Very Compact */}
-          <div className="relative mb-3">
-            <div className="aspect-[16/9] max-w-2xl mx-auto relative overflow-hidden rounded-lg border shadow-sm" style={{ maxHeight: '200px' }}>
+          <div className="relative mb-4">
+            <div className="aspect-[16/9] max-w-[600px] mx-auto relative overflow-hidden rounded-lg border shadow-sm" style={{ maxHeight: '200px' }}>
               <img 
                 src={spot.image} 
                 alt={spot.name}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute top-2 left-2">
-                <span className="bg-[#FF6B00] text-white px-2 py-1 rounded-full text-xs font-semibold">
+              <div className="absolute top-3 left-3">
+                <span className="bg-[#FF6B00] text-white px-3 py-1.5 rounded-full text-sm font-semibold shadow-md">
                   ${spot.price}/hr
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Spot Info Card - Very Compact */}
-          <Card className="mb-3">
-            <CardContent className="p-3">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h1 className="text-lg font-semibold text-[#1C1C1C]">{spot.name}</h1>
-                  <div className="flex items-center space-x-1 text-[#606060] text-sm">
-                    <MapPin className="w-3 h-3" />
-                    <span>{spot.address}</span>
-                  </div>
+          {/* Enhanced Spot Details Card */}
+          <Card className="mb-4 bg-[#F9FAFB] shadow-md">
+            <CardContent className="p-6">
+              {/* Title and Address */}
+              <div className="mb-5">
+                <h1 className="text-xl font-bold text-[#1C1C1C] mb-3">{spot.name}</h1>
+                <div className="flex items-center space-x-2 text-[#606060] mb-4">
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-base">{spot.address}</span>
                 </div>
               </div>
               
-              <p className="text-sm text-[#606060] mb-2">{spot.description}</p>
+              {/* Description */}
+              <div className="mb-5">
+                <p className="text-base text-[#1C1C1C] leading-relaxed max-w-3xl">
+                  {spot.description}
+                </p>
+              </div>
               
-              {/* Amenities - Compact */}
-              <div className="flex flex-wrap gap-1 mb-2">
-                {spot.amenities.map((amenity, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs flex items-center space-x-1 px-2 py-0.5">
-                    {getAmenityIcon(amenity)}
-                    <span>{amenity}</span>
-                  </Badge>
-                ))}
+              {/* Amenities/Features */}
+              <div className="mb-5">
+                <h3 className="text-base font-semibold text-[#1C1C1C] mb-3">Features</h3>
+                <div className="flex flex-wrap gap-2">
+                  {spot.amenities.map((amenity, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary" 
+                      className="h-8 text-sm flex items-center space-x-2 px-3 py-1 bg-white border border-gray-200 hover:bg-gray-50"
+                    >
+                      {getAmenityIcon(amenity)}
+                      <span>{amenity}</span>
+                    </Badge>
+                  ))}
+                </div>
               </div>
 
-              {/* Available Slots - Compact */}
-              <div className="text-sm">
-                <span className="font-medium text-[#1C1C1C]">Available: </span>
-                {spot.slots.map((slot, index) => (
-                  <span key={slot.id} className="text-[#606060]">
-                    {slot.name} ({slot.timeRange})
-                    {index < spot.slots.length - 1 && ', '}
-                  </span>
-                ))}
+              {/* Available Slots */}
+              <div>
+                <h3 className="text-base font-semibold text-[#1C1C1C] mb-3">Available Slots</h3>
+                <div className="flex flex-wrap gap-3">
+                  {spot.slots.map((slot) => (
+                    <div 
+                      key={slot.id} 
+                      className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm"
+                    >
+                      <Circle className="w-3 h-3 fill-blue-500 text-blue-500" />
+                      <div className="text-sm">
+                        <span className="font-medium text-[#1C1C1C]">{slot.name}</span>
+                        <span className="text-[#606060] ml-2">({slot.timeRange})</span>
+                        <div className="text-xs text-[#606060] mt-1">
+                          {slot.capacity} spot{slot.capacity > 1 ? 's' : ''} available
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Main Content Grid - Compact */}
-        <div className="grid lg:grid-cols-3 gap-3 max-w-4xl mx-auto">
+        <div className="grid lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
           {/* Left Column - Booking Form */}
           <div className="lg:col-span-2">
             <Card className="shadow-md">
