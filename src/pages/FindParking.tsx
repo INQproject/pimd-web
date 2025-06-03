@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -83,7 +82,7 @@ const FindParking = () => {
         hours = '00';
       }
       if (modifier === 'PM') {
-        hours = parseInt(hours, 10) + 12;
+        hours = (parseInt(hours, 10) + 12).toString();
       }
       return `${hours}:${minutes}`;
     };
