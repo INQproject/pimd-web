@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,11 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { MapPin, Calendar, Clock, Filter, Car, Navigation, Search, DollarSign, HelpCircle, Phone, Mail, Users } from 'lucide-react';
+import { MapPin, Calendar, Clock, Filter, Car, Navigation, Search, DollarSign, HelpCircle, Phone, Mail } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
 
-// Mock data with multiple dates for each spot
 const mockParkingSpots = [
   {
     id: 1,
@@ -22,40 +21,10 @@ const mockParkingSpots = [
     price: 15,
     city: 'austin',
     image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
-    coordinates: { x: 35, y: 40 },
+    coordinates: { x: 35, y: 40 }, // Position on static map (percentage)
     slots: [
-      { 
-        id: 1, 
-        name: 'Morning Slot', 
-        timeRange: '8:00 AM - 12:00 PM', 
-        capacity: 2, 
-        available: 2,
-        date: new Date(2025, 5, 14) // June 14, 2025
-      },
-      { 
-        id: 2, 
-        name: 'Afternoon Slot', 
-        timeRange: '1:00 PM - 6:00 PM', 
-        capacity: 1, 
-        available: 1,
-        date: new Date(2025, 5, 14) // June 14, 2025
-      },
-      { 
-        id: 3, 
-        name: 'Morning Slot', 
-        timeRange: '8:00 AM - 12:00 PM', 
-        capacity: 2, 
-        available: 1,
-        date: new Date(2025, 5, 15) // June 15, 2025
-      },
-      { 
-        id: 4, 
-        name: 'Evening Slot', 
-        timeRange: '6:00 PM - 10:00 PM', 
-        capacity: 3, 
-        available: 3,
-        date: new Date(2025, 5, 16) // June 16, 2025
-      }
+      { id: 1, name: 'Slot A', timeRange: '8:00 AM - 12:00 PM', capacity: 2 },
+      { id: 2, name: 'Slot B', timeRange: '1:00 PM - 6:00 PM', capacity: 1 }
     ]
   },
   {
@@ -67,22 +36,8 @@ const mockParkingSpots = [
     image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
     coordinates: { x: 65, y: 25 },
     slots: [
-      { 
-        id: 5, 
-        name: 'Morning Slot', 
-        timeRange: '9:00 AM - 2:00 PM', 
-        capacity: 3, 
-        available: 3,
-        date: new Date(2025, 5, 14) // June 14, 2025
-      },
-      { 
-        id: 6, 
-        name: 'Afternoon Slot', 
-        timeRange: '3:00 PM - 8:00 PM', 
-        capacity: 2, 
-        available: 1,
-        date: new Date(2025, 5, 15) // June 15, 2025
-      }
+      { id: 3, name: 'Slot A', timeRange: '9:00 AM - 2:00 PM', capacity: 3 },
+      { id: 4, name: 'Slot B', timeRange: '3:00 PM - 8:00 PM', capacity: 2 }
     ]
   },
   {
@@ -94,22 +49,8 @@ const mockParkingSpots = [
     image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
     coordinates: { x: 50, y: 60 },
     slots: [
-      { 
-        id: 7, 
-        name: 'All Day', 
-        timeRange: '10:00 AM - 4:00 PM', 
-        capacity: 5, 
-        available: 4,
-        date: new Date(2025, 5, 17) // June 17, 2025
-      },
-      { 
-        id: 8, 
-        name: 'Evening', 
-        timeRange: '5:00 PM - 10:00 PM', 
-        capacity: 3, 
-        available: 2,
-        date: new Date(2025, 5, 17) // June 17, 2025
-      }
+      { id: 5, name: 'Slot A', timeRange: '10:00 AM - 4:00 PM', capacity: 5 },
+      { id: 6, name: 'Slot B', timeRange: '5:00 PM - 10:00 PM', capacity: 3 }
     ]
   }
 ];
@@ -125,8 +66,6 @@ const FindParking = () => {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
   const [filteredSpots, setFilteredSpots] = useState(mockParkingSpots);
-  const [showDateSlotSelector, setShowDateSlotSelector] = useState(false);
-  const [selectedSpotForBooking, setSelectedSpotForBooking] = useState<any>(null);
 
   const timeOptions = [
     '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
@@ -241,31 +180,7 @@ const FindParking = () => {
       navigate('/login', { state: { returnTo: `/book-slot/${spot.id}`, context: 'booking' } });
       return;
     }
-    
-    setSelectedSpotForBooking(spot);
-    setShowDateSlotSelector(true);
-  };
-
-  const handleConfirmBooking = (selectedSlots: any[]) => {
-    setShowDateSlotSelector(false);
-    
-    const totalPrice = selectedSlots.reduce((sum, slot) => {
-      const [startTime, endTime] = slot.timeRange.split(' - ');
-      const duration = 1; // Simplified - assuming 1 hour slots
-      return sum + (selectedSpotForBooking.price * duration);
-    }, 0);
-    
-    toast({
-      title: "Booking Confirmed!",
-      description: `${selectedSlots.length} slot(s) booked. Total: $${totalPrice}`,
-    });
-
-    navigate('/profile');
-  };
-
-  const handleCancelBooking = () => {
-    setShowDateSlotSelector(false);
-    setSelectedSpotForBooking(null);
+    navigate(`/book-slot/${spot.id}`);
   };
 
   const handlePinClick = (spotId: number) => {
@@ -520,25 +435,20 @@ const FindParking = () => {
                         </div>
                       </div>
 
-                      {/* Available times with dates */}
+                      {/* Available times */}
                       <div className="flex-1 mb-4">
                         <div className="flex items-center space-x-2 text-sm text-gray-700 mb-3">
                           <Clock className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
-                          <span className="font-semibold">Available Slots:</span>
+                          <span className="font-semibold">Available Times:</span>
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           {spot.slots.map(slot => (
                             <div key={slot.id} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                              <div className="flex items-center space-x-2 text-sm font-medium text-gray-800 mb-1">
-                                <Calendar className="w-4 h-4 text-[#FF6B00]" />
-                                <span>{format(slot.date, 'MMM d, yyyy')}</span>
-                              </div>
-                              <div className="text-sm font-medium text-gray-800 mb-1">
+                              <div className="text-sm font-medium text-gray-800">
                                 {slot.timeRange}
                               </div>
-                              <div className="flex items-center space-x-2 text-xs text-gray-600">
-                                <Users className="w-3 h-3" />
-                                <span>{slot.available}/{slot.capacity} available</span>
+                              <div className="text-xs text-gray-600 mt-1">
+                                Capacity: {slot.capacity} vehicle{slot.capacity !== 1 ? 's' : ''}
                               </div>
                             </div>
                           ))}
@@ -564,18 +474,6 @@ const FindParking = () => {
             </div>
           )}
         </div>
-
-        {/* Date Slot Selector Modal */}
-        {selectedSpotForBooking && (
-          <DateSlotSelector
-            isOpen={showDateSlotSelector}
-            spotName={selectedSpotForBooking.name}
-            spotPrice={selectedSpotForBooking.price}
-            availableSlots={selectedSpotForBooking.slots}
-            onConfirmBooking={handleConfirmBooking}
-            onCancel={handleCancelBooking}
-          />
-        )}
       </div>
     </Layout>
   );
