@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Plus, Edit, Trash2, Lock, ChevronLeft, ChevronRight, Calendar, Clock, X } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Lock, ChevronLeft, ChevronRight, Calendar, Clock, X, Eye, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import CancelSlotModal from '@/components/CancelSlotModal';
 
 interface Slot {
   id: string;
@@ -20,6 +22,8 @@ interface Slot {
   availableSpots: number;
   notes?: string;
   isBooked: boolean;
+  status: 'available' | 'booked' | 'cancelled';
+  cancellationReason?: string;
 }
 
 const ManageAvailability = () => {
@@ -29,6 +33,13 @@ const ManageAvailability = () => {
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [showSlotForm, setShowSlotForm] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('');
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [slotToCancel, setSlotToCancel] = useState<Slot | null>(null);
+  
+  const slotFormRef = useRef<HTMLDivElement>(null);
+  const startTimeRef = useRef<HTMLSelectElement>(null);
   
   const [slots, setSlots] = useState<Slot[]>([
     {
@@ -39,7 +50,8 @@ const ManageAvailability = () => {
       totalSpots: 3,
       availableSpots: 3,
       notes: 'Main driveway',
-      isBooked: false
+      isBooked: false,
+      status: 'available'
     },
     {
       id: '2',
@@ -48,7 +60,8 @@ const ManageAvailability = () => {
       endTime: '10:00 PM',
       totalSpots: 2,
       availableSpots: 0,
-      isBooked: true
+      isBooked: true,
+      status: 'booked'
     },
     {
       id: '3',
@@ -57,7 +70,8 @@ const ManageAvailability = () => {
       endTime: '6:00 PM',
       totalSpots: 5,
       availableSpots: 4,
-      isBooked: false
+      isBooked: false,
+      status: 'available'
     }
   ]);
 
@@ -253,6 +267,19 @@ const ManageAvailability = () => {
     setSelectedDates([]);
   };
 
+  const scrollToSlotForm = () => {
+    setShowSlotForm(true);
+    setTimeout(() => {
+      slotFormRef.current?.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+      setTimeout(() => {
+        startTimeRef.current?.focus();
+      }, 500);
+    }, 100);
+  };
+
   const validateSlot = (targetDates: string[]) => {
     if (!newSlot.startTime || !newSlot.endTime) {
       toast({
@@ -341,7 +368,8 @@ const ManageAvailability = () => {
         totalSpots,
         availableSpots: totalSpots,
         notes: newSlot.notes || undefined,
-        isBooked: false
+        isBooked: false,
+        status: 'available'
       };
       newSlots.push(newSlotData);
     });
@@ -357,22 +385,35 @@ const ManageAvailability = () => {
     });
   };
 
+  const handleCancelSlot = (slot: Slot) => {
+    setSlotToCancel(slot);
+    setCancelModalOpen(true);
+  };
+
+  const confirmCancelSlot = (reason: string) => {
+    if (slotToCancel) {
+      setSlots(prev => prev.map(slot => 
+        slot.id === slotToCancel.id 
+          ? { ...slot, status: 'cancelled', cancellationReason: reason, availableSpots: 0 }
+          : slot
+      ));
+      
+      toast({
+        title: "Slot Cancelled",
+        description: "The slot has been cancelled and bookings have been notified.",
+      });
+    }
+  };
+
   const deleteSlot = (slotId: string) => {
     const slot = slots.find(s => s.id === slotId);
-    if (slot?.isBooked) {
+    if (slot?.status === 'cancelled' || !slot?.isBooked) {
+      setSlots(prev => prev.filter(slot => slot.id !== slotId));
       toast({
-        title: "Cannot Delete",
-        description: "This slot has bookings and cannot be deleted.",
-        variant: "destructive"
+        title: "Slot Deleted",
+        description: "Time slot has been removed.",
       });
-      return;
     }
-    
-    setSlots(prev => prev.filter(slot => slot.id !== slotId));
-    toast({
-      title: "Slot Deleted",
-      description: "Time slot has been removed.",
-    });
   };
 
   const nextMonth = () => {
@@ -394,9 +435,29 @@ const ManageAvailability = () => {
     });
   };
 
+  const formatDateShort = (dateStr: string) => {
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   const getSlotsByDate = () => {
     const groupedSlots: { [key: string]: Slot[] } = {};
-    slots.forEach(slot => {
+    let filteredSlots = slots;
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filteredSlots = filteredSlots.filter(slot => slot.status === statusFilter);
+    }
+
+    // Apply date filter
+    if (dateFilter) {
+      filteredSlots = filteredSlots.filter(slot => slot.date === dateFilter);
+    }
+
+    filteredSlots.forEach(slot => {
       if (!groupedSlots[slot.date]) {
         groupedSlots[slot.date] = [];
       }
@@ -405,10 +466,26 @@ const ManageAvailability = () => {
     return groupedSlots;
   };
 
+  const getStatusBadge = (slot: Slot) => {
+    switch (slot.status) {
+      case 'available':
+        return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Available</Badge>;
+      case 'booked':
+        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Booked</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Cancelled</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
   const calendarRows = generateCalendarRows();
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
   const slotsByDate = getSlotsByDate();
+
+  // Sort selected dates chronologically
+  const sortedSelectedDates = [...selectedDates].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 
   return (
     <TooltipProvider>
@@ -601,9 +678,9 @@ const ManageAvailability = () => {
                       <p className="text-sm text-gray-500">No dates selected</p>
                     ) : (
                       <div className="space-y-2 max-h-32 overflow-y-auto">
-                        {selectedDates.map(date => (
+                        {sortedSelectedDates.map(date => (
                           <div key={date} className="flex items-center justify-between p-2 bg-orange-50 rounded-md">
-                            <span className="text-sm">{formatDate(date).split(',')[0]}</span>
+                            <span className="text-sm">{formatDateShort(date)}</span>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -619,7 +696,7 @@ const ManageAvailability = () => {
                     
                     {selectedDates.length > 0 && (
                       <Button
-                        onClick={() => setShowSlotForm(true)}
+                        onClick={scrollToSlotForm}
                         className="w-full mt-3 bg-orange-500 hover:bg-orange-600 text-white"
                         size="sm"
                       >
@@ -663,18 +740,23 @@ const ManageAvailability = () => {
 
           {/* Slot Creation Form */}
           {showSlotForm && selectedDates.length > 0 && (
-            <Card className="shadow-md border-orange-200 border-2">
+            <Card ref={slotFormRef} className="shadow-md border-orange-200 border-2">
               <CardHeader className="pb-3 bg-orange-50">
                 <CardTitle className="text-lg flex items-center">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Slot to {selectedDates.length} Date{selectedDates.length !== 1 ? 's' : ''}
                 </CardTitle>
+                <p className="text-sm text-gray-600">
+                  Creating slots for: {sortedSelectedDates.slice(0, 3).map(formatDateShort).join(', ')}
+                  {selectedDates.length > 3 && ` and ${selectedDates.length - 3} more...`}
+                </p>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="startTime">Start Time</Label>
                     <select
+                      ref={startTimeRef}
                       id="startTime"
                       value={newSlot.startTime}
                       onChange={(e) => setNewSlot(prev => ({ ...prev, startTime: e.target.value }))}
@@ -745,68 +827,145 @@ const ManageAvailability = () => {
             </Card>
           )}
 
-          {/* Slots List by Date */}
+          {/* All Time Slots Section - Redesigned */}
           <Card className="shadow-md">
             <CardHeader>
-              <CardTitle>All Time Slots</CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                <CardTitle className="flex items-center">
+                  <Calendar className="mr-2 h-5 w-5" />
+                  All Time Slots
+                </CardTitle>
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                  <div className="flex items-center space-x-2">
+                    <Filter className="h-4 w-4 text-gray-500" />
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="available">Available</SelectItem>
+                        <SelectItem value="booked">Booked</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="date"
+                      value={dateFilter}
+                      onChange={(e) => setDateFilter(e.target.value)}
+                      className="w-40"
+                      placeholder="Filter by date"
+                    />
+                  </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 {Object.keys(slotsByDate).length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No slots added yet. Use the calendar above to add your first slots.</p>
+                  <p className="text-gray-500 text-center py-8">
+                    {statusFilter !== 'all' || dateFilter 
+                      ? 'No slots match the current filters.' 
+                      : 'No slots added yet. Use the calendar above to add your first slots.'}
+                  </p>
                 ) : (
                   Object.entries(slotsByDate)
                     .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
                     .map(([date, dateSlots]) => (
                       <div key={date} className="border rounded-lg p-4 bg-gray-50">
-                        <h3 className="font-semibold text-lg mb-3 text-gray-800">
+                        <h3 className="font-semibold text-lg mb-4 text-gray-800 flex items-center">
+                          <Calendar className="mr-2 h-5 w-5" />
                           {formatDate(date)}
                         </h3>
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                           {dateSlots.map(slot => (
-                            <div key={slot.id} className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-4">
-                                  <div>
-                                    <p className="font-medium">{slot.startTime} - {slot.endTime}</p>
-                                    <p className="text-sm text-gray-600">
-                                      {slot.availableSpots}/{slot.totalSpots} spots available
+                            <div key={slot.id} className="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-gray-900 mb-1">
+                                    {slot.startTime} - {slot.endTime}
+                                  </h4>
+                                  <p className="text-sm text-gray-600 mb-1">
+                                    {slot.status === 'cancelled' 
+                                      ? 'Cancelled' 
+                                      : `${slot.availableSpots}/${slot.totalSpots} spots available`}
+                                  </p>
+                                  {slot.notes && (
+                                    <p className="text-xs text-gray-500 mb-2">{slot.notes}</p>
+                                  )}
+                                  {slot.cancellationReason && (
+                                    <p className="text-xs text-red-600 mb-2">
+                                      Reason: {slot.cancellationReason}
                                     </p>
-                                    {slot.notes && (
-                                      <p className="text-xs text-gray-500 mt-1">{slot.notes}</p>
-                                    )}
-                                  </div>
-                                  <div>
-                                    {slot.isBooked ? (
-                                      <Badge variant="secondary" className="bg-red-100 text-red-700">
-                                        🔒 Has Bookings
-                                      </Badge>
-                                    ) : (
-                                      <Badge variant="default" className="bg-green-100 text-green-700">
-                                        ✅ Available
-                                      </Badge>
-                                    )}
-                                  </div>
+                                  )}
+                                </div>
+                                <div className="ml-2">
+                                  {getStatusBadge(slot)}
                                 </div>
                               </div>
-                              <div className="flex space-x-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  disabled={slot.isBooked}
-                                  className={slot.isBooked ? 'opacity-50' : ''}
-                                >
-                                  {slot.isBooked ? <Lock className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="destructive"
-                                  onClick={() => deleteSlot(slot.id)}
-                                  disabled={slot.isBooked}
-                                  className={slot.isBooked ? 'opacity-50' : ''}
-                                >
-                                  {slot.isBooked ? <Lock className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
-                                </Button>
+                              <div className="flex justify-between items-center pt-2 border-t">
+                                <div className="flex space-x-1">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                                        <Eye className="h-3 w-3" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>View Details</TooltipContent>
+                                  </Tooltip>
+                                  
+                                  {slot.status !== 'cancelled' && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          size="sm" 
+                                          variant="outline"
+                                          className="h-8 w-8 p-0"
+                                          disabled={slot.status === 'cancelled'}
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Edit Slot</TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
+                                
+                                <div className="flex space-x-1">
+                                  {slot.status === 'booked' && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          size="sm" 
+                                          variant="destructive"
+                                          onClick={() => handleCancelSlot(slot)}
+                                          className="h-8 w-8 p-0"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Cancel Slot</TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  
+                                  {(slot.status === 'available' || slot.status === 'cancelled') && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          size="sm" 
+                                          variant="destructive"
+                                          onClick={() => deleteSlot(slot.id)}
+                                          className="h-8 w-8 p-0"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Delete Slot</TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -817,6 +976,23 @@ const ManageAvailability = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Cancel Slot Modal */}
+          {slotToCancel && (
+            <CancelSlotModal
+              isOpen={cancelModalOpen}
+              onClose={() => {
+                setCancelModalOpen(false);
+                setSlotToCancel(null);
+              }}
+              onConfirm={confirmCancelSlot}
+              slotDetails={{
+                date: slotToCancel.date,
+                startTime: slotToCancel.startTime,
+                endTime: slotToCancel.endTime
+              }}
+            />
+          )}
         </div>
       </Layout>
     </TooltipProvider>
