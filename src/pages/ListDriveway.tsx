@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,23 +35,16 @@ const ListDriveway = () => {
     // Simulate submission
     await new Promise(resolve => setTimeout(resolve, 1000));
     
+    // Auto-approve listing and generate listing ID
+    const listingId = Math.random().toString(36).substr(2, 9);
+    
     toast({
-      title: "Submitted",
-      description: "Awaiting Admin Approval",
+      title: "Listing Auto-Approved!",
+      description: "Your parking spot is now live and ready for bookings.",
     });
 
-    // Reset form
-    setFormData({
-      spotName: '',
-      address: '',
-      description: '',
-      totalSpots: '',
-      hourlyRate: '',
-      dailyRate: '',
-      weeklyRate: ''
-    });
-
-    setIsSubmitting(false);
+    // Redirect to manage availability page
+    navigate(`/manage-availability/${listingId}`);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -179,7 +171,7 @@ const ListDriveway = () => {
                 className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit for Approval'}
+                {isSubmitting ? 'Submitting...' : 'Submit for Auto-Approval'}
               </Button>
             </form>
           </CardContent>
