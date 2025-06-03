@@ -1,14 +1,15 @@
-
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
+import DateSlotSelector from '@/components/DateSlotSelector';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Calendar, Car, Clock, Circle } from 'lucide-react';
+import { MapPin, Calendar, Car, Clock, Circle, Users } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 const mockParkingSpots = [
   {
@@ -19,8 +20,26 @@ const mockParkingSpots = [
     price: 15,
     coordinates: { lat: 30.2672, lng: -97.7431 },
     slots: [
-      { id: 1, name: 'Slot 1', timeRange: '9:00 AM - 11:00 AM', capacity: 2, available: 2, startTime: '9:00 AM', endTime: '11:00 AM' },
-      { id: 2, name: 'Slot 2', timeRange: '12:00 PM - 2:00 PM', capacity: 1, available: 1, startTime: '12:00 PM', endTime: '2:00 PM' }
+      { 
+        id: 1, 
+        name: 'Slot 1', 
+        timeRange: '9:00 AM - 11:00 AM', 
+        capacity: 2, 
+        available: 2, 
+        startTime: '9:00 AM', 
+        endTime: '11:00 AM',
+        date: new Date(2025, 5, 14) // Event date
+      },
+      { 
+        id: 2, 
+        name: 'Slot 2', 
+        timeRange: '12:00 PM - 2:00 PM', 
+        capacity: 1, 
+        available: 1, 
+        startTime: '12:00 PM', 
+        endTime: '2:00 PM',
+        date: new Date(2025, 5, 14) // Event date
+      }
     ]
   },
   {
@@ -31,15 +50,28 @@ const mockParkingSpots = [
     price: 12,
     coordinates: { lat: 30.2700, lng: -97.7400 },
     slots: [
-      { id: 3, name: 'Slot A', timeRange: '10:00 AM - 1:00 PM', capacity: 3, available: 3, startTime: '10:00 AM', endTime: '1:00 PM' },
-      { id: 4, name: 'Slot B', timeRange: '2:00 PM - 6:00 PM', capacity: 2, available: 1, startTime: '2:00 PM', endTime: '6:00 PM' }
+      { 
+        id: 3, 
+        name: 'Slot A', 
+        timeRange: '10:00 AM - 1:00 PM', 
+        capacity: 3, 
+        available: 3, 
+        startTime: '10:00 AM', 
+        endTime: '1:00 PM',
+        date: new Date(2025, 5, 14) // Event date
+      },
+      { 
+        id: 4, 
+        name: 'Slot B', 
+        timeRange: '2:00 PM - 6:00 PM', 
+        capacity: 2, 
+        available: 1, 
+        startTime: '2:00 PM', 
+        endTime: '6:00 PM',
+        date: new Date(2025, 5, 14) // Event date
+      }
     ]
   }
-];
-
-const allTimeOptions = [
-  '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-  '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'
 ];
 
 const EventBooking = () => {
@@ -48,11 +80,8 @@ const EventBooking = () => {
   const { user } = useAuth();
   const event = location.state?.event;
   const [selectedSpot, setSelectedSpot] = useState<number | null>(null);
-
-  const [vehicleCount, setVehicleCount] = useState('1');
-  const [vehicleBookings, setVehicleBookings] = useState([
-    { spotId: '', slotId: '', startTime: '', endTime: '', price: 0 }
-  ]);
+  const [showDateSlotSelector, setShowDateSlotSelector] = useState(false);
+  const [selectedSpotForBooking, setSelectedSpotForBooking] = useState<any>(null);
 
   // Get event date or default to today
   const eventDate = event?.date || new Date().toLocaleDateString('en-US', { 
@@ -72,111 +101,28 @@ const EventBooking = () => {
     return null;
   }
 
-  const handleVehicleCountChange = (count: string) => {
-    setVehicleCount(count);
-    const newBookings = Array(parseInt(count)).fill(null).map(() => ({
-      spotId: '',
-      slotId: '',
-      startTime: '',
-      endTime: '',
-      price: 0
-    }));
-    setVehicleBookings(newBookings);
+  const handleBookSpot = (spot: any) => {
+    setSelectedSpotForBooking(spot);
+    setShowDateSlotSelector(true);
   };
 
-  const getSpotById = (spotId: string) => {
-    return mockParkingSpots.find(spot => spot.id.toString() === spotId);
-  };
-
-  const getSlotById = (spotId: string, slotId: string) => {
-    const spot = getSpotById(spotId);
-    return spot?.slots.find(slot => slot.id.toString() === slotId);
-  };
-
-  const getAvailableStartTimes = (spotId: string, slotId: string) => {
-    const slot = getSlotById(spotId, slotId);
-    if (!slot) return [];
+  const handleConfirmBooking = (selectedSlots: any[]) => {
+    setShowDateSlotSelector(false);
     
-    const slotStartIndex = allTimeOptions.indexOf(slot.startTime);
-    const slotEndIndex = allTimeOptions.indexOf(slot.endTime);
-    
-    return allTimeOptions.slice(slotStartIndex, slotEndIndex);
-  };
-
-  const getAvailableEndTimes = (spotId: string, slotId: string, startTime: string) => {
-    const slot = getSlotById(spotId, slotId);
-    if (!slot || !startTime) return [];
-    
-    const startIndex = allTimeOptions.indexOf(startTime);
-    const slotEndIndex = allTimeOptions.indexOf(slot.endTime);
-    
-    return allTimeOptions.slice(startIndex + 1, slotEndIndex + 1);
-  };
-
-  const updateVehicleBooking = (index: number, field: string, value: string) => {
-    const newBookings = [...vehicleBookings];
-    newBookings[index] = { ...newBookings[index], [field]: value };
-    
-    // Reset slot, start and end times if spot changes
-    if (field === 'spotId') {
-      newBookings[index].slotId = '';
-      newBookings[index].startTime = '';
-      newBookings[index].endTime = '';
-      newBookings[index].price = 0;
-    }
-    
-    // Reset start and end times if slot changes
-    if (field === 'slotId') {
-      newBookings[index].startTime = '';
-      newBookings[index].endTime = '';
-      newBookings[index].price = 0;
-    }
-    
-    // Reset end time if start time changes
-    if (field === 'startTime') {
-      newBookings[index].endTime = '';
-      newBookings[index].price = 0;
-    }
-    
-    // Calculate price if we have both times and spot
-    if ((field === 'endTime' || field === 'startTime') && newBookings[index].spotId) {
-      const booking = newBookings[index];
-      const spot = getSpotById(booking.spotId);
-      if (booking.startTime && booking.endTime && spot) {
-        const startIndex = allTimeOptions.indexOf(booking.startTime);
-        const endIndex = allTimeOptions.indexOf(booking.endTime);
-        const hours = endIndex - startIndex;
-        newBookings[index].price = Math.max(hours * spot.price, 0);
-      }
-    }
-    
-    setVehicleBookings(newBookings);
-  };
-
-  const handleBookSpot = (spotId: number) => {
-    navigate(`/book-slot/${spotId}`, { 
-      state: { 
-        returnTo: `/event-booking/${event.id}`,
-        event: event,
-        selectedDate: event.date 
-      } 
-    });
-  };
-
-  const handleProceedToPayment = () => {
-    const totalPrice = vehicleBookings.reduce((sum, booking) => sum + booking.price, 0);
+    const totalPrice = selectedSlots.reduce((sum, slot) => sum + selectedSpotForBooking.price, 0);
     
     toast({
       title: "Event Parking Booked!",
-      description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s) at ${event.name}`,
+      description: `${selectedSlots.length} slot(s) booked for ${event.name}. Total: $${totalPrice}`,
     });
 
     navigate('/profile');
   };
 
-  const isBookingValid = vehicleBookings.every(booking => 
-    booking.spotId && booking.slotId && booking.startTime && booking.endTime && booking.price > 0
-  );
+  const handleCancelBooking = () => {
+    setShowDateSlotSelector(false);
+    setSelectedSpotForBooking(null);
+  };
 
   return (
     <Layout title={`Parking for ${event.name}`} showBackButton={true}>
@@ -337,7 +283,7 @@ const EventBooking = () => {
                           ))}
                           
                           <Button 
-                            onClick={() => handleBookSpot(spot.id)}
+                            onClick={() => handleBookSpot(spot)}
                             className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white mt-4"
                           >
                             Book This Spot
@@ -386,6 +332,18 @@ const EventBooking = () => {
             </div>
           </div>
         </div>
+
+        {/* Date Slot Selector Modal */}
+        {selectedSpotForBooking && (
+          <DateSlotSelector
+            isOpen={showDateSlotSelector}
+            spotName={selectedSpotForBooking.name}
+            spotPrice={selectedSpotForBooking.price}
+            availableSlots={selectedSpotForBooking.slots}
+            onConfirmBooking={handleConfirmBooking}
+            onCancel={handleCancelBooking}
+          />
+        )}
       </div>
     </Layout>
   );
