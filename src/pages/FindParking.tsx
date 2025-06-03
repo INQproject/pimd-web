@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -55,11 +56,11 @@ const mockParkingSpots = [
 const FindParking = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedDate, setSelectedDate] = useState('');
-  const [startTime, setStartTime] = useState('11:00 AM');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [cityFilter, setCityFilter] = useState<'all' | 'austin' | 'dallas'>('all');
-  const [searchLocation, setSearchLocation] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
   const [filteredSpots, setFilteredSpots] = useState(mockParkingSpots);
@@ -97,7 +98,7 @@ const FindParking = () => {
           console.log('Location access denied:', error);
           toast({
             title: "Location access denied",
-            description: "Please use the search bar to find parking spots",
+            description: "Please use the filters to find parking spots",
             variant: "destructive"
           });
         }
@@ -110,6 +111,14 @@ const FindParking = () => {
     // Reset end time if it's now invalid
     if (endTime && timeOptions.indexOf(endTime) <= timeOptions.indexOf(value)) {
       setEndTime('');
+    }
+  };
+
+  const handleStartDateChange = (value: string) => {
+    setStartDate(value);
+    // Reset end date if it's before start date
+    if (endDate && new Date(endDate) < new Date(value)) {
+      setEndDate('');
     }
   };
 
@@ -147,14 +156,6 @@ const FindParking = () => {
     // Filter by city
     if (cityFilter !== 'all') {
       filtered = filtered.filter(spot => spot.city === cityFilter);
-    }
-    
-    // Filter by search location
-    if (searchLocation.trim()) {
-      filtered = filtered.filter(spot => 
-        spot.name.toLowerCase().includes(searchLocation.toLowerCase()) ||
-        spot.address.toLowerCase().includes(searchLocation.toLowerCase())
-      );
     }
     
     // Filter by time availability
@@ -204,29 +205,13 @@ const FindParking = () => {
               <span>Search & Filter Parking</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Location Search */}
-            <div className="space-y-2">
-              <Label htmlFor="search">Search Location</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  id="search"
-                  type="text"
-                  placeholder="Search for a location or parking spot..."
-                  value={searchLocation}
-                  onChange={(e) => setSearchLocation(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="city">City</Label>
                 <Select value={cityFilter} onValueChange={(value: 'all' | 'austin' | 'dallas') => setCityFilter(value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select city" />
+                    <SelectValue placeholder="All Cities" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Cities</SelectItem>
@@ -237,12 +222,24 @@ const FindParking = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="startDate">Start Date</Label>
                 <Input
-                  id="date"
+                  id="startDate"
                   type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  value={startDate}
+                  onChange={(e) => handleStartDateChange(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="endDate">End Date</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate || new Date().toISOString().split('T')[0]}
                 />
               </div>
               
@@ -279,9 +276,9 @@ const FindParking = () => {
             <div className="pt-4">
               <Button 
                 onClick={applyFilters}
-                className="w-full md:w-auto bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white px-8"
+                className="w-full md:w-auto bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white px-8 py-3 text-lg font-semibold"
               >
-                <Filter className="w-4 h-4 mr-2" />
+                <Filter className="w-5 h-5 mr-2" />
                 Apply Filters
               </Button>
             </div>
@@ -382,7 +379,7 @@ const FindParking = () => {
                 <Car className="w-12 h-12 mx-auto text-gray-400" />
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">No parking spots found</h3>
-                  <p className="text-gray-500">Try adjusting your filters or search location to see more results.</p>
+                  <p className="text-gray-500">Try adjusting your filters to see more results.</p>
                 </div>
               </div>
             </Card>
