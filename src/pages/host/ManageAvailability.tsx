@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -5,12 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Plus, Edit, Trash2, Lock, ChevronLeft, ChevronRight, Calendar, Clock, Copy } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Lock, ChevronLeft, ChevronRight, Calendar, Clock, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Toggle } from '@/components/ui/toggle';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 
 interface Slot {
   id: string;
@@ -23,21 +22,13 @@ interface Slot {
   isBooked: boolean;
 }
 
-type SlotMode = 'day' | 'week' | 'month' | 'range';
-
 const ManageAvailability = () => {
   const { listingId } = useParams();
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState<string>('');
   const [currentMonth, setCurrentMonth] = useState(new Date(2024, 0)); // January 2024
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [showSlotForm, setShowSlotForm] = useState(false);
-  const [slotMode, setSlotMode] = useState<SlotMode>('day');
-  const [selectedWeekdays, setSelectedWeekdays] = useState<boolean[]>(new Array(7).fill(false)); // Sun-Sat
-  
-  // Custom Range state
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-  const [selectedRangeDates, setSelectedRangeDates] = useState<string[]>([]);
   
   const [slots, setSlots] = useState<Slot[]>([
     {
@@ -84,51 +75,6 @@ const ManageAvailability = () => {
     '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM', '11:00 PM'
   ];
 
-  const weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  // Generate date range for custom range mode
-  const generateDateRange = (start: string, end: string): string[] => {
-    if (!start || !end) return [];
-    
-    const startDateObj = new Date(start + 'T00:00:00');
-    const endDateObj = new Date(end + 'T00:00:00');
-    const dates: string[] = [];
-    
-    const currentDate = new Date(startDateObj);
-    while (currentDate <= endDateObj) {
-      const dateStr = currentDate.toISOString().split('T')[0];
-      dates.push(dateStr);
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    
-    return dates;
-  };
-
-  // Update selected range dates when start/end dates change
-  React.useEffect(() => {
-    if (slotMode === 'range' && startDate && endDate) {
-      const dateRange = generateDateRange(startDate, endDate);
-      setSelectedRangeDates(dateRange);
-    }
-  }, [startDate, endDate, slotMode]);
-
-  const toggleRangeDate = (date: string) => {
-    setSelectedRangeDates(prev => 
-      prev.includes(date) 
-        ? prev.filter(d => d !== date)
-        : [...prev, date]
-    );
-  };
-
-  const selectAllRangeDates = () => {
-    const dateRange = generateDateRange(startDate, endDate);
-    setSelectedRangeDates(dateRange);
-  };
-
-  const unselectAllRangeDates = () => {
-    setSelectedRangeDates([]);
-  };
-
   // Generate compact calendar days
   const generateCalendarDays = () => {
     const year = currentMonth.getFullYear();
@@ -150,74 +96,31 @@ const ManageAvailability = () => {
       const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
       const hasSlots = slots.some(slot => slot.date === dateStr);
       const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+      const isSelected = selectedDates.includes(dateStr);
       const daySlots = slots.filter(slot => slot.date === dateStr);
-      days.push({ day, dateStr, hasSlots, isToday, daySlots });
+      days.push({ day, dateStr, hasSlots, isToday, isSelected, daySlots });
     }
     
     return days;
   };
 
   const handleDateClick = (dateStr: string) => {
-    setSelectedDate(dateStr);
-    if (slotMode === 'day') {
+    if (multiSelectMode) {
+      setSelectedDates(prev => 
+        prev.includes(dateStr) 
+          ? prev.filter(d => d !== dateStr)
+          : [...prev, dateStr]
+      );
+    } else {
+      // Single date selection for immediate slot creation
+      setSelectedDates([dateStr]);
       setShowSlotForm(true);
       setNewSlot({ startTime: '', endTime: '', totalSpots: '1', notes: '' });
     }
   };
 
-  const handleModeClick = (mode: SlotMode) => {
-    setSlotMode(mode);
-    setShowSlotForm(true);
-    setNewSlot({ startTime: '', endTime: '', totalSpots: '1', notes: '' });
-    if (mode !== 'week') {
-      setSelectedWeekdays(new Array(7).fill(false));
-    }
-    if (mode !== 'range') {
-      setStartDate('');
-      setEndDate('');
-      setSelectedRangeDates([]);
-    }
-  };
-
-  const toggleWeekday = (index: number) => {
-    const newSelection = [...selectedWeekdays];
-    newSelection[index] = !newSelection[index];
-    setSelectedWeekdays(newSelection);
-  };
-
-  const generateDatesForMode = (): string[] => {
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const dates: string[] = [];
-
-    if (slotMode === 'day') {
-      return selectedDate ? [selectedDate] : [];
-    }
-    
-    if (slotMode === 'week') {
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        const weekday = date.getDay();
-        if (selectedWeekdays[weekday]) {
-          const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-          dates.push(dateStr);
-        }
-      }
-    }
-    
-    if (slotMode === 'month') {
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        dates.push(dateStr);
-      }
-    }
-
-    if (slotMode === 'range') {
-      return selectedRangeDates;
-    }
-
-    return dates;
+  const clearAllSelectedDates = () => {
+    setSelectedDates([]);
   };
 
   const validateSlot = (targetDates: string[]) => {
@@ -243,8 +146,8 @@ const ManageAvailability = () => {
       return false;
     }
 
-    // Check for overlapping slots
-    for (const date of targetDates) {
+    // Check for overlapping slots and remove conflicting dates
+    const validDates = targetDates.filter(date => {
       const existingSlots = slots.filter(slot => slot.date === date);
       const hasOverlap = existingSlots.some(slot => {
         const existingStart = timeOptions.indexOf(slot.startTime);
@@ -253,40 +156,53 @@ const ManageAvailability = () => {
       });
 
       if (hasOverlap) {
-        toast({
-          title: "Error",
-          description: `Time slot overlaps with existing slot on ${formatDate(date)}.`,
-          variant: "destructive"
-        });
+        // Remove this date from selectedDates
+        setSelectedDates(prev => prev.filter(d => d !== date));
         return false;
       }
+      return true;
+    });
+
+    if (validDates.length !== targetDates.length) {
+      const conflictCount = targetDates.length - validDates.length;
+      toast({
+        title: "Conflicts Removed",
+        description: `${conflictCount} date(s) removed due to overlapping slots.`,
+        variant: "destructive"
+      });
     }
 
-    return true;
+    return validDates.length > 0;
   };
 
   const addNewSlot = () => {
-    const targetDates = generateDatesForMode();
-    
-    if (targetDates.length === 0) {
-      let errorMessage = "Please select a date.";
-      if (slotMode === 'week') errorMessage = "Please select at least one weekday.";
-      if (slotMode === 'range') errorMessage = "Please select start and end dates, and at least one day.";
-      
+    if (selectedDates.length === 0) {
       toast({
         title: "Error",
-        description: errorMessage,
+        description: "Please select at least one date.",
         variant: "destructive"
       });
       return;
     }
 
-    if (!validateSlot(targetDates)) return;
+    const validDates = selectedDates.filter(date => {
+      const existingSlots = slots.filter(slot => slot.date === date);
+      const startIndex = timeOptions.indexOf(newSlot.startTime);
+      const endIndex = timeOptions.indexOf(newSlot.endTime);
+      
+      return !existingSlots.some(slot => {
+        const existingStart = timeOptions.indexOf(slot.startTime);
+        const existingEnd = timeOptions.indexOf(slot.endTime);
+        return (startIndex < existingEnd && endIndex > existingStart);
+      });
+    });
+
+    if (!validateSlot(validDates)) return;
 
     const totalSpots = parseInt(newSlot.totalSpots) || 1;
     const newSlots: Slot[] = [];
     
-    targetDates.forEach(date => {
+    validDates.forEach(date => {
       const newSlotData: Slot = {
         id: Math.random().toString(36).substr(2, 9),
         date,
@@ -303,14 +219,11 @@ const ManageAvailability = () => {
     setSlots(prev => [...prev, ...newSlots]);
     setNewSlot({ startTime: '', endTime: '', totalSpots: '1', notes: '' });
     setShowSlotForm(false);
-    setSelectedWeekdays(new Array(7).fill(false));
-    setSelectedRangeDates([]);
+    setSelectedDates([]);
     
-    const modeText = slotMode === 'day' ? 'slot' : `${newSlots.length} slots`;
-    const periodText = slotMode === 'range' ? 'selected dates' : monthNames[currentMonth.getMonth()];
     toast({
       title: "Slots Added",
-      description: `${modeText} added successfully for ${periodText}.`,
+      description: `Slot added to ${validDates.length} date${validDates.length !== 1 ? 's' : ''} successfully.`,
     });
   };
 
@@ -334,10 +247,12 @@ const ManageAvailability = () => {
 
   const nextMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+    setSelectedDates([]);
   };
 
   const prevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+    setSelectedDates([]);
   };
 
   const formatDate = (dateStr: string) => {
@@ -367,7 +282,7 @@ const ManageAvailability = () => {
 
   return (
     <Layout title="Manage Availability">
-      <div className="max-w-5xl mx-auto space-y-6 p-4">
+      <div className="max-w-6xl mx-auto space-y-6 p-4">
         {/* Back Button */}
         <Button
           variant="outline"
@@ -387,165 +302,45 @@ const ManageAvailability = () => {
               Manage Availability - Listing #{listingId}
             </CardTitle>
             <p className="text-sm text-gray-600">
-              {slotMode === 'day' && 'Click any date to add availability slots'}
-              {slotMode === 'week' && 'Select weekdays to apply slots across the month'}
-              {slotMode === 'month' && 'Add slots to every day of the month'}
-              {slotMode === 'range' && 'Select a date range and customize which days to include'}
+              {multiSelectMode 
+                ? 'Multi-select mode: Click dates to select multiple, then add slots'
+                : 'Single-select mode: Click any date to add a slot immediately'
+              }
             </p>
           </CardHeader>
         </Card>
 
-        {/* Slot Creation Mode Toggle */}
-        <Card className="shadow-md">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Apply To:</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex space-x-2">
-              <Toggle
-                pressed={slotMode === 'day'}
-                onPressedChange={() => handleModeClick('day')}
-                variant="outline"
-              >
-                Day
-              </Toggle>
-              <Toggle
-                pressed={slotMode === 'week'}
-                onPressedChange={() => handleModeClick('week')}
-                variant="outline"
-              >
-                Week
-              </Toggle>
-              <Toggle
-                pressed={slotMode === 'month'}
-                onPressedChange={() => handleModeClick('month')}
-                variant="outline"
-              >
-                Month
-              </Toggle>
-              <Toggle
-                pressed={slotMode === 'range'}
-                onPressedChange={() => handleModeClick('range')}
-                variant="outline"
-              >
-                Custom Range
-              </Toggle>
-            </div>
-            
-            {/* Weekday Selection for Week Mode */}
-            {slotMode === 'week' && (
-              <div className="mt-4">
-                <Label className="text-sm font-medium mb-2 block">Select Weekdays:</Label>
-                <div className="flex space-x-2">
-                  {weekdayNames.map((day, index) => (
-                    <Toggle
-                      key={day}
-                      pressed={selectedWeekdays[index]}
-                      onPressedChange={() => toggleWeekday(index)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      {day}
-                    </Toggle>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Custom Range Selection */}
-            {slotMode === 'range' && (
-              <div className="mt-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="startDate">Start Date</Label>
-                    <Input
-                      id="startDate"
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="endDate">End Date</Label>
-                    <Input
-                      id="endDate"
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-
-                {startDate && endDate && generateDateRange(startDate, endDate).length > 0 && (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <Label className="text-sm font-medium">Select dates to include:</Label>
-                      <div className="flex space-x-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={selectAllRangeDates}
-                        >
-                          Select All
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={unselectAllRangeDates}
-                        >
-                          Unselect All
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="max-h-48 overflow-y-auto border rounded-lg p-3 bg-gray-50">
-                      <div className="space-y-2">
-                        {generateDateRange(startDate, endDate).map(date => (
-                          <div key={date} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`date-${date}`}
-                              checked={selectedRangeDates.includes(date)}
-                              onCheckedChange={() => toggleRangeDate(date)}
-                            />
-                            <Label htmlFor={`date-${date}`} className="text-sm">
-                              {formatDate(date)}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    {selectedRangeDates.length > 0 && (
-                      <p className="text-sm text-blue-600 mt-2">
-                        Slots will be created on {selectedRangeDates.length} day{selectedRangeDates.length !== 1 ? 's' : ''}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Compact Calendar */}
+          {/* Calendar */}
           <div className="lg:col-span-2">
-            <Card className="shadow-md rounded-lg">
+            <Card className="shadow-md">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center">
                     <Calendar className="mr-2 h-4 w-4" />
                     {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                   </CardTitle>
-                  <div className="flex space-x-1">
-                    <Button variant="outline" size="sm" onClick={prevMonth}>
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={nextMonth}>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="multi-select" className="text-sm">Multi-Select</Label>
+                      <Switch
+                        id="multi-select"
+                        checked={multiSelectMode}
+                        onCheckedChange={(checked) => {
+                          setMultiSelectMode(checked);
+                          setSelectedDates([]);
+                          setShowSlotForm(false);
+                        }}
+                      />
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button variant="outline" size="sm" onClick={prevMonth}>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={nextMonth}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -562,7 +357,7 @@ const ManageAvailability = () => {
                         <button
                           onClick={() => handleDateClick(dayData.dateStr)}
                           className={`w-full h-full text-sm rounded-md hover:bg-gray-100 relative border transition-colors flex flex-col items-center justify-center group ${
-                            selectedDate === dayData.dateStr 
+                            dayData.isSelected
                               ? 'bg-orange-500 text-white border-orange-500' 
                               : dayData.isToday 
                               ? 'bg-blue-100 text-blue-800 border-blue-300'
@@ -573,6 +368,11 @@ const ManageAvailability = () => {
                           <span className="text-xs font-medium">{dayData.day}</span>
                           {dayData.hasSlots && (
                             <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          )}
+                          {dayData.isSelected && (
+                            <div className="absolute top-1 right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                              <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                            </div>
                           )}
                         </button>
                       ) : (
@@ -585,147 +385,180 @@ const ManageAvailability = () => {
             </Card>
           </div>
 
-          {/* Quick Actions */}
-          <Card className="shadow-md rounded-lg">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center">
-                <Plus className="mr-2 h-4 w-4" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-gray-600 mb-3">
-                Current mode: <Badge variant="outline">{slotMode.charAt(0).toUpperCase() + slotMode.slice(1)}</Badge>
-              </p>
-              {selectedDate && slotMode === 'day' && (
-                <div className="p-3 bg-orange-50 rounded-lg border">
-                  <p className="text-sm font-medium text-orange-800">
-                    Selected: {formatDate(selectedDate)}
-                  </p>
+          {/* Selected Dates & Slot Form */}
+          <div className="space-y-4">
+            {/* Selected Dates Preview */}
+            {(selectedDates.length > 0 || multiSelectMode) && (
+              <Card className="shadow-md">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center">
+                      📅 Selected Dates
+                    </CardTitle>
+                    {selectedDates.length > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearAllSelectedDates}
+                        className="text-xs"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Clear All
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {selectedDates.length === 0 ? (
+                    <p className="text-sm text-gray-500">No dates selected</p>
+                  ) : (
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {selectedDates.map(date => (
+                        <div key={date} className="flex items-center justify-between p-2 bg-orange-50 rounded-md">
+                          <span className="text-sm">{formatDate(date).split(',')[0]}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedDates(prev => prev.filter(d => d !== date))}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {selectedDates.length > 0 && (
+                    <Button
+                      onClick={() => setShowSlotForm(true)}
+                      className="w-full mt-3 bg-orange-500 hover:bg-orange-600 text-white"
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Slot for {selectedDates.length} Date{selectedDates.length !== 1 ? 's' : ''}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quick Actions */}
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  <Clock className="mr-2 h-4 w-4" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  Mode: <Badge variant="outline">{multiSelectMode ? 'Multi-Select' : 'Single-Select'}</Badge>
+                </p>
+                <div className="text-sm text-gray-600">
+                  {multiSelectMode 
+                    ? "Click multiple dates, then create slots for all selected dates at once."
+                    : "Click any date to immediately create a slot for that day."
+                  }
                 </div>
-              )}
-              {slotMode === 'week' && selectedWeekdays.some(Boolean) && (
-                <div className="p-3 bg-blue-50 rounded-lg border">
-                  <p className="text-sm font-medium text-blue-800">
-                    Selected weekdays: {weekdayNames.filter((_, i) => selectedWeekdays[i]).join(', ')}
-                  </p>
-                </div>
-              )}
-              {slotMode === 'month' && (
-                <div className="p-3 bg-green-50 rounded-lg border">
-                  <p className="text-sm font-medium text-green-800">
-                    Will apply to entire month: {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-                  </p>
-                </div>
-              )}
-              {slotMode === 'range' && selectedRangeDates.length > 0 && (
-                <div className="p-3 bg-purple-50 rounded-lg border">
-                  <p className="text-sm font-medium text-purple-800">
-                    Selected {selectedRangeDates.length} date{selectedRangeDates.length !== 1 ? 's' : ''} in range
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Slot Creation Form */}
-        {showSlotForm && (
-          <Collapsible open={showSlotForm} onOpenChange={setShowSlotForm}>
-            <CollapsibleContent>
-              <Card className="shadow-md rounded-lg border-orange-200 border-2">
-                <CardHeader className="pb-3 bg-orange-50">
-                  <CardTitle className="text-lg flex items-center">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Slot - {slotMode.charAt(0).toUpperCase() + slotMode.slice(1)} Mode
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="startTime">Start Time</Label>
-                      <select
-                        id="startTime"
-                        value={newSlot.startTime}
-                        onChange={(e) => setNewSlot(prev => ({ ...prev, startTime: e.target.value }))}
-                        className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select start time</option>
-                        {timeOptions.map(time => (
-                          <option key={time} value={time}>{time}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <Label htmlFor="endTime">End Time</Label>
-                      <select
-                        id="endTime"
-                        value={newSlot.endTime}
-                        onChange={(e) => setNewSlot(prev => ({ ...prev, endTime: e.target.value }))}
-                        className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select end time</option>
-                        {timeOptions.map(time => (
-                          <option key={time} value={time}>{time}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="totalSpots">Number of Spots</Label>
-                      <Input
-                        id="totalSpots"
-                        type="number"
-                        min="1"
-                        placeholder="1"
-                        value={newSlot.totalSpots}
-                        onChange={(e) => setNewSlot(prev => ({ ...prev, totalSpots: e.target.value }))}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="notes">Notes (Optional)</Label>
-                      <Input
-                        id="notes"
-                        placeholder="Special instructions"
-                        value={newSlot.notes}
-                        onChange={(e) => setNewSlot(prev => ({ ...prev, notes: e.target.value }))}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button 
-                      onClick={addNewSlot} 
-                      className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Slot{slotMode !== 'day' ? 's' : ''}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowSlotForm(false)}
-                      className="px-6"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </CollapsibleContent>
-          </Collapsible>
+        {showSlotForm && selectedDates.length > 0 && (
+          <Card className="shadow-md border-orange-200 border-2">
+            <CardHeader className="pb-3 bg-orange-50">
+              <CardTitle className="text-lg flex items-center">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Slot to {selectedDates.length} Date{selectedDates.length !== 1 ? 's' : ''}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <select
+                    id="startTime"
+                    value={newSlot.startTime}
+                    onChange={(e) => setNewSlot(prev => ({ ...prev, startTime: e.target.value }))}
+                    className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select start time</option>
+                    {timeOptions.map(time => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="endTime">End Time</Label>
+                  <select
+                    id="endTime"
+                    value={newSlot.endTime}
+                    onChange={(e) => setNewSlot(prev => ({ ...prev, endTime: e.target.value }))}
+                    className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select end time</option>
+                    {timeOptions.map(time => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="totalSpots">Number of Spots</Label>
+                  <Input
+                    id="totalSpots"
+                    type="number"
+                    min="1"
+                    placeholder="1"
+                    value={newSlot.totalSpots}
+                    onChange={(e) => setNewSlot(prev => ({ ...prev, totalSpots: e.target.value }))}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="notes">Notes (Optional)</Label>
+                  <Input
+                    id="notes"
+                    placeholder="Special instructions"
+                    value={newSlot.notes}
+                    onChange={(e) => setNewSlot(prev => ({ ...prev, notes: e.target.value }))}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={addNewSlot} 
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Slot{selectedDates.length !== 1 ? 's' : ''}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowSlotForm(false)}
+                  className="px-6"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Slots List by Date */}
-        <Card className="shadow-md rounded-lg">
+        <Card className="shadow-md">
           <CardHeader>
             <CardTitle>All Time Slots</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               {Object.keys(slotsByDate).length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No slots added yet. Use the mode selector and calendar above to add your first slots.</p>
+                <p className="text-gray-500 text-center py-8">No slots added yet. Use the calendar above to add your first slots.</p>
               ) : (
                 Object.entries(slotsByDate)
                   .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
