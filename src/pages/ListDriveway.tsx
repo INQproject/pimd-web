@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,7 +22,8 @@ const ListDriveway = () => {
     totalSpots: '',
     hourlyRate: '',
     dailyRate: '',
-    weeklyRate: ''
+    weeklyRate: '',
+    monthlyRate: ''
   });
 
   const handleLoginToStart = () => {
@@ -127,36 +129,50 @@ const ListDriveway = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="hourlyRate">Hourly Rate ($)</Label>
-                  <Input
-                    id="hourlyRate"
-                    type="number"
-                    placeholder="15"
-                    value={formData.hourlyRate}
-                    onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dailyRate">Daily Rate ($)</Label>
-                  <Input
-                    id="dailyRate"
-                    type="number"
-                    placeholder="50"
-                    value={formData.dailyRate}
-                    onChange={(e) => handleInputChange('dailyRate', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="weeklyRate">Weekly Rate ($)</Label>
-                  <Input
-                    id="weeklyRate"
-                    type="number"
-                    placeholder="300"
-                    value={formData.weeklyRate}
-                    onChange={(e) => handleInputChange('weeklyRate', e.target.value)}
-                  />
+              {/* Set Your Rates Section */}
+              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900">Set Your Rates</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="hourlyRate">Hourly Rate ($)</Label>
+                    <Input
+                      id="hourlyRate"
+                      type="number"
+                      placeholder="15"
+                      value={formData.hourlyRate}
+                      onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dailyRate">Daily Rate ($)</Label>
+                    <Input
+                      id="dailyRate"
+                      type="number"
+                      placeholder="50"
+                      value={formData.dailyRate}
+                      onChange={(e) => handleInputChange('dailyRate', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="weeklyRate">Weekly Rate ($)</Label>
+                    <Input
+                      id="weeklyRate"
+                      type="number"
+                      placeholder="300"
+                      value={formData.weeklyRate}
+                      onChange={(e) => handleInputChange('weeklyRate', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="monthlyRate">Monthly Rate ($)</Label>
+                    <Input
+                      id="monthlyRate"
+                      type="number"
+                      placeholder="1200"
+                      value={formData.monthlyRate}
+                      onChange={(e) => handleInputChange('monthlyRate', e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
 
