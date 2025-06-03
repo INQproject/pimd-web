@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { MapPin, Car, Shield, Sun, Clock, Circle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+
 const mockParkingSpots = [{
   id: 1,
   name: 'Downtown Austin Driveway',
@@ -60,6 +61,7 @@ const mockParkingSpots = [{
   }]
 }];
 const allTimeOptions = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'];
+
 const BookSlot = () => {
   const {
     spotId
@@ -202,9 +204,17 @@ const BookSlot = () => {
               
               {/* Amenities/Features */}
               <div className="mb-5">
-                
                 <div className="flex flex-wrap gap-2">
-                  {spot.amenities.map((amenity, index) => {})}
+                  {spot.amenities.map((amenity, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary" 
+                      className="flex items-center gap-2 h-8 px-3 bg-white border-gray-200 text-[#1C1C1C] hover:bg-gray-50"
+                    >
+                      {getAmenityIcon(amenity)}
+                      <span className="text-sm font-medium">{amenity}</span>
+                    </Badge>
+                  ))}
                 </div>
               </div>
 
@@ -212,7 +222,8 @@ const BookSlot = () => {
               <div>
                 <h3 className="text-base font-semibold text-[#1C1C1C] mb-3">Available Slots</h3>
                 <div className="flex flex-wrap gap-3">
-                  {spot.slots.map(slot => <div key={slot.id} className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
+                  {spot.slots.map(slot => (
+                    <div key={slot.id} className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
                       <Circle className="w-3 h-3 fill-blue-500 text-blue-500" />
                       <div className="text-sm">
                         <span className="font-medium text-[#1C1C1C]">{slot.name}</span>
@@ -221,7 +232,8 @@ const BookSlot = () => {
                           {slot.capacity} spot{slot.capacity > 1 ? 's' : ''} available
                         </div>
                       </div>
-                    </div>)}
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -245,15 +257,18 @@ const BookSlot = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[1, 2, 3, 4, 5].map(num => <SelectItem key={num} value={num.toString()}>
+                      {[1, 2, 3, 4, 5].map(num => (
+                        <SelectItem key={num} value={num.toString()}>
                           {num} vehicle{num > 1 ? 's' : ''}
-                        </SelectItem>)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Vehicle Assignments - Enhanced Cards */}
-                {vehicleBookings.map((booking, index) => <Card key={index} className="p-4 bg-[#F8F9FA] border shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl">
+                {vehicleBookings.map((booking, index) => (
+                  <Card key={index} className="p-4 bg-[#F8F9FA] border shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl">
                     <div className="flex items-center space-x-2 mb-3">
                       <Car className="w-4 h-4 text-[#FF6B00]" />
                       <h4 className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</h4>
@@ -267,9 +282,11 @@ const BookSlot = () => {
                             <SelectValue placeholder="Choose slot" />
                           </SelectTrigger>
                           <SelectContent>
-                            {spot.slots.map(slot => <SelectItem key={slot.id} value={slot.id.toString()}>
+                            {spot.slots.map(slot => (
+                              <SelectItem key={slot.id} value={slot.id.toString()}>
                                 {slot.name}
-                              </SelectItem>)}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -281,7 +298,9 @@ const BookSlot = () => {
                             <SelectValue placeholder="Start" />
                           </SelectTrigger>
                           <SelectContent>
-                            {getAvailableStartTimes(booking.slotId).map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}
+                            {getAvailableStartTimes(booking.slotId).map(time => (
+                              <SelectItem key={time} value={time}>{time}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -293,7 +312,9 @@ const BookSlot = () => {
                             <SelectValue placeholder="End" />
                           </SelectTrigger>
                           <SelectContent>
-                            {getAvailableEndTimes(booking.slotId, booking.startTime).map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}
+                            {getAvailableEndTimes(booking.slotId, booking.startTime).map(time => (
+                              <SelectItem key={time} value={time}>{time}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -305,7 +326,8 @@ const BookSlot = () => {
                         </div>
                       </div>
                     </div>
-                  </Card>)}
+                  </Card>
+                ))}
               </CardContent>
             </Card>
           </div>
@@ -320,18 +342,22 @@ const BookSlot = () => {
                 <CardContent className="space-y-3">
                   {vehicleBookings.map((booking, index) => {
                   const slot = getSlotById(booking.slotId);
-                  return <div key={index} className="space-y-1">
-                        <div className="flex justify-between items-start">
-                          <div className="text-sm">
-                            <span className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</span>
-                            {slot && booking.startTime && booking.endTime && <div className="text-xs text-[#666]">
-                                {slot.name}: {booking.startTime} - {booking.endTime}
-                              </div>}
-                          </div>
-                          <span className="font-semibold text-sm text-[#1C1C1C]">${booking.price.toFixed(2)}</span>
+                  return (
+                    <div key={index} className="space-y-1">
+                      <div className="flex justify-between items-start">
+                        <div className="text-sm">
+                          <span className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</span>
+                          {slot && booking.startTime && booking.endTime && (
+                            <div className="text-xs text-[#666]">
+                              {slot.name}: {booking.startTime} - {booking.endTime}
+                            </div>
+                          )}
                         </div>
-                        {index < vehicleBookings.length - 1 && <Separator className="my-2" />}
-                      </div>;
+                        <span className="font-semibold text-sm text-[#1C1C1C]">${booking.price.toFixed(2)}</span>
+                      </div>
+                      {index < vehicleBookings.length - 1 && <Separator className="my-2" />}
+                    </div>
+                  );
                 })}
                   
                   <Separator className="my-3" />
@@ -354,4 +380,5 @@ const BookSlot = () => {
       </div>
     </Layout>;
 };
+
 export default BookSlot;
