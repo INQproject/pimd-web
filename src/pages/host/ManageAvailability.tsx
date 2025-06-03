@@ -4,11 +4,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, ArrowLeft, Plus, Edit, Trash2, Lock } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 
@@ -17,8 +16,7 @@ interface Slot {
   date: string;
   startTime: string;
   endTime: string;
-  spotCount?: number;
-  remarks?: string;
+  notes?: string;
   status: 'available' | 'booked';
   isBooked: boolean;
 }
@@ -27,15 +25,16 @@ const ManageAvailability = () => {
   const { listingId } = useParams();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [isAddSlotOpen, setIsAddSlotOpen] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date(2024, 0)); // January 2024
+  const [showSlotForm, setShowSlotForm] = useState(false);
+  
   const [slots, setSlots] = useState<Slot[]>([
     {
       id: '1',
       date: '2024-01-15',
       startTime: '9:00 AM',
       endTime: '5:00 PM',
-      spotCount: 2,
-      remarks: 'Main driveway',
+      notes: 'Main driveway',
       status: 'available',
       isBooked: false
     },
@@ -44,7 +43,6 @@ const ManageAvailability = () => {
       date: '2024-01-15',
       startTime: '6:00 PM',
       endTime: '10:00 PM',
-      spotCount: 1,
       status: 'booked',
       isBooked: true
     },
@@ -53,7 +51,6 @@ const ManageAvailability = () => {
       date: '2024-01-16',
       startTime: '8:00 AM',
       endTime: '6:00 PM',
-      spotCount: 2,
       status: 'available',
       isBooked: false
     }
@@ -62,31 +59,47 @@ const ManageAvailability = () => {
   const [newSlot, setNewSlot] = useState({
     startTime: '',
     endTime: '',
-    spotCount: '',
-    remarks: ''
+    notes: ''
   });
 
-  // Generate calendar days for current month (January 2024)
+  // Generate calendar days for current month
   const generateCalendarDays = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const firstDayOfWeek = firstDay.getDay();
+    const daysInMonth = lastDay.getDate();
+    
     const days = [];
-    for (let i = 1; i <= 31; i++) {
-      const dateStr = `2024-01-${i.toString().padStart(2, '0')}`;
-      const hasSlots = slots.some(slot => slot.date === dateStr);
-      days.push({ day: i, dateStr, hasSlots });
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      days.push(null);
     }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      const hasSlots = slots.some(slot => slot.date === dateStr);
+      const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+      days.push({ day, dateStr, hasSlots, isToday });
+    }
+    
     return days;
   };
 
   const handleDateClick = (dateStr: string) => {
     setSelectedDate(dateStr);
-    setIsAddSlotOpen(true);
+    setShowSlotForm(true);
+    setNewSlot({ startTime: '', endTime: '', notes: '' });
   };
 
   const addNewSlot = () => {
     if (!selectedDate || !newSlot.startTime || !newSlot.endTime) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields.",
+        description: "Please fill in start time and end time.",
         variant: "destructive"
       });
       return;
@@ -97,15 +110,14 @@ const ManageAvailability = () => {
       date: selectedDate,
       startTime: newSlot.startTime,
       endTime: newSlot.endTime,
-      spotCount: newSlot.spotCount ? parseInt(newSlot.spotCount) : undefined,
-      remarks: newSlot.remarks || undefined,
+      notes: newSlot.notes || undefined,
       status: 'available',
       isBooked: false
     };
 
     setSlots(prev => [...prev, newSlotData]);
-    setNewSlot({ startTime: '', endTime: '', spotCount: '', remarks: '' });
-    setIsAddSlotOpen(false);
+    setNewSlot({ startTime: '', endTime: '', notes: '' });
+    setShowSlotForm(false);
     
     toast({
       title: "Slot Added",
@@ -131,11 +143,42 @@ const ManageAvailability = () => {
     });
   };
 
+  const toggleSlotAvailability = (slotId: string) => {
+    const slot = slots.find(s => s.id === slotId);
+    if (slot?.isBooked) return;
+    
+    setSlots(prev => prev.map(slot => 
+      slot.id === slotId 
+        ? { ...slot, status: slot.status === 'available' ? 'available' : 'available' }
+        : slot
+    ));
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+  };
+
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   const calendarDays = generateCalendarDays();
+  const selectedDateSlots = slots.filter(slot => slot.date === selectedDate);
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
 
   return (
     <Layout title="Manage Availability">
-      <div className="space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6 p-4">
         {/* Back Button */}
         <Button
           variant="outline"
@@ -147,101 +190,199 @@ const ManageAvailability = () => {
           <span>Back to Profile</span>
         </Button>
 
-        {/* Listing Info */}
+        {/* Header */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-4">
             <CardTitle>Manage Availability - Listing #{listingId}</CardTitle>
+            <p className="text-sm text-gray-600">Click any date to add availability</p>
           </CardHeader>
         </Card>
 
-        {/* Calendar */}
+        {/* Compact Calendar */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="mr-2 h-5 w-5" />
-              January 2024 - Click a date to add slots
-            </CardTitle>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">
+                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+              </CardTitle>
+              <div className="flex space-x-1">
+                <Button variant="outline" size="sm" onClick={prevMonth}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={nextMonth}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-2 text-center">
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-7 gap-1 text-center mb-2">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="p-2 font-medium text-sm border-b">{day}</div>
+                <div key={day} className="p-2 text-xs font-medium text-gray-500">{day}</div>
               ))}
-              {calendarDays.map(({ day, dateStr, hasSlots }) => (
-                <button
-                  key={day}
-                  onClick={() => handleDateClick(dateStr)}
-                  className="p-3 text-sm rounded hover:bg-gray-100 relative border transition-colors"
-                >
-                  {day}
-                  {hasSlots && (
-                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-orange-500 rounded-full"></div>
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((dayData, index) => (
+                <div key={index} className="aspect-square">
+                  {dayData ? (
+                    <button
+                      onClick={() => handleDateClick(dayData.dateStr)}
+                      className={`w-full h-full text-sm rounded hover:bg-gray-100 relative border transition-colors flex items-center justify-center ${
+                        selectedDate === dayData.dateStr 
+                          ? 'bg-orange-500 text-white' 
+                          : dayData.isToday 
+                          ? 'bg-blue-100 text-blue-800 border-blue-300'
+                          : 'border-gray-200'
+                      }`}
+                    >
+                      {dayData.day}
+                      {dayData.hasSlots && (
+                        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-orange-500 rounded-full"></div>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="w-full h-full"></div>
                   )}
-                </button>
+                </div>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Add Slot Modal */}
-        <Dialog open={isAddSlotOpen} onOpenChange={setIsAddSlotOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                Add Slot for {selectedDate && new Date(selectedDate + 'T00:00:00').toLocaleDateString()}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+        {/* Inline Slot Form */}
+        {showSlotForm && selectedDate && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Add Slot for {formatDate(selectedDate)}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="startTime">Start Time *</Label>
-                  <Input
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <select
                     id="startTime"
-                    type="time"
                     value={newSlot.startTime}
                     onChange={(e) => setNewSlot(prev => ({ ...prev, startTime: e.target.value }))}
-                    required
-                  />
+                    className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select start time</option>
+                    {Array.from({ length: 24 }, (_, i) => {
+                      const hour = i === 0 ? 12 : i > 12 ? i - 12 : i;
+                      const ampm = i < 12 ? 'AM' : 'PM';
+                      return (
+                        <option key={i} value={`${hour}:00 ${ampm}`}>
+                          {hour}:00 {ampm}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
                 <div>
-                  <Label htmlFor="endTime">End Time *</Label>
-                  <Input
+                  <Label htmlFor="endTime">End Time</Label>
+                  <select
                     id="endTime"
-                    type="time"
                     value={newSlot.endTime}
                     onChange={(e) => setNewSlot(prev => ({ ...prev, endTime: e.target.value }))}
-                    required
-                  />
+                    className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select end time</option>
+                    {Array.from({ length: 24 }, (_, i) => {
+                      const hour = i === 0 ? 12 : i > 12 ? i - 12 : i;
+                      const ampm = i < 12 ? 'AM' : 'PM';
+                      return (
+                        <option key={i} value={`${hour}:00 ${ampm}`}>
+                          {hour}:00 {ampm}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
               </div>
               <div>
-                <Label htmlFor="spotCount">Spot Count (Optional)</Label>
-                <Input
-                  id="spotCount"
-                  type="number"
-                  placeholder="Number of spots available"
-                  value={newSlot.spotCount}
-                  onChange={(e) => setNewSlot(prev => ({ ...prev, spotCount: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="remarks">Remarks (Optional)</Label>
+                <Label htmlFor="notes">Notes (Optional)</Label>
                 <Textarea
-                  id="remarks"
+                  id="notes"
                   placeholder="Any special notes or instructions"
-                  value={newSlot.remarks}
-                  onChange={(e) => setNewSlot(prev => ({ ...prev, remarks: e.target.value }))}
+                  value={newSlot.notes}
+                  onChange={(e) => setNewSlot(prev => ({ ...prev, notes: e.target.value }))}
+                  className="mt-1"
+                  rows={2}
                 />
               </div>
-              <Button onClick={addNewSlot} className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Slot
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={addNewSlot} 
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Slot
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowSlotForm(false)}
+                  className="px-6"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* All Slots List */}
+        {/* Slots for Selected Date */}
+        {selectedDate && selectedDateSlots.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Slots for {formatDate(selectedDate)}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {selectedDateSlots.map(slot => (
+                  <div key={slot.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <p className="font-medium">{slot.startTime} - {slot.endTime}</p>
+                      {slot.notes && (
+                        <p className="text-sm text-gray-600 mt-1">{slot.notes}</p>
+                      )}
+                      <div className="mt-2">
+                        {slot.isBooked ? (
+                          <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                            🔒 Booked
+                          </Badge>
+                        ) : (
+                          <Badge variant="default" className="bg-green-100 text-green-700">
+                            ✅ Available
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        disabled={slot.isBooked}
+                        className={slot.isBooked ? 'opacity-50' : ''}
+                      >
+                        {slot.isBooked ? <Lock className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => deleteSlot(slot.id)}
+                        disabled={slot.isBooked}
+                        className={slot.isBooked ? 'opacity-50' : ''}
+                      >
+                        {slot.isBooked ? <Lock className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* All Slots Overview */}
         <Card>
           <CardHeader>
             <CardTitle>All Time Slots</CardTitle>
@@ -258,11 +399,8 @@ const ManageAvailability = () => {
                         <div>
                           <p className="font-medium">{slot.date}</p>
                           <p className="text-sm text-gray-600">{slot.startTime} - {slot.endTime}</p>
-                          {slot.spotCount && (
-                            <p className="text-xs text-gray-500">Spots: {slot.spotCount}</p>
-                          )}
-                          {slot.remarks && (
-                            <p className="text-xs text-gray-500">{slot.remarks}</p>
+                          {slot.notes && (
+                            <p className="text-xs text-gray-500 mt-1">{slot.notes}</p>
                           )}
                         </div>
                         <div>
