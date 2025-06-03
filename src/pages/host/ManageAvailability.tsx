@@ -347,9 +347,9 @@ const ManageAvailability = () => {
 
             {/* Time Slots List */}
             {timeSlots.length === 0 ? (
-              <Alert variant="info">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>No time slots available. Please add a time slot.</AlertDescription>
+              <Alert className="bg-yellow-50 border-yellow-200">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800">No time slots available. Please add a time slot.</AlertDescription>
               </Alert>
             ) : (
               <div className="space-y-4">
