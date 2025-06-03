@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Calendar, Car, Clock, Circle } from 'lucide-react';
+import { MapPin, Calendar, Car, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const mockParkingSpots = [
@@ -17,7 +17,6 @@ const mockParkingSpots = [
     address: '123 Congress Ave, Austin, TX',
     distance: '0.2 miles from event',
     price: 15,
-    coordinates: { lat: 30.2672, lng: -97.7431 },
     slots: [
       { id: 1, name: 'Slot 1', timeRange: '9:00 AM - 11:00 AM', capacity: 2, available: 2, startTime: '9:00 AM', endTime: '11:00 AM' },
       { id: 2, name: 'Slot 2', timeRange: '12:00 PM - 2:00 PM', capacity: 1, available: 1, startTime: '12:00 PM', endTime: '2:00 PM' }
@@ -29,7 +28,6 @@ const mockParkingSpots = [
     address: '456 Oak St, Austin, TX',
     distance: '0.4 miles from event',
     price: 12,
-    coordinates: { lat: 30.2700, lng: -97.7400 },
     slots: [
       { id: 3, name: 'Slot A', timeRange: '10:00 AM - 1:00 PM', capacity: 3, available: 3, startTime: '10:00 AM', endTime: '1:00 PM' },
       { id: 4, name: 'Slot B', timeRange: '2:00 PM - 6:00 PM', capacity: 2, available: 1, startTime: '2:00 PM', endTime: '6:00 PM' }
@@ -47,7 +45,6 @@ const EventBooking = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const event = location.state?.event;
-  const [selectedSpot, setSelectedSpot] = useState<number | null>(null);
 
   const [vehicleCount, setVehicleCount] = useState('1');
   const [vehicleBookings, setVehicleBookings] = useState([
@@ -145,15 +142,6 @@ const EventBooking = () => {
     setVehicleBookings(newBookings);
   };
 
-  const handleBookSpot = (spotId: number) => {
-    navigate(`/book-slot/${spotId}`, { 
-      state: { 
-        returnTo: `/event-booking/${event.id}`,
-        event: event 
-      } 
-    });
-  };
-
   const handleProceedToPayment = () => {
     const totalPrice = vehicleBookings.reduce((sum, booking) => sum + booking.price, 0);
     
@@ -171,7 +159,7 @@ const EventBooking = () => {
 
   return (
     <Layout title={`Parking for ${event.name}`} showBackButton={true}>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Event Info */}
         <Card className="bg-gradient-to-r from-[#FF6B00]/10 to-[#002F5F]/10 border-none">
           <CardContent className="p-6">
@@ -198,168 +186,209 @@ const EventBooking = () => {
           </CardContent>
         </Card>
 
-        {/* Map-Style Parking Section */}
-        <div className="space-y-4">
+        {/* Available Parking Spots */}
+        <div className="space-y-6">
           <h2 className="text-2xl font-bold text-[#1C1C1C]">Available Parking Near Event</h2>
           
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Static Map with Pins */}
-            <div className="relative">
-              <div 
-                className="h-96 bg-cover bg-center rounded-lg relative border shadow-sm"
-                style={{
-                  backgroundImage: "url('https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&h=600&fit=crop')"
-                }}
-              >
-                {/* Map overlay */}
-                <div className="absolute inset-0 bg-blue-50/30 rounded-lg"></div>
-                
-                {/* Parking Pins */}
-                {mockParkingSpots.map((spot, index) => (
-                  <div
-                    key={spot.id}
-                    className={`absolute cursor-pointer transform -translate-x-1/2 -translate-y-full transition-all duration-200 hover:scale-110 ${
-                      selectedSpot === spot.id ? 'scale-110 z-20' : 'z-10'
-                    }`}
-                    style={{
-                      left: `${30 + index * 25}%`,
-                      top: `${40 + index * 15}%`
-                    }}
-                    onClick={() => setSelectedSpot(selectedSpot === spot.id ? null : spot.id)}
-                  >
-                    {/* Pin */}
-                    <div className="relative">
-                      <div className={`w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-xs font-bold text-white ${
-                        selectedSpot === spot.id ? 'bg-[#FF6B00] scale-125' : 'bg-[#FF6B00]'
-                      }`}>
-                        ${spot.price}
+          <div className="grid md:grid-cols-2 gap-6">
+            {mockParkingSpots.map((spot) => (
+              <Card key={spot.id} className="hover:shadow-lg transition-all duration-200">
+                <CardHeader>
+                  <CardTitle className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-lg">{spot.name}</h3>
+                      <div className="flex items-center space-x-2 text-[#606060] mt-1">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-sm">{spot.address}</span>
                       </div>
-                      <div className={`w-0 h-0 border-l-4 border-r-4 border-t-8 border-transparent mx-auto ${
-                        selectedSpot === spot.id ? 'border-t-[#FF6B00]' : 'border-t-[#FF6B00]'
-                      }`}></div>
+                      <p className="text-sm text-[#FF6B00] font-medium">{spot.distance}</p>
                     </div>
-                    
-                    {/* Tooltip */}
-                    {selectedSpot === spot.id && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white p-3 rounded-lg shadow-lg border min-w-48 z-30">
-                        <div className="text-sm">
-                          <p className="font-semibold text-[#1C1C1C]">{spot.name}</p>
-                          <p className="text-[#606060] text-xs">{spot.distance}</p>
-                          <p className="text-[#FF6B00] font-bold">${spot.price}/hr</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                
-                {/* Event Location Marker */}
-                <div 
-                  className="absolute transform -translate-x-1/2 -translate-y-full"
-                  style={{ left: '50%', top: '30%' }}
-                >
-                  <div className="w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  </div>
-                  <div className="w-0 h-0 border-l-3 border-r-3 border-t-6 border-transparent border-t-red-500 mx-auto"></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Spot Details */}
-            <div className="space-y-4">
-              {selectedSpot ? (
-                // Selected spot details
-                (() => {
-                  const spot = mockParkingSpots.find(s => s.id === selectedSpot);
-                  if (!spot) return null;
-                  
-                  return (
-                    <Card className="border-[#FF6B00]/30 shadow-lg">
-                      <CardHeader>
-                        <CardTitle className="flex justify-between items-start">
-                          <div>
-                            <h3 className="text-lg">{spot.name}</h3>
-                            <div className="flex items-center space-x-2 text-[#606060] mt-1">
-                              <MapPin className="w-4 h-4" />
-                              <span className="text-sm">{spot.address}</span>
-                            </div>
-                            <p className="text-sm text-[#FF6B00] font-medium">{spot.distance}</p>
+                    <span className="bg-[#FF6B00] text-white px-2 py-1 rounded text-sm font-semibold">
+                      ${spot.price}/hr
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <p className="font-medium text-sm">Available Slots:</p>
+                    {spot.slots.map((slot) => (
+                      <div key={slot.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <div>
+                          <span className="font-medium">{slot.name}</span>
+                          <div className="flex items-center space-x-1 text-sm text-[#606060]">
+                            <Clock className="w-3 h-3" />
+                            <span>{slot.timeRange}</span>
                           </div>
-                          <span className="bg-[#FF6B00] text-white px-3 py-1 rounded-lg text-sm font-semibold">
-                            ${spot.price}/hr
-                          </span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <p className="font-medium text-sm mb-2">Available Slots:</p>
-                          {spot.slots.map((slot) => (
-                            <div key={slot.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                              <div>
-                                <span className="font-medium">{slot.name}</span>
-                                <div className="flex items-center space-x-1 text-sm text-[#606060]">
-                                  <Clock className="w-3 h-3" />
-                                  <span>{slot.timeRange}</span>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-sm text-green-600 font-medium">
-                                  {slot.available}/{slot.capacity} available
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                          
-                          <Button 
-                            onClick={() => handleBookSpot(spot.id)}
-                            className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white mt-4"
-                          >
-                            Book This Spot
-                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })()
-              ) : (
-                // Default instruction
-                <Card className="border-dashed border-2 border-gray-300">
-                  <CardContent className="p-8 text-center">
-                    <Circle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-600 mb-2">Select a Parking Spot</h3>
-                    <p className="text-gray-500">
-                      Click on any orange pin on the map to view parking details and book your spot.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {/* All spots list for quick reference */}
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm text-[#606060]">Quick List:</h4>
-                {mockParkingSpots.map((spot) => (
-                  <div 
-                    key={spot.id}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                      selectedSpot === spot.id 
-                        ? 'border-[#FF6B00] bg-[#FF6B00]/5' 
-                        : 'border-gray-200 hover:border-[#FF6B00]/50'
-                    }`}
-                    onClick={() => setSelectedSpot(selectedSpot === spot.id ? null : spot.id)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium text-sm">{spot.name}</p>
-                        <p className="text-xs text-[#606060]">{spot.distance}</p>
+                        <span className="text-sm text-green-600">
+                          {slot.available}/{slot.capacity} available
+                        </span>
                       </div>
-                      <span className="text-sm font-bold text-[#FF6B00]">${spot.price}/hr</span>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
+
+        {/* Vehicle Booking Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Book Your Parking</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Vehicle Count */}
+            <div className="space-y-2">
+              <Label>How many vehicles are you booking for?</Label>
+              <Select value={vehicleCount} onValueChange={handleVehicleCountChange}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5].map(num => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} vehicle{num > 1 ? 's' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Vehicle Assignments */}
+            {vehicleBookings.map((booking, index) => (
+              <Card key={index} className="p-4 bg-gray-50">
+                <h4 className="font-semibold mb-3 flex items-center space-x-2">
+                  <Car className="w-4 h-4" />
+                  <span>Car {index + 1}</span>
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                  <div>
+                    <Label>Parking Spot</Label>
+                    <Select 
+                      value={booking.spotId} 
+                      onValueChange={(value) => updateVehicleBooking(index, 'spotId', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select spot" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mockParkingSpots.map((spot) => (
+                          <SelectItem key={spot.id} value={spot.id.toString()}>
+                            {spot.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label>Slot</Label>
+                    <Select 
+                      value={booking.slotId} 
+                      onValueChange={(value) => updateVehicleBooking(index, 'slotId', value)}
+                      disabled={!booking.spotId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select slot" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {booking.spotId && getSpotById(booking.spotId)?.slots.map((slot) => (
+                          <SelectItem key={slot.id} value={slot.id.toString()}>
+                            {slot.name} ({slot.timeRange})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label>Start Time</Label>
+                    <Select 
+                      value={booking.startTime} 
+                      onValueChange={(value) => updateVehicleBooking(index, 'startTime', value)}
+                      disabled={!booking.slotId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Start" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableStartTimes(booking.spotId, booking.slotId).map(time => (
+                          <SelectItem key={time} value={time}>{time}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label>End Time</Label>
+                    <Select 
+                      value={booking.endTime} 
+                      onValueChange={(value) => updateVehicleBooking(index, 'endTime', value)}
+                      disabled={!booking.startTime}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="End" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableEndTimes(booking.spotId, booking.slotId, booking.startTime).map(time => (
+                          <SelectItem key={time} value={time}>{time}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label>Price</Label>
+                    <div className="p-2 bg-white border rounded text-center font-semibold">
+                      ${booking.price.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+
+            {/* Booking Summary */}
+            <Card className="bg-[#F9FAFB] border-[#FF6B00]">
+              <CardHeader>
+                <CardTitle className="text-lg">Booking Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {vehicleBookings.map((booking, index) => {
+                  const spot = getSpotById(booking.spotId);
+                  const slot = getSlotById(booking.spotId, booking.slotId);
+                  return (
+                    <div key={index} className="flex justify-between items-center py-2">
+                      <div className="text-sm">
+                        <span className="font-medium">Car {index + 1}</span>
+                        {spot && slot && booking.startTime && booking.endTime && (
+                          <span className="text-[#606060]">
+                            {' → '}{spot.name} → {slot.name} ({booking.startTime} - {booking.endTime})
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-semibold">${booking.price.toFixed(2)}</span>
+                    </div>
+                  );
+                })}
+                <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
+                  <span>Total:</span>
+                  <span className="text-[#FF6B00]">
+                    ${vehicleBookings.reduce((sum, b) => sum + b.price, 0).toFixed(2)}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button 
+              onClick={handleProceedToPayment}
+              className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-lg py-3"
+              disabled={!isBookingValid}
+            >
+              Proceed to Payment
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
