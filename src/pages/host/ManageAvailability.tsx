@@ -17,6 +17,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import CancelSlotModal from '@/components/CancelSlotModal';
 
+type SlotStatus = 'available' | 'booked' | 'cancelled';
+
 interface Slot {
   id: string;
   date: string;
@@ -26,7 +28,7 @@ interface Slot {
   availableSpots: number;
   notes?: string;
   isBooked: boolean;
-  status: 'available' | 'booked' | 'cancelled';
+  status: SlotStatus;
   cancellationReason?: string;
 }
 
@@ -399,7 +401,7 @@ const ManageAvailability = () => {
     if (slotToCancel) {
       setSlots(prev => prev.map(slot => 
         slot.id === slotToCancel.id 
-          ? { ...slot, status: 'cancelled', cancellationReason: reason, availableSpots: 0 }
+          ? { ...slot, status: 'cancelled' as SlotStatus, cancellationReason: reason, availableSpots: 0 }
           : slot
       ));
       
@@ -412,7 +414,7 @@ const ManageAvailability = () => {
 
   const deleteSlot = (slotId: string) => {
     const slot = slots.find(s => s.id === slotId);
-    if (slot?.status === 'cancelled' || (slot && !slot.isBooked)) {
+    if (slot && (slot.status === 'cancelled' || !slot.isBooked)) {
       setSlots(prev => prev.filter(slot => slot.id !== slotId));
       toast({
         title: "Slot Deleted",
