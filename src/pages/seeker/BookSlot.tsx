@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Car, Shield, Sun, Clock, Circle, Calendar } from 'lucide-react';
+import { MapPin, Car, Shield, Sun, Clock, Circle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const mockParkingSpots = [{
@@ -63,9 +63,10 @@ const mockParkingSpots = [{
 const allTimeOptions = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'];
 
 const BookSlot = () => {
-  const { spotId } = useParams();
+  const {
+    spotId
+  } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const {
     user
   } = useAuth();
@@ -76,22 +77,6 @@ const BookSlot = () => {
     endTime: '',
     price: 0
   }]);
-  
-  // Get selected date from URL params or default to today
-  const searchParams = new URLSearchParams(location.search);
-  const selectedDate = searchParams.get('date') || new Date().toISOString().split('T')[0];
-  
-  // Format the date for display
-  const formatSelectedDate = (dateStr: string) => {
-    const date = new Date(dateStr + 'T00:00:00');
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long',
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
   const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
   if (!spot) {
     navigate('/find-parking');
@@ -180,22 +165,8 @@ const BookSlot = () => {
         return null;
     }
   };
-  return (
-    <Layout title={`Book Parking at ${spot.name}`} showBackButton={true}>
+  return <Layout title={`Book Parking at ${spot.name}`} showBackButton={true}>
       <div className="space-y-4">
-        {/* Selected Date Display - Prominent */}
-        <Card className="bg-gradient-to-r from-[#FF6B00]/5 to-[#002F5F]/5 border-[#FF6B00]/20">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <Calendar className="w-6 h-6 text-[#FF6B00]" />
-              <div>
-                <div className="text-sm font-medium text-[#606060]">Selected Date:</div>
-                <div className="text-xl font-bold text-[#1C1C1C]">{formatSelectedDate(selectedDate)}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Compact Header Section */}
         <div className="max-w-4xl mx-auto">
           {/* Hero Image - Very Compact */}
@@ -301,7 +272,6 @@ const BookSlot = () => {
                     <div className="flex items-center space-x-2 mb-3">
                       <Car className="w-4 h-4 text-[#FF6B00]" />
                       <h4 className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</h4>
-                      <div className="text-sm text-[#606060]">for {formatSelectedDate(selectedDate)}</div>
                     </div>
                     
                     <div className="flex flex-wrap gap-3 items-end">
@@ -368,28 +338,27 @@ const BookSlot = () => {
               <Card className="bg-[#FFF8F2] border-[#FF6B00]/30 shadow-lg rounded-xl">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Booking Summary</CardTitle>
-                  <div className="text-sm text-[#606060]">{formatSelectedDate(selectedDate)}</div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {vehicleBookings.map((booking, index) => {
-                    const slot = getSlotById(booking.slotId);
-                    return (
-                      <div key={index} className="space-y-1">
-                        <div className="flex justify-between items-start">
-                          <div className="text-sm">
-                            <span className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</span>
-                            {slot && booking.startTime && booking.endTime && (
-                              <div className="text-xs text-[#666]">
-                                {slot.name}: {booking.startTime} - {booking.endTime}
-                              </div>
-                            )}
-                          </div>
-                          <span className="font-semibold text-sm text-[#1C1C1C]">${booking.price.toFixed(2)}</span>
+                  const slot = getSlotById(booking.slotId);
+                  return (
+                    <div key={index} className="space-y-1">
+                      <div className="flex justify-between items-start">
+                        <div className="text-sm">
+                          <span className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</span>
+                          {slot && booking.startTime && booking.endTime && (
+                            <div className="text-xs text-[#666]">
+                              {slot.name}: {booking.startTime} - {booking.endTime}
+                            </div>
+                          )}
                         </div>
-                        {index < vehicleBookings.length - 1 && <Separator className="my-2" />}
+                        <span className="font-semibold text-sm text-[#1C1C1C]">${booking.price.toFixed(2)}</span>
                       </div>
-                    );
-                  })}
+                      {index < vehicleBookings.length - 1 && <Separator className="my-2" />}
+                    </div>
+                  );
+                })}
                   
                   <Separator className="my-3" />
                   
@@ -400,11 +369,7 @@ const BookSlot = () => {
                     </span>
                   </div>
 
-                  <Button 
-                    onClick={handleProceedToPayment} 
-                    className="w-full bg-[#FF6B00] hover:bg-[#e55a00] text-white h-12 mt-4 font-semibold text-base rounded-lg shadow-md hover:shadow-lg transition-all duration-200" 
-                    disabled={!isBookingValid}
-                  >
+                  <Button onClick={handleProceedToPayment} className="w-full bg-[#FF6B00] hover:bg-[#e55a00] text-white h-12 mt-4 font-semibold text-base rounded-lg shadow-md hover:shadow-lg transition-all duration-200" disabled={!isBookingValid}>
                     Proceed to Payment
                   </Button>
                 </CardContent>
@@ -413,8 +378,7 @@ const BookSlot = () => {
           </div>
         </div>
       </div>
-    </Layout>
-  );
+    </Layout>;
 };
 
 export default BookSlot;
