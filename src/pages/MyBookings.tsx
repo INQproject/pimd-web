@@ -5,9 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Clock, Car, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from "@/hooks/use-toast";
 
 const MyBookings = () => {
-  const [bookings] = useState([
+  const { toast } = useToast();
+  const [bookings, setBookings] = useState([
     {
       id: 'B001',
       spotName: 'Downtown Driveway - Sarah\'s Place',
@@ -16,6 +19,7 @@ const MyBookings = () => {
       timeSlot: '9:00 AM - 11:00 AM',
       vehicleNumber: 'ABC-123',
       status: 'confirmed',
+      amount: 25.00,
       isFuture: true
     },
     {
@@ -26,6 +30,7 @@ const MyBookings = () => {
       timeSlot: '2:00 PM - 4:00 PM',
       vehicleNumber: 'XYZ-789',
       status: 'confirmed',
+      amount: 30.00,
       isFuture: true
     },
     {
@@ -36,6 +41,7 @@ const MyBookings = () => {
       timeSlot: '10:00 AM - 12:00 PM',
       vehicleNumber: 'DEF-456',
       status: 'completed',
+      amount: 19.00,
       isFuture: false
     },
     {
@@ -46,26 +52,72 @@ const MyBookings = () => {
       timeSlot: '6:00 PM - 8:00 PM',
       vehicleNumber: 'GHI-789',
       status: 'completed',
+      amount: 42.00,
       isFuture: false
     }
   ]);
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<string | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return 'bg-green-100 text-green-800';
       case 'completed': return 'bg-blue-100 text-blue-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'cancelled-refund-pending': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleCancelBooking = (bookingId: string) => {
-    // Handle booking cancellation
-    console.log('Cancelling booking:', bookingId);
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'cancelled-refund-pending': return 'Cancelled - Refund Pending';
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
+    }
   };
 
-  const upcomingBookings = bookings.filter(b => b.isFuture);
-  const pastBookings = bookings.filter(b => !b.isFuture);
+  const handleCancelClick = (bookingId: string) => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    // Check if booking is in the future
+    const bookingDateTime = new Date(`${booking.date} ${booking.timeSlot.split(' - ')[0]}`);
+    const now = new Date();
+    
+    if (bookingDateTime <= now) {
+      toast({
+        title: "Cannot Cancel",
+        description: "You can only cancel future bookings.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedBooking(bookingId);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancellation = () => {
+    if (!selectedBooking) return;
+
+    setBookings(prev => prev.map(booking => 
+      booking.id === selectedBooking 
+        ? { ...booking, status: 'cancelled-refund-pending' }
+        : booking
+    ));
+
+    setShowCancelModal(false);
+    setSelectedBooking(null);
+
+    toast({
+      title: "Booking Cancelled",
+      description: "Your booking has been cancelled. Refund will be processed within 1–2 business days.",
+    });
+  };
+
+  const upcomingBookings = bookings.filter(b => b.isFuture && b.status !== 'cancelled-refund-pending');
+  const pastBookings = bookings.filter(b => !b.isFuture || b.status === 'cancelled-refund-pending');
 
   return (
     <Layout title="My Bookings">
@@ -86,7 +138,7 @@ const MyBookings = () => {
                         <div className="flex items-center space-x-2">
                           <h3 className="font-semibold text-lg">{booking.spotName}</h3>
                           <Badge className={getStatusColor(booking.status)}>
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                            {getStatusDisplay(booking.status)}
                           </Badge>
                         </div>
                         
@@ -114,7 +166,7 @@ const MyBookings = () => {
                         <Button 
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleCancelBooking(booking.id)}
+                          onClick={() => handleCancelClick(booking.id)}
                           className="flex items-center"
                         >
                           <AlertTriangle className="w-4 h-4 mr-1" />
@@ -141,7 +193,7 @@ const MyBookings = () => {
                       <div className="flex items-center space-x-2">
                         <h3 className="font-semibold text-lg">{booking.spotName}</h3>
                         <Badge className={getStatusColor(booking.status)}>
-                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          {getStatusDisplay(booking.status)}
                         </Badge>
                       </div>
                       
@@ -190,6 +242,29 @@ const MyBookings = () => {
           </Card>
         )}
       </div>
+
+      {/* Cancellation Confirmation Modal */}
+      <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              <span>Cancel Booking</span>
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this booking? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button variant="outline" onClick={() => setShowCancelModal(false)}>
+              Keep Booking
+            </Button>
+            <Button variant="destructive" onClick={confirmCancellation}>
+              Yes, Cancel Booking
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

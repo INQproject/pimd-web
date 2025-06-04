@@ -23,6 +23,7 @@ import BookSlot from "./pages/seeker/BookSlot";
 import EventBooking from "./pages/seeker/EventBooking";
 import ManageAvailability from "./pages/host/ManageAvailability";
 import NotFound from "./pages/NotFound";
+import AdminRefunds from "./pages/admin/AdminRefunds";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/book-slot/:spotId" element={<BookSlot />} />
             <Route path="/event-booking/:eventId" element={<EventBooking />} />
             <Route path="/manage-availability/:listingId" element={<ManageAvailability />} />
+            <Route path="/admin/refunds" element={<AdminRefunds />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
