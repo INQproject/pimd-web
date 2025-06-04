@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -233,7 +232,7 @@ const BookSlot = () => {
               <div className="mb-5">
                 <div className="flex flex-wrap gap-2">
                   {spot.amenities && spot.amenities.map((amenity, index) => (
-                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                    <Badge key={index} variant="secondary" className="flex items-center">
                       {getAmenityIcon(amenity)}
                       {amenity}
                     </Badge>
@@ -375,7 +374,7 @@ const BookSlot = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
                       {/* Time Slot */}
                       <div className="flex-1 min-w-0">
-                        <Label className="text-xs font-medium text-[#606060] flex items-center gap-1">
+                        <Label className="text-xs font-medium text-[#606060]">
                           <Clock className="w-3 h-3" />
                           Time Slot
                         </Label>
@@ -395,7 +394,7 @@ const BookSlot = () => {
                       
                       {/* Vehicle Number */}
                       <div className="flex-1 min-w-0">
-                        <Label className="text-xs font-medium text-[#606060] flex items-center gap-1">
+                        <Label className="text-xs font-medium text-[#606060]">
                           <Hash className="w-3 h-3" />
                           Vehicle Number
                         </Label>
