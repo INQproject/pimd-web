@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Car, Shield, Sun, Clock, Circle } from 'lucide-react';
+import { MapPin, Car, Shield, Sun, Clock, Circle, Hash } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { mockParkingSpots } from '@/data/mockParkingData';
 import DateSelector from '@/components/DateSelector';
@@ -24,6 +24,7 @@ const BookSlot = () => {
   const [vehicleCount, setVehicleCount] = useState('1');
   const [vehicleBookings, setVehicleBookings] = useState([{
     slotId: '',
+    vehicleNumber: '',
     startTime: '',
     endTime: '',
     price: 0
@@ -73,6 +74,7 @@ const BookSlot = () => {
     setVehicleCount(count);
     const newBookings = Array(parseInt(count)).fill(null).map(() => ({
       slotId: '',
+      vehicleNumber: '',
       startTime: '',
       endTime: '',
       price: 0
@@ -140,6 +142,7 @@ const BookSlot = () => {
     // Reset all vehicle bookings when date changes
     const resetBookings = vehicleBookings.map(() => ({
       slotId: '',
+      vehicleNumber: '',
       startTime: '',
       endTime: '',
       price: 0
@@ -157,7 +160,7 @@ const BookSlot = () => {
   };
 
   const isBookingValid = vehicleBookings.every(booking => 
-    booking.slotId && booking.startTime && booking.endTime && booking.price > 0
+    booking.slotId && booking.vehicleNumber && booking.startTime && booking.endTime && booking.price > 0
   );
 
   const getAmenityIcon = (amenity: string) => {
@@ -171,6 +174,21 @@ const BookSlot = () => {
       default:
         return null;
     }
+  };
+
+  // Generate vehicle number options
+  const generateVehicleOptions = () => {
+    const options = [];
+    for (let i = 1; i <= 5; i++) {
+      options.push(`Car ${i}`);
+    }
+    for (let i = 1; i <= 3; i++) {
+      options.push(`Truck ${i}`);
+    }
+    for (let i = 1; i <= 2; i++) {
+      options.push(`Van ${i}`);
+    }
+    return options;
   };
 
   return (
@@ -298,9 +316,13 @@ const BookSlot = () => {
                       <h4 className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</h4>
                     </div>
                     
-                    <div className="flex flex-wrap gap-3 items-end">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+                      {/* Time Slot */}
                       <div className="flex-1 min-w-0">
-                        <Label className="text-xs font-medium text-[#606060]">Time Slot</Label>
+                        <Label className="text-xs font-medium text-[#606060] flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Time Slot
+                        </Label>
                         <Select value={booking.slotId} onValueChange={value => updateVehicleBooking(index, 'slotId', value)}>
                           <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
                             <SelectValue placeholder="Choose slot" />
@@ -315,6 +337,25 @@ const BookSlot = () => {
                         </Select>
                       </div>
                       
+                      {/* Vehicle Number */}
+                      <div className="flex-1 min-w-0">
+                        <Label className="text-xs font-medium text-[#606060] flex items-center gap-1">
+                          <Hash className="w-3 h-3" />
+                          Vehicle Number
+                        </Label>
+                        <Select value={booking.vehicleNumber} onValueChange={value => updateVehicleBooking(index, 'vehicleNumber', value)}>
+                          <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
+                            <SelectValue placeholder="Select vehicle" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {generateVehicleOptions().map(vehicle => (
+                              <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {/* Start Time */}
                       <div className="flex-1 min-w-0">
                         <Label className="text-xs font-medium text-[#606060]">Start Time</Label>
                         <Select value={booking.startTime} onValueChange={value => updateVehicleBooking(index, 'startTime', value)} disabled={!booking.slotId}>
@@ -329,6 +370,7 @@ const BookSlot = () => {
                         </Select>
                       </div>
                       
+                      {/* End Time */}
                       <div className="flex-1 min-w-0">
                         <Label className="text-xs font-medium text-[#606060]">End Time</Label>
                         <Select value={booking.endTime} onValueChange={value => updateVehicleBooking(index, 'endTime', value)} disabled={!booking.startTime}>
@@ -343,6 +385,7 @@ const BookSlot = () => {
                         </Select>
                       </div>
                       
+                      {/* Price */}
                       <div className="flex-shrink-0">
                         <Label className="text-xs font-medium text-[#606060]">Price</Label>
                         <div className="h-9 px-3 bg-white border rounded-md text-center font-bold text-lg flex items-center justify-center min-w-[80px] mt-1 text-[#FF6B00]">
@@ -394,6 +437,11 @@ const BookSlot = () => {
                         <div className="flex justify-between items-start">
                           <div className="text-sm">
                             <span className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</span>
+                            {booking.vehicleNumber && (
+                              <div className="text-xs text-[#666]">
+                                {booking.vehicleNumber}
+                              </div>
+                            )}
                             {slot && booking.startTime && booking.endTime && (
                               <div className="text-xs text-[#666]">
                                 {slot.name}: {booking.startTime} - {booking.endTime}
