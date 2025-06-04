@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Car, Shield, Sun, Clock, Circle, Hash } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { MapPin, Car, Shield, Sun, Clock, Circle, Hash, Calendar } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { mockParkingSpots } from '@/data/mockParkingData';
 import DateSelector from '@/components/DateSelector';
@@ -20,15 +22,16 @@ const BookSlot = () => {
   const { spotId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [isMultiDateMode, setIsMultiDateMode] = useState(false);
   const [vehicleCount, setVehicleCount] = useState('1');
-  const [vehicleBookings, setVehicleBookings] = useState([{
+  const [singleSlotBooking, setSingleSlotBooking] = useState({
     slotId: '',
     vehicleNumber: '',
     startTime: '',
     endTime: '',
-    price: 0
-  }]);
+    pricePerDay: 0
+  });
 
   const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
 
@@ -39,18 +42,20 @@ const BookSlot = () => {
     return [...new Set(allDates)].sort();
   }, [spot]);
 
-  // Filter slots based on selected date
-  const availableSlotsForDate = useMemo(() => {
-    if (!selectedDate || !spot) return [];
-    return spot.slots.filter(slot => slot.availableDates && slot.availableDates.includes(selectedDate));
-  }, [spot, selectedDate]);
+  // Filter slots based on the first selected date for multi-date mode
+  const availableSlotsForSelection = useMemo(() => {
+    if (!spot) return [];
+    const referenceDate = selectedDates.length > 0 ? selectedDates[0] : null;
+    if (!referenceDate) return [];
+    return spot.slots.filter(slot => slot.availableDates && slot.availableDates.includes(referenceDate));
+  }, [spot, selectedDates]);
 
-  // Set the first available date as default
+  // Set the first available date as default for single date mode
   React.useEffect(() => {
-    if (availableDates.length > 0 && !selectedDate) {
-      setSelectedDate(availableDates[0]);
+    if (availableDates.length > 0 && selectedDates.length === 0 && !isMultiDateMode) {
+      setSelectedDates([availableDates[0]]);
     }
-  }, [availableDates, selectedDate]);
+  }, [availableDates, selectedDates, isMultiDateMode]);
 
   // Handle early returns after all hooks are called
   if (!spot) {
@@ -69,18 +74,12 @@ const BookSlot = () => {
 
   const handleVehicleCountChange = (count: string) => {
     setVehicleCount(count);
-    const newBookings = Array(parseInt(count)).fill(null).map(() => ({
-      slotId: '',
-      vehicleNumber: '',
-      startTime: '',
-      endTime: '',
-      price: 0
-    }));
-    setVehicleBookings(newBookings);
   };
+
   const getSlotById = (slotId: string) => {
-    return availableSlotsForDate.find(slot => slot.id.toString() === slotId);
+    return availableSlotsForSelection.find(slot => slot.id.toString() === slotId);
   };
+
   const getAvailableStartTimes = (slotId: string) => {
     const slot = getSlotById(slotId);
     if (!slot) return [];
@@ -88,6 +87,7 @@ const BookSlot = () => {
     const slotEndIndex = allTimeOptions.indexOf(slot.endTime);
     return allTimeOptions.slice(slotStartIndex, slotEndIndex);
   };
+
   const getAvailableEndTimes = (slotId: string, startTime: string) => {
     const slot = getSlotById(slotId);
     if (!slot || !startTime) return [];
@@ -95,53 +95,85 @@ const BookSlot = () => {
     const slotEndIndex = allTimeOptions.indexOf(slot.endTime);
     return allTimeOptions.slice(startIndex + 1, slotEndIndex + 1);
   };
-  const updateVehicleBooking = (index: number, field: string, value: string) => {
-    const newBookings = [...vehicleBookings];
-    newBookings[index] = {
-      ...newBookings[index],
+
+  const updateSingleSlotBooking = (field: string, value: string) => {
+    const newBooking = {
+      ...singleSlotBooking,
       [field]: value
     };
+
     if (field === 'startTime') {
-      newBookings[index].endTime = '';
-      newBookings[index].price = 0;
+      newBooking.endTime = '';
+      newBooking.pricePerDay = 0;
     }
     if (field === 'slotId') {
-      newBookings[index].startTime = '';
-      newBookings[index].endTime = '';
-      newBookings[index].price = 0;
+      newBooking.startTime = '';
+      newBooking.endTime = '';
+      newBooking.pricePerDay = 0;
     }
-    if (field === 'endTime' || field === 'startTime' && newBookings[index].endTime) {
-      const booking = newBookings[index];
-      if (booking.startTime && booking.endTime) {
-        const startIndex = allTimeOptions.indexOf(booking.startTime);
-        const endIndex = allTimeOptions.indexOf(booking.endTime);
+    if (field === 'endTime' || (field === 'startTime' && newBooking.endTime)) {
+      if (newBooking.startTime && newBooking.endTime) {
+        const startIndex = allTimeOptions.indexOf(newBooking.startTime);
+        const endIndex = allTimeOptions.indexOf(newBooking.endTime);
         const hours = endIndex - startIndex;
-        newBookings[index].price = Math.max(hours * spot.price, 0);
+        newBooking.pricePerDay = Math.max(hours * spot.price, 0);
       }
     }
-    setVehicleBookings(newBookings);
+    setSingleSlotBooking(newBooking);
   };
+
   const handleDateSelect = (date: string) => {
-    setSelectedDate(date);
-    // Reset all vehicle bookings when date changes
-    const resetBookings = vehicleBookings.map(() => ({
+    if (isMultiDateMode) {
+      setSelectedDates(prev => {
+        if (prev.includes(date)) {
+          return prev.filter(d => d !== date);
+        } else {
+          return [...prev, date].sort();
+        }
+      });
+    } else {
+      setSelectedDates([date]);
+    }
+    // Reset booking when dates change
+    setSingleSlotBooking({
       slotId: '',
       vehicleNumber: '',
       startTime: '',
       endTime: '',
-      price: 0
-    }));
-    setVehicleBookings(resetBookings);
+      pricePerDay: 0
+    });
   };
+
+  const handleMultiDateModeToggle = (enabled: boolean) => {
+    setIsMultiDateMode(enabled);
+    if (!enabled && selectedDates.length > 1) {
+      setSelectedDates(selectedDates.slice(0, 1));
+    }
+    setSingleSlotBooking({
+      slotId: '',
+      vehicleNumber: '',
+      startTime: '',
+      endTime: '',
+      pricePerDay: 0
+    });
+  };
+
   const handleProceedToPayment = () => {
-    const totalPrice = vehicleBookings.reduce((sum, booking) => sum + booking.price, 0);
+    const totalDays = selectedDates.length;
+    const totalVehicles = parseInt(vehicleCount);
+    const totalPrice = singleSlotBooking.pricePerDay * totalDays * totalVehicles;
+    
     toast({
       title: "Booking Confirmed",
-      description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s) at ${spot.name} on ${selectedDate}`
+      description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s) at ${spot.name} across ${totalDays} day(s)`
     });
     navigate('/profile');
   };
-  const isBookingValid = vehicleBookings.every(booking => booking.slotId && booking.vehicleNumber && booking.startTime && booking.endTime && booking.price > 0);
+
+  const isBookingValid = singleSlotBooking.slotId && singleSlotBooking.vehicleNumber && 
+                        singleSlotBooking.startTime && singleSlotBooking.endTime && 
+                        singleSlotBooking.pricePerDay > 0 && selectedDates.length > 0;
+
   const getAmenityIcon = (amenity: string) => {
     switch (amenity.toLowerCase()) {
       case 'cctv':
@@ -153,6 +185,10 @@ const BookSlot = () => {
       default:
         return null;
     }
+  };
+
+  const getTotalPrice = () => {
+    return singleSlotBooking.pricePerDay * selectedDates.length * parseInt(vehicleCount);
   };
 
   return (
@@ -217,14 +253,76 @@ const BookSlot = () => {
                 <CardTitle className="text-lg font-semibold">Select Your Parking</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Date Selector */}
-                <DateSelector 
-                  availableDates={availableDates} 
-                  selectedDate={selectedDate} 
-                  onDateSelect={handleDateSelect} 
-                />
+                {/* Multi-Date Mode Toggle */}
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <div className="font-medium text-blue-900">Multi-Date Booking</div>
+                      <div className="text-sm text-blue-700">Book the same slot across multiple dates</div>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={isMultiDateMode}
+                    onCheckedChange={handleMultiDateModeToggle}
+                  />
+                </div>
 
-                {/* Vehicle Count - Compact */}
+                {/* Date Selector */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-[#1C1C1C]">
+                      {isMultiDateMode ? 'Select Dates' : 'Select Date'}
+                    </h3>
+                    {isMultiDateMode && selectedDates.length > 0 && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                        {selectedDates.length} day{selectedDates.length > 1 ? 's' : ''} selected
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {availableDates.map((date) => (
+                      <Button
+                        key={date}
+                        variant={selectedDates.includes(date) ? "default" : "outline"}
+                        onClick={() => handleDateSelect(date)}
+                        className={`px-4 py-2 rounded-lg transition-all ${
+                          selectedDates.includes(date)
+                            ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white'
+                            : 'border-gray-300 hover:border-[#FF6B00] hover:text-[#FF6B00]'
+                        }`}
+                      >
+                        {new Date(date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Selected Dates Preview */}
+                {isMultiDateMode && selectedDates.length > 0 && (
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <h4 className="font-semibold text-green-900 mb-2">Selected Dates</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedDates.map(date => (
+                        <div key={date} className="flex items-center space-x-2 bg-white border border-green-200 rounded-lg px-3 py-1 shadow-sm">
+                          <Circle className="w-3 h-3 fill-green-500 text-green-500" />
+                          <span className="text-sm font-medium text-green-900">
+                            {new Date(date).toLocaleDateString('en-US', {
+                              month: 'long',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Vehicle Count */}
                 <div>
                   <Label className="text-sm font-medium">Number of vehicles</Label>
                   <Select value={vehicleCount} onValueChange={handleVehicleCountChange}>
@@ -241,18 +339,14 @@ const BookSlot = () => {
                   </Select>
                 </div>
 
-                {/* Available Slots for Selected Date */}
-                {selectedDate && availableSlotsForDate.length > 0 && (
+                {/* Available Slots for Selected Dates */}
+                {selectedDates.length > 0 && availableSlotsForSelection.length > 0 && (
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <h4 className="font-semibold text-blue-900 mb-2">
-                      Available Slots for {new Date(selectedDate).toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
+                      Available Slots{isMultiDateMode ? ' (will apply to all selected dates)' : ''}
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {availableSlotsForDate.map(slot => (
+                      {availableSlotsForSelection.map(slot => (
                         <div key={slot.id} className="flex items-center space-x-2 bg-white border border-blue-200 rounded-lg px-3 py-2 shadow-sm">
                           <Circle className="w-3 h-3 fill-blue-500 text-blue-500" />
                           <div className="text-sm">
@@ -268,12 +362,14 @@ const BookSlot = () => {
                   </div>
                 )}
 
-                {/* Vehicle Assignments - Enhanced Cards */}
-                {selectedDate && availableSlotsForDate.length > 0 && vehicleBookings.map((booking, index) => (
-                  <Card key={index} className="p-4 bg-[#F8F9FA] border shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl">
+                {/* Single Slot Configuration */}
+                {selectedDates.length > 0 && availableSlotsForSelection.length > 0 && (
+                  <Card className="p-4 bg-[#F8F9FA] border shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl">
                     <div className="flex items-center space-x-2 mb-3">
                       <Car className="w-4 h-4 text-[#FF6B00]" />
-                      <h4 className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</h4>
+                      <h4 className="font-semibold text-[#1C1C1C]">
+                        Slot Configuration{isMultiDateMode ? ' (for all selected dates)' : ''}
+                      </h4>
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
@@ -283,12 +379,12 @@ const BookSlot = () => {
                           <Clock className="w-3 h-3" />
                           Time Slot
                         </Label>
-                        <Select value={booking.slotId} onValueChange={(value) => updateVehicleBooking(index, 'slotId', value)}>
+                        <Select value={singleSlotBooking.slotId} onValueChange={(value) => updateSingleSlotBooking('slotId', value)}>
                           <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
                             <SelectValue placeholder="Choose slot" />
                           </SelectTrigger>
                           <SelectContent>
-                            {availableSlotsForDate.map(slot => (
+                            {availableSlotsForSelection.map(slot => (
                               <SelectItem key={slot.id} value={slot.id.toString()}>
                                 {slot.name} ({slot.timeRange})
                               </SelectItem>
@@ -306,8 +402,8 @@ const BookSlot = () => {
                         <Input 
                           type="text" 
                           placeholder="e.g., TN 10 AK 6567" 
-                          value={booking.vehicleNumber} 
-                          onChange={(e) => updateVehicleBooking(index, 'vehicleNumber', e.target.value)} 
+                          value={singleSlotBooking.vehicleNumber} 
+                          onChange={(e) => updateSingleSlotBooking('vehicleNumber', e.target.value)} 
                           className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20" 
                           required 
                         />
@@ -316,12 +412,12 @@ const BookSlot = () => {
                       {/* Start Time */}
                       <div className="flex-1 min-w-0">
                         <Label className="text-xs font-medium text-[#606060]">Start Time</Label>
-                        <Select value={booking.startTime} onValueChange={(value) => updateVehicleBooking(index, 'startTime', value)} disabled={!booking.slotId}>
+                        <Select value={singleSlotBooking.startTime} onValueChange={(value) => updateSingleSlotBooking('startTime', value)} disabled={!singleSlotBooking.slotId}>
                           <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
                             <SelectValue placeholder="Start" />
                           </SelectTrigger>
                           <SelectContent>
-                            {getAvailableStartTimes(booking.slotId).map(time => (
+                            {getAvailableStartTimes(singleSlotBooking.slotId).map(time => (
                               <SelectItem key={time} value={time}>{time}</SelectItem>
                             ))}
                           </SelectContent>
@@ -331,35 +427,35 @@ const BookSlot = () => {
                       {/* End Time */}
                       <div className="flex-1 min-w-0">
                         <Label className="text-xs font-medium text-[#606060]">End Time</Label>
-                        <Select value={booking.endTime} onValueChange={(value) => updateVehicleBooking(index, 'endTime', value)} disabled={!booking.startTime}>
+                        <Select value={singleSlotBooking.endTime} onValueChange={(value) => updateSingleSlotBooking('endTime', value)} disabled={!singleSlotBooking.startTime}>
                           <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
                             <SelectValue placeholder="End" />
                           </SelectTrigger>
                           <SelectContent>
-                            {getAvailableEndTimes(booking.slotId, booking.startTime).map(time => (
+                            {getAvailableEndTimes(singleSlotBooking.slotId, singleSlotBooking.startTime).map(time => (
                               <SelectItem key={time} value={time}>{time}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                       
-                      {/* Price */}
+                      {/* Price per Day */}
                       <div className="flex-shrink-0">
-                        <Label className="text-xs font-medium text-[#606060]">Price</Label>
+                        <Label className="text-xs font-medium text-[#606060]">Price/Day</Label>
                         <div className="h-9 px-3 bg-white border rounded-md text-center font-bold text-lg flex items-center justify-center min-w-[80px] mt-1 text-[#FF6B00]">
-                          ${booking.price.toFixed(2)}
+                          ${singleSlotBooking.pricePerDay.toFixed(2)}
                         </div>
                       </div>
                     </div>
                   </Card>
-                ))}
+                )}
 
                 {/* No slots message */}
-                {selectedDate && availableSlotsForDate.length === 0 && (
+                {selectedDates.length > 0 && availableSlotsForSelection.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p>No slots available for the selected date.</p>
-                    <p className="text-sm">Please choose a different date.</p>
+                    <p>No slots available for the selected date{selectedDates.length > 1 ? 's' : ''}.</p>
+                    <p className="text-sm">Please choose different dates.</p>
                   </div>
                 )}
               </CardContent>
@@ -374,58 +470,77 @@ const BookSlot = () => {
                   <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Booking Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {selectedDate && (
+                  {selectedDates.length > 0 && (
                     <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="text-sm font-medium text-blue-900">Selected Date</div>
-                      <div className="text-blue-700">
-                        {new Date(selectedDate).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
+                      <div className="text-sm font-medium text-blue-900">
+                        Selected Date{selectedDates.length > 1 ? 's' : ''}
+                      </div>
+                      <div className="text-blue-700 space-y-1">
+                        {selectedDates.map(date => (
+                          <div key={date} className="text-sm">
+                            {new Date(date).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                  {vehicleBookings.map((booking, index) => {
-                    const slot = getSlotById(booking.slotId);
-                    return (
-                      <div key={index} className="space-y-1">
-                        <div className="flex justify-between items-start">
-                          <div className="text-sm">
-                            <span className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</span>
-                            {booking.vehicleNumber && (
-                              <div className="text-xs text-[#666]">
-                                {booking.vehicleNumber}
-                              </div>
-                            )}
-                            {slot && booking.startTime && booking.endTime && (
-                              <div className="text-xs text-[#666]">
-                                {slot.name}: {booking.startTime} - {booking.endTime}
-                              </div>
-                            )}
+                  {singleSlotBooking.slotId && (
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <span className="font-semibold text-[#1C1C1C]">Slot Configuration</span>
+                        {singleSlotBooking.vehicleNumber && (
+                          <div className="text-xs text-[#666]">
+                            Vehicle: {singleSlotBooking.vehicleNumber}
                           </div>
-                          <span className="font-semibold text-sm text-[#1C1C1C]">${booking.price.toFixed(2)}</span>
+                        )}
+                        {singleSlotBooking.startTime && singleSlotBooking.endTime && (
+                          <div className="text-xs text-[#666]">
+                            Time: {singleSlotBooking.startTime} - {singleSlotBooking.endTime}
+                          </div>
+                        )}
+                        <div className="text-xs text-[#666]">
+                          ${singleSlotBooking.pricePerDay.toFixed(2)}/day per vehicle
                         </div>
-                        {index < vehicleBookings.length - 1 && <Separator className="my-2" />}
                       </div>
-                    );
-                  })}
+                    </div>
+                  )}
+
+                  <Separator className="my-3" />
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Days:</span>
+                      <span>{selectedDates.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Vehicles:</span>
+                      <span>{vehicleCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Price per day per vehicle:</span>
+                      <span>${singleSlotBooking.pricePerDay.toFixed(2)}</span>
+                    </div>
+                  </div>
                   
                   <Separator className="my-3" />
                   
                   <div className="flex justify-between font-bold text-lg">
                     <span className="text-[#1C1C1C]">Total:</span>
                     <span className="text-[#FF6B00]">
-                      ${vehicleBookings.reduce((sum, b) => sum + b.price, 0).toFixed(2)}
+                      ${getTotalPrice().toFixed(2)}
                     </span>
                   </div>
 
                   <Button 
                     onClick={handleProceedToPayment} 
                     className="w-full bg-[#FF6B00] hover:bg-[#e55a00] text-white h-12 mt-4 font-semibold text-base rounded-lg shadow-md hover:shadow-lg transition-all duration-200" 
-                    disabled={!isBookingValid || !selectedDate}
+                    disabled={!isBookingValid}
                   >
                     Proceed to Payment
                   </Button>
