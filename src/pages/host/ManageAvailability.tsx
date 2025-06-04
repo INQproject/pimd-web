@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -79,6 +80,52 @@ const ManageAvailability = () => {
     });
   };
 
+  const renderBookings = () => {
+    return timeSlots.map(timeSlot => {
+      return (
+        <div key={timeSlot.id} className="mb-6">
+          <h3 className="text-xl font-semibold mb-3">{timeSlot.name}</h3>
+          {bookings.length === 0 ? (
+            <div className="text-gray-500">No bookings available for this time slot.</div>
+          ) : (
+            <div className="space-y-3">
+              {bookings.filter(booking => booking.timeSlotId === timeSlot.id.toString()).map(booking => (
+                <div key={booking.id} className="flex items-center justify-between p-4 rounded-md shadow-sm border">
+                  <div className="space-y-1">
+                    <div className="font-medium">Booking Date: {booking.startTime}</div>
+                    {booking.startTime && (
+                      <div className="text-xs text-gray-600">
+                        {timeSlots.find(ts => ts.id.toString() === booking.timeSlotId)?.name || 'Unknown Slot'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge 
+                      variant={booking.status === 'booked' ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {booking.status}
+                    </Badge>
+                    {booking.status === 'booked' && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleCancelBooking(booking.id)}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
+
   const spot = mockParkingSpots.find(s => s.id.toString() === listingId);
 
   if (!spot) {
@@ -148,53 +195,6 @@ const ManageAvailability = () => {
       </div>
     </Layout>
   );
-
-  function renderBookings() {
-    return timeSlots.map(timeSlot => {
-      return (
-        <div key={timeSlot.id} className="mb-6">
-          <h3 className="text-xl font-semibold mb-3">{timeSlot.name}</h3>
-          {bookings.length === 0 ? (
-            <div className="text-gray-500">No bookings available for this time slot.</div>
-          ) : (
-            <div className="space-y-3">
-              {bookings.filter(booking => booking.timeSlotId === timeSlot.id.toString()).map(booking => (
-                  <div key={booking.id} className="flex items-center justify-between p-4 rounded-md shadow-sm border">
-                    <div className="space-y-1">
-                      <div className="font-medium">Booking Date: {booking.startTime}</div>
-                      {booking.startTime && (
-                        <div className="text-xs text-gray-600">
-                          {timeSlots.find(ts => ts.id.toString() === booking.timeSlotId)?.name || 'Unknown Slot'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge 
-                        variant={booking.status === 'booked' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {booking.status}
-                      </Badge>
-                      {booking.status === 'booked' && (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleCancelBooking(booking.id)}
-                          className="h-6 px-2 text-xs"
-                        >
-                          Cancel
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    });
-  };
 };
 
 export default ManageAvailability;
