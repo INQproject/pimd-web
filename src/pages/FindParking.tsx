@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,48 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MapPin, Calendar, Clock, Filter, Car, Navigation, Search, DollarSign, HelpCircle, Phone, Mail } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-
-const mockParkingSpots = [
-  {
-    id: 1,
-    name: 'Downtown Austin Driveway',
-    address: '123 Congress Ave, Austin, TX',
-    price: 15,
-    city: 'austin',
-    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
-    coordinates: { x: 35, y: 40 }, // Position on static map (percentage)
-    slots: [
-      { id: 1, name: 'Slot A', timeRange: '8:00 AM - 12:00 PM', capacity: 2 },
-      { id: 2, name: 'Slot B', timeRange: '1:00 PM - 6:00 PM', capacity: 1 }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Deep Ellum Private Spot',
-    address: '456 Elm St, Dallas, TX',
-    price: 12,
-    city: 'dallas',
-    image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
-    coordinates: { x: 65, y: 25 },
-    slots: [
-      { id: 3, name: 'Slot A', timeRange: '9:00 AM - 2:00 PM', capacity: 3 },
-      { id: 4, name: 'Slot B', timeRange: '3:00 PM - 8:00 PM', capacity: 2 }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Phoenix Mall Parking',
-    address: '789 Phoenix Way, Austin, TX',
-    price: 8,
-    city: 'austin',
-    image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
-    coordinates: { x: 50, y: 60 },
-    slots: [
-      { id: 5, name: 'Slot A', timeRange: '10:00 AM - 4:00 PM', capacity: 5 },
-      { id: 6, name: 'Slot B', timeRange: '5:00 PM - 10:00 PM', capacity: 3 }
-    ]
-  }
-];
+import { mockParkingSpots } from '@/data/mockParkingData';
+import { format } from 'date-fns';
 
 const FindParking = () => {
   const navigate = useNavigate();
@@ -105,6 +66,26 @@ const FindParking = () => {
       );
     }
   }, []);
+
+  const getUniqueDatesForSpot = (spot: any) => {
+    const allDates = spot.slots.flatMap((slot: any) => slot.availableDates || []);
+    return [...new Set(allDates)].sort();
+  };
+
+  const formatAvailableDates = (dates: string[]) => {
+    if (dates.length === 0) return 'No dates available';
+    
+    const formattedDates = dates.slice(0, 3).map(date => {
+      const dateObj = new Date(date);
+      return format(dateObj, 'MMM d');
+    });
+    
+    if (dates.length > 3) {
+      return `${formattedDates.join(', ')} +${dates.length - 3} more`;
+    }
+    
+    return formattedDates.join(', ');
+  };
 
   const handleStartTimeChange = (value: string) => {
     setStartTime(value);
@@ -408,7 +389,7 @@ const FindParking = () => {
                   <Card 
                     key={spot.id} 
                     id={`spot-card-${spot.id}`}
-                    className={`w-full min-h-[240px] hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
+                    className={`w-full min-h-[280px] hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
                       selectedSpotId === spot.id ? 'ring-2 ring-[#FF6B00] shadow-lg border-[#FF6B00]/50' : 'hover:shadow-lg'
                     }`}
                     onClick={() => handleCardClick(spot.id)}
@@ -433,11 +414,22 @@ const FindParking = () => {
                         </div>
                       </div>
 
+                      {/* Available dates */}
+                      <div className="mb-4">
+                        <div className="flex items-center space-x-2 text-sm text-gray-700 mb-2">
+                          <Calendar className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
+                          <span className="font-semibold">Available:</span>
+                          <span className="text-[#FF6B00] font-medium">
+                            {formatAvailableDates(getUniqueDatesForSpot(spot))}
+                          </span>
+                        </div>
+                      </div>
+
                       {/* Available times */}
                       <div className="flex-1 mb-4">
                         <div className="flex items-center space-x-2 text-sm text-gray-700 mb-3">
                           <Clock className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
-                          <span className="font-semibold">Available Times:</span>
+                          <span className="font-semibold">Time Slots:</span>
                         </div>
                         <div className="space-y-2">
                           {spot.slots.map(slot => (

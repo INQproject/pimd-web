@@ -534,6 +534,22 @@ const ManageAvailability = () => {
   // Sort selected dates chronologically
   const sortedSelectedDates = [...selectedDates].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 
+  const updateSlotStatus = (slotId: number, newStatus: 'available' | 'booked') => {
+    setSlots(slots.map(slot => 
+      slot.id === slotId 
+        ? { ...slot, status: newStatus }
+        : slot
+    ));
+  };
+
+  const cancelSlot = (slotId: number) => {
+    setSlots(slots.map(slot => 
+      slot.id === slotId 
+        ? { ...slot, status: 'available' as const }
+        : slot
+    ));
+  };
+
   return (
     <TooltipProvider>
       <Layout title="Manage Availability">
