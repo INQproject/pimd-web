@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -7,105 +6,88 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { MapPin, Car, DollarSign, Calendar, Star, Shield, Clock, Users, CheckCircle } from 'lucide-react';
 
 // Import events from the events page data
-const mockEvents = [
-  {
-    id: 1,
-    name: 'Austin City Limits Music Festival',
-    date: 'Oct 6-8, 2024',
-    time: '2:00 PM - 11:00 PM',
-    location: 'Zilker Park, Austin',
-    category: 'Music',
-    image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=500&h=300&fit=crop',
-    description: 'Three days of amazing music featuring top artists from around the world.',
-    city: 'austin',
-    dateObj: new Date('2024-10-06')
-  },
-  {
-    id: 2,
-    name: 'Dallas Marathon 2025',
-    date: 'Dec 8, 2024',
-    time: '7:00 AM - 2:00 PM',
-    location: 'Downtown Dallas',
-    category: 'Sports',
-    image: 'https://images.unsplash.com/photo-1571008887538-b36bb32f4571?w=500&h=300&fit=crop',
-    description: 'Join thousands of runners in this premier marathon event through the heart of Dallas.',
-    city: 'dallas',
-    dateObj: new Date('2024-12-08')
-  },
-  {
-    id: 3,
-    name: 'South by Southwest (SXSW)',
-    date: 'Mar 10-19, 2025',
-    time: 'All Day',
-    location: 'Downtown Austin',
-    category: 'Music',
-    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&h=300&fit=crop',
-    description: 'The ultimate music, interactive, and film festival.',
-    city: 'austin',
-    dateObj: new Date('2025-03-10')
-  },
-  {
-    id: 4,
-    name: 'State Fair of Texas',
-    date: 'Sep 27 - Oct 20, 2024',
-    time: '10:00 AM - 10:00 PM',
-    location: 'Fair Park, Dallas',
-    category: 'Fair',
-    image: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=500&h=300&fit=crop',
-    description: 'The biggest state fair in the United States with rides, food, and entertainment.',
-    city: 'dallas',
-    dateObj: new Date('2024-09-27')
-  },
-  {
-    id: 5,
-    name: 'Austin Food + Wine Festival',
-    date: 'Apr 26-28, 2025',
-    time: '12:00 PM - 10:00 PM',
-    location: 'Auditorium Shores, Austin',
-    category: 'Food',
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&h=300&fit=crop',
-    description: 'Celebrate Austin\'s incredible food scene with top chefs and local restaurants.',
-    city: 'austin',
-    dateObj: new Date('2025-04-26')
-  }
-];
-
+const mockEvents = [{
+  id: 1,
+  name: 'Austin City Limits Music Festival',
+  date: 'Oct 6-8, 2024',
+  time: '2:00 PM - 11:00 PM',
+  location: 'Zilker Park, Austin',
+  category: 'Music',
+  image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=500&h=300&fit=crop',
+  description: 'Three days of amazing music featuring top artists from around the world.',
+  city: 'austin',
+  dateObj: new Date('2024-10-06')
+}, {
+  id: 2,
+  name: 'Dallas Marathon 2025',
+  date: 'Dec 8, 2024',
+  time: '7:00 AM - 2:00 PM',
+  location: 'Downtown Dallas',
+  category: 'Sports',
+  image: 'https://images.unsplash.com/photo-1571008887538-b36bb32f4571?w=500&h=300&fit=crop',
+  description: 'Join thousands of runners in this premier marathon event through the heart of Dallas.',
+  city: 'dallas',
+  dateObj: new Date('2024-12-08')
+}, {
+  id: 3,
+  name: 'South by Southwest (SXSW)',
+  date: 'Mar 10-19, 2025',
+  time: 'All Day',
+  location: 'Downtown Austin',
+  category: 'Music',
+  image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&h=300&fit=crop',
+  description: 'The ultimate music, interactive, and film festival.',
+  city: 'austin',
+  dateObj: new Date('2025-03-10')
+}, {
+  id: 4,
+  name: 'State Fair of Texas',
+  date: 'Sep 27 - Oct 20, 2024',
+  time: '10:00 AM - 10:00 PM',
+  location: 'Fair Park, Dallas',
+  category: 'Fair',
+  image: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=500&h=300&fit=crop',
+  description: 'The biggest state fair in the United States with rides, food, and entertainment.',
+  city: 'dallas',
+  dateObj: new Date('2024-09-27')
+}, {
+  id: 5,
+  name: 'Austin Food + Wine Festival',
+  date: 'Apr 26-28, 2025',
+  time: '12:00 PM - 10:00 PM',
+  location: 'Auditorium Shores, Austin',
+  category: 'Food',
+  image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&h=300&fit=crop',
+  description: 'Celebrate Austin\'s incredible food scene with top chefs and local restaurants.',
+  city: 'austin',
+  dateObj: new Date('2025-04-26')
+}];
 const Index = () => {
   const navigate = useNavigate();
   const [selectedCity, setSelectedCity] = useState<'all' | 'austin' | 'dallas'>('all');
-  
+
   // Filter events to show only upcoming events within the next 30 days, then take first 3
   const today = new Date();
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(today.getDate() + 30);
-  
-  const upcomingEvents = mockEvents
-    .filter(event => event.dateObj >= today && event.dateObj <= thirtyDaysFromNow)
-    .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-    .slice(0, 3);
-  
-  // If no upcoming events in 30 days, show next 3 upcoming events
-  const featuredEvents = upcomingEvents.length > 0 
-    ? upcomingEvents 
-    : mockEvents
-        .filter(event => event.dateObj >= today)
-        .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-        .slice(0, 3);
+  const upcomingEvents = mockEvents.filter(event => event.dateObj >= today && event.dateObj <= thirtyDaysFromNow).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime()).slice(0, 3);
 
+  // If no upcoming events in 30 days, show next 3 upcoming events
+  const featuredEvents = upcomingEvents.length > 0 ? upcomingEvents : mockEvents.filter(event => event.dateObj >= today).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime()).slice(0, 3);
   const filteredEvents = selectedCity === 'all' ? featuredEvents : featuredEvents.filter(event => event.city === selectedCity);
-  
   const handleFindParking = () => {
     navigate('/find-parking');
   };
-  
   const handleListDriveway = () => {
     navigate('/list-driveway');
   };
-
   const handleEventBooking = (event: any) => {
-    navigate(`/event-booking/${event.id}`, { state: { event } });
+    navigate(`/event-booking/${event.id}`, {
+      state: {
+        event
+      }
+    });
   };
-
   const getCategoryColor = (category: string) => {
     const colors = {
       'Sports': 'bg-blue-100 text-blue-800',
@@ -113,11 +95,10 @@ const Index = () => {
       'Business': 'bg-green-100 text-green-800',
       'Food': 'bg-orange-100 text-orange-800',
       'Arts': 'bg-pink-100 text-pink-800',
-      'Fair': 'bg-yellow-100 text-yellow-800',
+      'Fair': 'bg-yellow-100 text-yellow-800'
     };
     return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
-
   return <Layout showNavigation={true}>
       {/* Hero Banner Section */}
       <section className="relative h-96 bg-cover bg-center rounded-2xl mb-12 overflow-hidden" style={{
@@ -185,84 +166,7 @@ const Index = () => {
       </section>
 
       {/* Featured Events Section */}
-      <section className="py-12">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-[#1C1C1C] mb-4">Featured Events</h2>
-          <p className="text-[#606060] mb-6">Find parking for these upcoming events</p>
-          
-          {/* City Filter Buttons */}
-          <div className="flex justify-center space-x-4 mb-8">
-            <Button variant={selectedCity === 'all' ? 'default' : 'outline'} onClick={() => setSelectedCity('all')} className={selectedCity === 'all' ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90' : ''}>
-              All Cities
-            </Button>
-            <Button variant={selectedCity === 'austin' ? 'default' : 'outline'} onClick={() => setSelectedCity('austin')} className={selectedCity === 'austin' ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90' : ''}>
-              Austin
-            </Button>
-            <Button variant={selectedCity === 'dallas' ? 'default' : 'outline'} onClick={() => setSelectedCity('dallas')} className={selectedCity === 'dallas' ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90' : ''}>
-              Dallas
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {filteredEvents.map(event => (
-            <Card key={event.id} className="hover:shadow-lg transition-all duration-200 group hover:scale-105">
-              <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                <img 
-                  src={event.image} 
-                  alt={event.name} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" 
-                />
-                <div className="absolute top-3 left-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(event.category)}`}>
-                    {event.category}
-                  </span>
-                </div>
-              </div>
-              
-              <CardHeader>
-                <CardTitle className="text-lg line-clamp-2">{event.name}</CardTitle>
-                <CardDescription className="space-y-2">
-                  <div className="flex items-center space-x-2 text-[#606060]">
-                    <Calendar className="w-4 h-4" />
-                    <span>{event.date} at {event.time}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-[#606060]">
-                    <MapPin className="w-4 h-4" />
-                    <span>{event.location}</span>
-                  </div>
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent>
-                <p className="text-sm text-[#606060] mb-4 line-clamp-2">
-                  {event.description}
-                </p>
-                <Button 
-                  onClick={() => handleEventBooking(event)}
-                  className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
-                >
-                  <Car className="w-4 h-4 mr-2" />
-                  Find Parking
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* View All Events Button */}
-        {featuredEvents.length > 0 && (
-          <div className="text-center mt-8">
-            <Button 
-              onClick={() => navigate('/events')}
-              variant="outline"
-              className="border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-white"
-            >
-              View All Events
-            </Button>
-          </div>
-        )}
-      </section>
+      
 
       {/* Why Use Section */}
       <section className="py-16 bg-white rounded-2xl shadow-sm mb-12">
@@ -378,5 +282,4 @@ const Index = () => {
       </footer>
     </Layout>;
 };
-
 export default Index;
