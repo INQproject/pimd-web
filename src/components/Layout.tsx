@@ -131,13 +131,13 @@ export default function Layout({
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/profile?tab=bookings" className="flex items-center">
+                        <Link to="/my-bookings" className="flex items-center">
                           <Calendar className="mr-2 h-4 w-4" />
                           <span>My Bookings</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/profile?tab=uploads" className="flex items-center">
+                        <Link to="/my-uploads" className="flex items-center">
                           <Upload className="mr-2 h-4 w-4" />
                           <span>My Uploads</span>
                         </Link>
