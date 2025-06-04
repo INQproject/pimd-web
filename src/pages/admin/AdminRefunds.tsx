@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import Layout from '@/components/Layout';
+import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -125,7 +124,7 @@ const AdminRefunds = () => {
   const processedRequests = refundRequests.filter(r => r.status === 'refunded');
 
   return (
-    <Layout title="Refund Management">
+    <AdminLayout title="Refund Management">
       <div className="space-y-6">
         {/* Pending Refunds */}
         <Card>
@@ -322,7 +321,7 @@ const AdminRefunds = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </AdminLayout>
   );
 };
 

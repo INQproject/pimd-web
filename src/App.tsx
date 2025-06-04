@@ -29,6 +29,8 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminRefunds from "./pages/admin/AdminRefunds";
+import AdminBookings from "./pages/admin/AdminBookings";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -62,7 +64,9 @@ const App = () => (
             <Route path="/admin/hosts" element={<AdminUsers />} />
             <Route path="/admin/seekers" element={<AdminUsers />} />
             <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/bookings" element={<AdminBookings />} />
             <Route path="/admin/refunds" element={<AdminRefunds />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

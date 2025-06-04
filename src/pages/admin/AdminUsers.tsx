@@ -1,16 +1,24 @@
 
 import React, { useState } from 'react';
-import Layout from '@/components/Layout';
+import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Search, Users, MapPin } from 'lucide-react';
+import { Search, Users, MapPin, Eye, Edit } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 const AdminUsers = () => {
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [userType, setUserType] = useState('all'); // all, hosts, seekers
+  const [userType, setUserType] = useState(() => {
+    // Determine user type from URL path
+    if (location.pathname.includes('/admin/hosts')) return 'hosts';
+    if (location.pathname.includes('/admin/seekers')) return 'seekers';
+    return 'all';
+  });
+
   const [users, setUsers] = useState([
     {
       id: 1,
@@ -21,7 +29,9 @@ const AdminUsers = () => {
       joinDate: '2024-01-10',
       totalListings: 3,
       totalBookings: 0,
-      totalEarnings: 1250.00
+      totalEarnings: 1250.00,
+      phone: '+1 234-567-8901',
+      location: 'New York, NY'
     },
     {
       id: 2,
@@ -32,7 +42,9 @@ const AdminUsers = () => {
       joinDate: '2024-01-08',
       totalListings: 0,
       totalBookings: 12,
-      totalSpent: 485.00
+      totalSpent: 485.00,
+      phone: '+1 234-567-8902',
+      location: 'Los Angeles, CA'
     },
     {
       id: 3,
@@ -43,7 +55,9 @@ const AdminUsers = () => {
       joinDate: '2024-01-12',
       totalListings: 1,
       totalBookings: 0,
-      totalEarnings: 75.00
+      totalEarnings: 75.00,
+      phone: '+1 234-567-8903',
+      location: 'Chicago, IL'
     },
     {
       id: 4,
@@ -54,7 +68,22 @@ const AdminUsers = () => {
       joinDate: '2024-01-05',
       totalListings: 0,
       totalBookings: 8,
-      totalSpent: 320.00
+      totalSpent: 320.00,
+      phone: '+1 234-567-8904',
+      location: 'Miami, FL'
+    },
+    {
+      id: 5,
+      name: 'Alex Brown',
+      email: 'alex@example.com',
+      role: 'host',
+      status: 'active',
+      joinDate: '2024-01-15',
+      totalListings: 2,
+      totalBookings: 0,
+      totalEarnings: 890.00,
+      phone: '+1 234-567-8905',
+      location: 'Seattle, WA'
     }
   ]);
 
@@ -90,8 +119,14 @@ const AdminUsers = () => {
     }
   };
 
+  const getPageTitle = () => {
+    if (userType === 'hosts') return 'Manage Hosts';
+    if (userType === 'seekers') return 'Manage Seekers';
+    return 'User Management';
+  };
+
   return (
-    <Layout title="User Management">
+    <AdminLayout title={getPageTitle()}>
       <div className="space-y-6">
         {/* Filters */}
         <Card>
@@ -135,7 +170,7 @@ const AdminUsers = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Users className="h-5 w-5" />
-              <span>All Users ({filteredUsers.length})</span>
+              <span>{getPageTitle()} ({filteredUsers.length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -154,9 +189,15 @@ const AdminUsers = () => {
                         </Badge>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600 mb-3">
                         <div>
                           <span className="font-medium">Email:</span> {user.email}
+                        </div>
+                        <div>
+                          <span className="font-medium">Phone:</span> {user.phone}
+                        </div>
+                        <div>
+                          <span className="font-medium">Location:</span> {user.location}
                         </div>
                         <div>
                           <span className="font-medium">Joined:</span> {user.joinDate}
@@ -183,7 +224,7 @@ const AdminUsers = () => {
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                       <div className="flex items-center space-x-2">
                         <span className="text-sm font-medium">Active</span>
                         <Switch 
@@ -191,15 +232,22 @@ const AdminUsers = () => {
                           onCheckedChange={() => toggleUserStatus(user.id)}
                         />
                       </div>
-                      <Button size="sm" variant="outline">
-                        View Profile
-                      </Button>
-                      {user.role === 'host' && (
+                      <div className="flex space-x-2">
                         <Button size="sm" variant="outline">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          View Listings
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Profile
                         </Button>
-                      )}
+                        <Button size="sm" variant="outline">
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        {user.role === 'host' && (
+                          <Button size="sm" variant="outline">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            View Listings
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -208,7 +256,7 @@ const AdminUsers = () => {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </AdminLayout>
   );
 };
 

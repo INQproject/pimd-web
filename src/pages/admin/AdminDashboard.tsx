@@ -1,10 +1,10 @@
 
 import React from 'react';
-import Layout from '@/components/Layout';
+import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Car, Calendar, DollarSign, MapPin, Clock, AlertTriangle } from 'lucide-react';
+import { Users, Car, Calendar, DollarSign, MapPin, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
@@ -13,7 +13,7 @@ const AdminDashboard = () => {
     { title: 'Manage Seekers', path: '/admin/seekers', icon: Users, color: 'bg-green-500' },
     { title: 'Manage Listings', path: '/admin/listings', icon: MapPin, color: 'bg-purple-500' },
     { title: 'Manage Events', path: '/admin/events', icon: Calendar, color: 'bg-orange-500' },
-    { title: 'Manage Bookings', path: '/admin/bookings', icon: Car, color: 'bg-indigo-500' },
+    { title: 'Admin Bookings', path: '/admin/bookings', icon: Car, color: 'bg-indigo-500' },
     { title: 'Refund Requests', path: '/admin/refunds', icon: DollarSign, color: 'bg-red-500' },
   ];
 
@@ -22,10 +22,35 @@ const AdminDashboard = () => {
     { action: 'Booking cancelled', user: 'Sarah Wilson', time: '4 hours ago', type: 'warning' },
     { action: 'Listing approved', user: 'Mike Johnson', time: '6 hours ago', type: 'success' },
     { action: 'Refund processed', user: 'Emma Davis', time: '1 day ago', type: 'info' },
+    { action: 'New seeker registered', user: 'Alex Brown', time: '2 days ago', type: 'success' },
+  ];
+
+  const pendingApprovals = [
+    {
+      id: 1,
+      title: 'Downtown Parking Spot',
+      host: 'Sarah Johnson',
+      submitted: 'Today',
+      type: 'listing'
+    },
+    {
+      id: 2,
+      title: 'Mall Parking Space',
+      host: 'Mike Chen',
+      submitted: 'Yesterday',
+      type: 'listing'
+    },
+    {
+      id: 3,
+      title: 'Payout Request',
+      host: 'Emma Wilson',
+      submitted: '2 days ago',
+      type: 'payout'
+    }
   ];
 
   return (
-    <Layout title="Super Admin Dashboard">
+    <AdminLayout title="Dashboard">
       <div className="space-y-8">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -36,7 +61,12 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">248</div>
-              <p className="text-xs text-muted-foreground">+12% from last month</p>
+              <p className="text-xs text-muted-foreground">
+                <span className="text-green-600 flex items-center">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  +12% from last month
+                </span>
+              </p>
             </CardContent>
           </Card>
 
@@ -58,7 +88,12 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">1,247</div>
-              <p className="text-xs text-muted-foreground">+8% from last month</p>
+              <p className="text-xs text-muted-foreground">
+                <span className="text-green-600 flex items-center">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  +8% from last month
+                </span>
+              </p>
             </CardContent>
           </Card>
 
@@ -109,37 +144,25 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-semibold">Downtown Parking Spot</h4>
-                    <p className="text-sm text-gray-600">Host: Sarah Johnson</p>
-                    <p className="text-xs text-gray-500">Submitted: Today</p>
+                {pendingApprovals.map((approval) => (
+                  <div key={approval.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h4 className="font-semibold">{approval.title}</h4>
+                      <p className="text-sm text-gray-600">
+                        {approval.type === 'listing' ? `Host: ${approval.host}` : approval.host}
+                      </p>
+                      <p className="text-xs text-gray-500">Submitted: {approval.submitted}</p>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button size="sm" className="bg-green-500 hover:bg-green-600">
+                        Approve
+                      </Button>
+                      <Button size="sm" variant="destructive">
+                        {approval.type === 'payout' ? 'Deny' : 'Reject'}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <Button size="sm" className="bg-green-500 hover:bg-green-600">
-                      Approve
-                    </Button>
-                    <Button size="sm" variant="destructive">
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h4 className="font-semibold">Mall Parking Space</h4>
-                    <p className="text-sm text-gray-600">Host: Mike Chen</p>
-                    <p className="text-xs text-gray-500">Submitted: Yesterday</p>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button size="sm" className="bg-green-500 hover:bg-green-600">
-                      Approve
-                    </Button>
-                    <Button size="sm" variant="destructive">
-                      Reject
-                    </Button>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -147,7 +170,10 @@ const AdminDashboard = () => {
           {/* Recent Activity */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <Clock className="h-5 w-5 text-blue-500" />
+                <span>Recent Activity</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -176,7 +202,7 @@ const AdminDashboard = () => {
           </Card>
         </div>
       </div>
-    </Layout>
+    </AdminLayout>
   );
 };
 
