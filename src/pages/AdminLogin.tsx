@@ -22,11 +22,11 @@ const AdminLogin = () => {
 
     try {
       // Check admin credentials
-      if (email === 'admin@parkdriveway.com' && password === 'admin123') {
+      if (email === 'admin@pimd.com' && password === 'admin123') {
         // Login with admin user data
         login({
           id: 'admin-1',
-          name: 'Admin User',
+          name: 'Super Admin',
           email: email,
           role: 'admin'
         });
@@ -63,7 +63,7 @@ const AdminLogin = () => {
 
         <Card className="card-shadow animate-fade-in">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Admin Access</CardTitle>
+            <CardTitle className="text-2xl">Super Admin Access</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -72,7 +72,7 @@ const AdminLogin = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@parkdriveway.com"
+                  placeholder="admin@pimd.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -98,9 +98,9 @@ const AdminLogin = () => {
 
             {/* Sample Credentials */}
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-700 mb-2">Admin Credentials:</p>
+              <p className="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</p>
               <div className="text-xs text-gray-600">
-                <p><strong>Email:</strong> admin@parkdriveway.com</p>
+                <p><strong>Email:</strong> admin@pimd.com</p>
                 <p><strong>Password:</strong> admin123</p>
               </div>
             </div>

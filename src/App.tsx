@@ -23,6 +23,11 @@ import BookSlot from "./pages/seeker/BookSlot";
 import EventBooking from "./pages/seeker/EventBooking";
 import ManageAvailability from "./pages/host/ManageAvailability";
 import NotFound from "./pages/NotFound";
+
+// Admin Pages
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
 import AdminRefunds from "./pages/admin/AdminRefunds";
 
 const queryClient = new QueryClient();
@@ -50,7 +55,15 @@ const App = () => (
             <Route path="/book-slot/:spotId" element={<BookSlot />} />
             <Route path="/event-booking/:eventId" element={<EventBooking />} />
             <Route path="/manage-availability/:listingId" element={<ManageAvailability />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/hosts" element={<AdminUsers />} />
+            <Route path="/admin/seekers" element={<AdminUsers />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/refunds" element={<AdminRefunds />} />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
