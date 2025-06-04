@@ -1,4 +1,3 @@
-
 import React from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,12 +8,12 @@ import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const quickActions = [
-    { title: 'Manage Hosts', path: '/admin/hosts', icon: Users, color: 'bg-blue-500' },
-    { title: 'Manage Seekers', path: '/admin/seekers', icon: Users, color: 'bg-green-500' },
-    { title: 'Manage Listings', path: '/admin/listings', icon: MapPin, color: 'bg-purple-500' },
-    { title: 'Manage Events', path: '/admin/events', icon: Calendar, color: 'bg-orange-500' },
-    { title: 'Admin Bookings', path: '/admin/bookings', icon: Car, color: 'bg-indigo-500' },
-    { title: 'Refund Requests', path: '/admin/refunds', icon: DollarSign, color: 'bg-red-500' },
+    { title: 'Manage Hosts', path: '/admin-manage-hosts', icon: Users, color: 'bg-blue-500' },
+    { title: 'Manage Seekers', path: '/admin-manage-seekers', icon: Users, color: 'bg-green-500' },
+    { title: 'Manage Listings', path: '/admin-manage-listings', icon: MapPin, color: 'bg-purple-500' },
+    { title: 'Manage Events', path: '/admin-manage-events', icon: Calendar, color: 'bg-orange-500' },
+    { title: 'Admin Booking', path: '/admin-book-for-seeker', icon: Car, color: 'bg-indigo-500' },
+    { title: 'Refund Requests', path: '/admin-refunds', icon: DollarSign, color: 'bg-red-500' },
   ];
 
   const recentActivity = [

@@ -29,6 +29,7 @@ import {
   Settings,
   LogOut,
   Shield,
+  UserPlus,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -61,47 +62,47 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
     },
     {
       title: "Manage Hosts",
-      url: "/admin/hosts",
+      url: "/admin-manage-hosts",
       icon: Users,
     },
     {
       title: "Manage Seekers",
-      url: "/admin/seekers",
+      url: "/admin-manage-seekers",
       icon: Users,
     },
     {
       title: "Manage Listings",
-      url: "/admin/listings",
+      url: "/admin-manage-listings",
       icon: MapPin,
     },
     {
       title: "Manage Events",
-      url: "/admin/events",
+      url: "/admin-manage-events",
       icon: Calendar,
     },
     {
-      title: "Admin Bookings",
-      url: "/admin/bookings",
+      title: "Admin Booking",
+      url: "/admin-book-for-seeker",
       icon: Car,
     },
     {
       title: "Create Slot for Host",
-      url: "/admin/create-slot",
+      url: "/admin-create-slot-host",
       icon: Plus,
     },
     {
       title: "Refund Requests",
-      url: "/admin/refunds",
+      url: "/admin-refunds",
       icon: CreditCard,
     },
     {
       title: "Payout Management",
-      url: "/admin/payouts",
+      url: "/admin-payouts",
       icon: DollarSign,
     },
     {
       title: "Admin Settings",
-      url: "/admin/settings",
+      url: "/admin-settings",
       icon: Settings,
     },
   ];

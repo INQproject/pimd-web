@@ -31,6 +31,11 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminRefunds from "./pages/admin/AdminRefunds";
 import AdminBookings from "./pages/admin/AdminBookings";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminListings from "./pages/admin/AdminListings";
+import AdminEvents from "./pages/admin/AdminEvents";
+import AdminBookForSeeker from "./pages/admin/AdminBookForSeeker";
+import AdminCreateSlot from "./pages/admin/AdminCreateSlot";
+import AdminPayouts from "./pages/admin/AdminPayouts";
 
 const queryClient = new QueryClient();
 
@@ -61,12 +66,15 @@ const App = () => (
             {/* Admin Routes */}
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/hosts" element={<AdminUsers />} />
-            <Route path="/admin/seekers" element={<AdminUsers />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/bookings" element={<AdminBookings />} />
-            <Route path="/admin/refunds" element={<AdminRefunds />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/admin-manage-hosts" element={<AdminUsers />} />
+            <Route path="/admin-manage-seekers" element={<AdminUsers />} />
+            <Route path="/admin-manage-listings" element={<AdminListings />} />
+            <Route path="/admin-manage-events" element={<AdminEvents />} />
+            <Route path="/admin-book-for-seeker" element={<AdminBookForSeeker />} />
+            <Route path="/admin-create-slot-host" element={<AdminCreateSlot />} />
+            <Route path="/admin-refunds" element={<AdminRefunds />} />
+            <Route path="/admin-payouts" element={<AdminPayouts />} />
+            <Route path="/admin-settings" element={<AdminSettings />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
