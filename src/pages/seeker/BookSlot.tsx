@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,6 +5,7 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -176,21 +176,6 @@ const BookSlot = () => {
     }
   };
 
-  // Generate vehicle number options
-  const generateVehicleOptions = () => {
-    const options = [];
-    for (let i = 1; i <= 5; i++) {
-      options.push(`Car ${i}`);
-    }
-    for (let i = 1; i <= 3; i++) {
-      options.push(`Truck ${i}`);
-    }
-    for (let i = 1; i <= 2; i++) {
-      options.push(`Van ${i}`);
-    }
-    return options;
-  };
-
   return (
     <Layout title={`Book Parking at ${spot.name}`} showBackButton={true}>
       <div className="space-y-4">
@@ -343,16 +328,14 @@ const BookSlot = () => {
                           <Hash className="w-3 h-3" />
                           Vehicle Number
                         </Label>
-                        <Select value={booking.vehicleNumber} onValueChange={value => updateVehicleBooking(index, 'vehicleNumber', value)}>
-                          <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
-                            <SelectValue placeholder="Select vehicle" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {generateVehicleOptions().map(vehicle => (
-                              <SelectItem key={vehicle} value={vehicle}>{vehicle}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          type="text"
+                          placeholder="e.g., TN 10 AK 6567"
+                          value={booking.vehicleNumber}
+                          onChange={(e) => updateVehicleBooking(index, 'vehicleNumber', e.target.value)}
+                          className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20"
+                          required
+                        />
                       </div>
                       
                       {/* Start Time */}
