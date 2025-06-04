@@ -14,7 +14,9 @@ import { MapPin, Car, Shield, Sun, Clock, Circle, Hash, Calendar } from 'lucide-
 import { toast } from '@/hooks/use-toast';
 import { mockParkingSpots } from '@/data/mockParkingData';
 import DateSelector from '@/components/DateSelector';
+
 const allTimeOptions = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'];
+
 const BookSlot = () => {
   const {
     spotId
@@ -33,6 +35,7 @@ const BookSlot = () => {
     endTime: '',
     pricePerDay: 0
   });
+
   const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
 
   // Get all unique available dates for this spot
@@ -71,6 +74,7 @@ const BookSlot = () => {
     });
     return null;
   }
+
   const handleVehicleCountChange = (count: string) => {
     setVehicleCount(count);
   };
@@ -215,7 +219,12 @@ const BookSlot = () => {
               {/* Amenities/Features */}
               <div className="mb-5">
                 <div className="flex flex-wrap gap-2">
-                  {spot.amenities && spot.amenities.map((amenity, index) => {})}
+                  {spot.amenities && spot.amenities.map((amenity, index) => (
+                    <Badge key={index} variant="outline" className="flex items-center gap-1">
+                      {getAmenityIcon(amenity)}
+                      {amenity}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -473,4 +482,5 @@ const BookSlot = () => {
       </div>
     </Layout>;
 };
+
 export default BookSlot;
