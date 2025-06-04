@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { MapPin, Search, Eye, Check, X, Edit } from 'lucide-react';
+import { MapPin, Search, Eye, Check, X } from 'lucide-react';
 
 const AdminListings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Mock listings data
-  const listings = [
+  // Mock listings data with status management
+  const [listings, setListings] = useState([
     {
       id: 1,
       title: 'Downtown Parking Spot',
@@ -58,7 +58,7 @@ const AdminListings = () => {
       created: '2024-01-22',
       spaces: 3
     }
-  ];
+  ]);
 
   const filteredListings = listings.filter(listing => {
     const matchesSearch = listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -69,6 +69,9 @@ const AdminListings = () => {
   });
 
   const handleApprove = (id: number) => {
+    setListings(prev => prev.map(listing => 
+      listing.id === id ? { ...listing, status: 'active' } : listing
+    ));
     toast({
       title: "Listing Approved",
       description: "The parking listing has been approved and is now active.",
@@ -76,29 +79,52 @@ const AdminListings = () => {
   };
 
   const handleReject = (id: number) => {
+    const listing = listings.find(l => l.id === id);
+    if (!listing) return;
+
+    let newStatus = '';
+    let toastMessage = '';
+
+    if (listing.status === 'active') {
+      newStatus = 'suspended';
+      toastMessage = 'The parking listing has been suspended.';
+    } else if (listing.status === 'suspended') {
+      newStatus = 'active';
+      toastMessage = 'The parking listing has been reactivated.';
+    } else if (listing.status === 'pending') {
+      newStatus = 'rejected';
+      toastMessage = 'The parking listing has been rejected.';
+    }
+
+    setListings(prev => prev.map(listing => 
+      listing.id === id ? { ...listing, status: newStatus } : listing
+    ));
+
     toast({
-      title: "Listing Rejected",
-      description: "The parking listing has been rejected.",
-      variant: "destructive",
+      title: "Status Updated",
+      description: toastMessage,
+      variant: newStatus === 'suspended' || newStatus === 'rejected' ? "destructive" : "default",
     });
   };
 
-  const handleSuspend = (id: number) => {
+  const handleView = (id: number) => {
     toast({
-      title: "Listing Suspended",
-      description: "The parking listing has been suspended.",
-      variant: "destructive",
+      title: "Viewing Listing",
+      description: `Opening details for listing #${id}`,
     });
+    // In a real app, this would navigate to /admin-view-listing/:id
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+        return <Badge className="bg-green-100 text-green-800 border-green-300">Active</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-300">Pending</Badge>;
       case 'suspended':
-        return <Badge className="bg-red-100 text-red-800">Suspended</Badge>;
+        return <Badge className="bg-red-100 text-red-800 border-red-300">Suspended</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800 border-red-300">Rejected</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -135,6 +161,7 @@ const AdminListings = () => {
                   <option value="active">Active</option>
                   <option value="pending">Pending</option>
                   <option value="suspended">Suspended</option>
+                  <option value="rejected">Rejected</option>
                 </select>
               </div>
             </div>
@@ -153,11 +180,9 @@ const AdminListings = () => {
                   <tr className="bg-gray-50">
                     <th className="border border-gray-200 px-4 py-2 text-left">Listing</th>
                     <th className="border border-gray-200 px-4 py-2 text-left">Host</th>
-                    <th className="border border-gray-200 px-4 py-2 text-left">Address</th>
+                    <th className="border border-gray-200 px-4 py-2 text-left">Location</th>
                     <th className="border border-gray-200 px-4 py-2 text-left">Price/hr</th>
-                    <th className="border border-gray-200 px-4 py-2 text-left">Spaces</th>
                     <th className="border border-gray-200 px-4 py-2 text-left">Status</th>
-                    <th className="border border-gray-200 px-4 py-2 text-left">Created</th>
                     <th className="border border-gray-200 px-4 py-2 text-left">Actions</th>
                   </tr>
                 </thead>
@@ -178,31 +203,32 @@ const AdminListings = () => {
                       </td>
                       <td className="border border-gray-200 px-4 py-2 text-sm">{listing.address}</td>
                       <td className="border border-gray-200 px-4 py-2 font-medium">${listing.price}</td>
-                      <td className="border border-gray-200 px-4 py-2">{listing.spaces}</td>
                       <td className="border border-gray-200 px-4 py-2">{getStatusBadge(listing.status)}</td>
-                      <td className="border border-gray-200 px-4 py-2 text-sm">{listing.created}</td>
                       <td className="border border-gray-200 px-4 py-2">
                         <div className="flex space-x-1">
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-3 w-3" />
+                          <Button 
+                            size="sm" 
+                            className="bg-green-500 hover:bg-green-600 text-white"
+                            onClick={() => handleApprove(listing.id)}
+                            title="Approve/Activate"
+                          >
+                            <Check className="h-3 w-3" />
                           </Button>
-                          {listing.status === 'pending' && (
-                            <>
-                              <Button size="sm" className="bg-green-500 hover:bg-green-600" onClick={() => handleApprove(listing.id)}>
-                                <Check className="h-3 w-3" />
-                              </Button>
-                              <Button size="sm" variant="destructive" onClick={() => handleReject(listing.id)}>
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </>
-                          )}
-                          {listing.status === 'active' && (
-                            <Button size="sm" variant="destructive" onClick={() => handleSuspend(listing.id)}>
-                              Suspend
-                            </Button>
-                          )}
-                          <Button size="sm" variant="outline">
-                            <Edit className="h-3 w-3" />
+                          <Button 
+                            size="sm" 
+                            className="bg-red-500 hover:bg-red-600 text-white"
+                            onClick={() => handleReject(listing.id)}
+                            title={listing.status === 'active' ? 'Suspend' : listing.status === 'suspended' ? 'Reactivate' : 'Reject'}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleView(listing.id)}
+                            title="View Details"
+                          >
+                            <Eye className="h-3 w-3" />
                           </Button>
                         </div>
                       </td>
