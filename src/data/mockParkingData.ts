@@ -7,6 +7,8 @@ export const mockParkingSpots = [
     price: 15,
     city: 'austin',
     image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
+    description: 'Convenient downtown parking spot with easy access to main attractions and business district.',
+    amenities: ['CCTV', 'Well-lit', '24/7 access'],
     coordinates: { x: 35, y: 40 },
     slots: [
       { 
@@ -36,6 +38,8 @@ export const mockParkingSpots = [
     price: 12,
     city: 'dallas',
     image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
+    description: 'Secure private parking spot in the heart of Deep Ellum, walking distance to restaurants and nightlife.',
+    amenities: ['CCTV', 'Well-lit'],
     coordinates: { x: 65, y: 25 },
     slots: [
       { 
@@ -65,6 +69,8 @@ export const mockParkingSpots = [
     price: 8,
     city: 'austin',
     image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
+    description: 'Large parking area near Phoenix Mall with excellent shopping and dining options nearby.',
+    amenities: ['24/7 access'],
     coordinates: { x: 50, y: 60 },
     slots: [
       { 

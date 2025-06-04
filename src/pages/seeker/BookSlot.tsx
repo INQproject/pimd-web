@@ -31,6 +31,29 @@ const BookSlot = () => {
 
   const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
 
+  // Get all unique available dates for this spot
+  const availableDates = useMemo(() => {
+    if (!spot) return [];
+    const allDates = spot.slots.flatMap(slot => slot.availableDates || []);
+    return [...new Set(allDates)].sort();
+  }, [spot]);
+
+  // Filter slots based on selected date
+  const availableSlotsForDate = useMemo(() => {
+    if (!selectedDate || !spot) return [];
+    return spot.slots.filter(slot => 
+      slot.availableDates && slot.availableDates.includes(selectedDate)
+    );
+  }, [spot, selectedDate]);
+
+  // Set the first available date as default
+  React.useEffect(() => {
+    if (availableDates.length > 0 && !selectedDate) {
+      setSelectedDate(availableDates[0]);
+    }
+  }, [availableDates, selectedDate]);
+
+  // Handle early returns after all hooks are called
   if (!spot) {
     navigate('/find-parking');
     return null;
@@ -45,27 +68,6 @@ const BookSlot = () => {
     });
     return null;
   }
-
-  // Get all unique available dates for this spot
-  const availableDates = useMemo(() => {
-    const allDates = spot.slots.flatMap(slot => slot.availableDates || []);
-    return [...new Set(allDates)].sort();
-  }, [spot.slots]);
-
-  // Set the first available date as default
-  React.useEffect(() => {
-    if (availableDates.length > 0 && !selectedDate) {
-      setSelectedDate(availableDates[0]);
-    }
-  }, [availableDates, selectedDate]);
-
-  // Filter slots based on selected date
-  const availableSlotsForDate = useMemo(() => {
-    if (!selectedDate) return [];
-    return spot.slots.filter(slot => 
-      slot.availableDates && slot.availableDates.includes(selectedDate)
-    );
-  }, [spot.slots, selectedDate]);
 
   const handleVehicleCountChange = (count: string) => {
     setVehicleCount(count);
