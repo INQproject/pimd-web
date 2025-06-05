@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { MapPin, Car, Shield, Sun, Clock, Circle, Hash, Calendar } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { MapPin, Car, Shield, Sun, Clock, Circle, Hash, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { mockParkingSpots } from '@/data/mockParkingData';
 import DateSelector from '@/components/DateSelector';
@@ -52,6 +53,28 @@ const BookSlot = () => {
     if (!referenceDate) return [];
     return spot.slots.filter(slot => slot.availableDates && slot.availableDates.includes(referenceDate));
   }, [spot, selectedDates]);
+
+  // Get the selected slot details
+  const selectedSlot = useMemo(() => {
+    return availableSlotsForSelection.find(slot => slot.id.toString() === singleSlotBooking.slotId);
+  }, [availableSlotsForSelection, singleSlotBooking.slotId]);
+
+  // Check if vehicle count exceeds available capacity
+  const vehicleCountValidation = useMemo(() => {
+    if (!selectedSlot) return { isValid: true, message: '' };
+    
+    const requestedVehicles = parseInt(vehicleCount);
+    const availableCapacity = selectedSlot.capacity;
+    
+    if (requestedVehicles > availableCapacity) {
+      return {
+        isValid: false,
+        message: `Only ${availableCapacity} spot${availableCapacity !== 1 ? 's' : ''} available for the selected time.`
+      };
+    }
+    
+    return { isValid: true, message: '' };
+  }, [selectedSlot, vehicleCount]);
 
   // Set the first available date as default for single date mode
   React.useEffect(() => {
@@ -154,6 +177,15 @@ const BookSlot = () => {
     });
   };
   const handleProceedToPayment = () => {
+    if (!vehicleCountValidation.isValid) {
+      toast({
+        title: "Booking Error",
+        description: vehicleCountValidation.message,
+        variant: "destructive"
+      });
+      return;
+    }
+
     const totalDays = selectedDates.length;
     const totalVehicles = parseInt(vehicleCount);
     const totalPrice = singleSlotBooking.pricePerDay * totalDays * totalVehicles;
@@ -163,7 +195,14 @@ const BookSlot = () => {
     });
     navigate('/profile');
   };
-  const isBookingValid = singleSlotBooking.slotId && singleSlotBooking.vehicleNumber && singleSlotBooking.startTime && singleSlotBooking.endTime && singleSlotBooking.pricePerDay > 0 && selectedDates.length > 0;
+  const isBookingValid = singleSlotBooking.slotId && 
+    singleSlotBooking.vehicleNumber && 
+    singleSlotBooking.startTime && 
+    singleSlotBooking.endTime && 
+    singleSlotBooking.pricePerDay > 0 && 
+    selectedDates.length > 0 && 
+    vehicleCountValidation.isValid;
+
   const getAmenityIcon = (amenity: string) => {
     switch (amenity.toLowerCase()) {
       case 'cctv':
@@ -303,6 +342,26 @@ const BookSlot = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Vehicle Count Validation Alert */}
+                {selectedSlot && !vehicleCountValidation.isValid && (
+                  <Alert className="bg-red-50 border-red-200">
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <AlertDescription className="text-red-800">
+                      {vehicleCountValidation.message}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Available Spots Indicator */}
+                {selectedSlot && vehicleCountValidation.isValid && parseInt(vehicleCount) > 1 && (
+                  <Alert className="bg-green-50 border-green-200">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      Booking {vehicleCount} out of {selectedSlot.capacity} available spots
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 {/* Available Slots for Selected Dates */}
                 {selectedDates.length > 0 && availableSlotsForSelection.length > 0 && <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
@@ -460,6 +519,10 @@ const BookSlot = () => {
                       <span>Price per day per vehicle:</span>
                       <span>${singleSlotBooking.pricePerDay.toFixed(2)}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span>Per hour rate:</span>
+                      <span>${spot.price.toFixed(2)}</span>
+                    </div>
                   </div>
                   
                   <Separator className="my-3" />
@@ -470,6 +533,13 @@ const BookSlot = () => {
                       ${getTotalPrice().toFixed(2)}
                     </span>
                   </div>
+
+                  {/* Vehicle availability indicator in summary */}
+                  {selectedSlot && (
+                    <div className="mt-3 p-2 bg-gray-50 rounded-lg text-xs text-gray-600">
+                      Available spots: {selectedSlot.capacity} | Booking: {vehicleCount}
+                    </div>
+                  )}
 
                   <Button onClick={handleProceedToPayment} className="w-full bg-[#FF6B00] hover:bg-[#e55a00] text-white h-12 mt-4 font-semibold text-base rounded-lg shadow-md hover:shadow-lg transition-all duration-200" disabled={!isBookingValid}>
                     Proceed to Payment
