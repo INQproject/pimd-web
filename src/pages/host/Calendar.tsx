@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -7,8 +6,23 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, X, Plus } from 'lucide-react';
+import { ArrowLeft, Save, X, Plus, Edit2, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
+interface Slot {
+  id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  booked: number;
+  status: 'available' | 'booked' | 'disabled';
+}
+
+interface DaySlots {
+  [key: string]: Slot[];
+}
 
 const Calendar = () => {
   const { listingId } = useParams();
@@ -16,10 +30,26 @@ const Calendar = () => {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [currentMonth, setCurrentMonth] = useState<number>(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
+  const [editingSlot, setEditingSlot] = useState<{dateStr: string, slotId: string} | null>(null);
   const [newSlot, setNewSlot] = useState({
+    title: '',
     startTime: '',
     endTime: '',
     capacity: 1
+  });
+
+  // Mock data for slots per date
+  const [daySlots, setDaySlots] = useState<DaySlots>({
+    '2024-01-15': [
+      { id: '1', title: 'Front Yard', startTime: '09:00', endTime: '17:00', capacity: 3, booked: 1, status: 'available' },
+      { id: '2', title: 'Main Driveway', startTime: '08:00', endTime: '18:00', capacity: 2, booked: 2, status: 'booked' }
+    ],
+    '2024-01-16': [
+      { id: '3', title: 'Front Yard', startTime: '09:00', endTime: '17:00', capacity: 3, booked: 0, status: 'available' }
+    ],
+    '2024-01-17': [
+      { id: '4', title: 'Main Driveway', startTime: '08:00', endTime: '18:00', capacity: 2, booked: 0, status: 'disabled' }
+    ],
   });
 
   // Mock data for parking capacity per date
@@ -70,10 +100,11 @@ const Calendar = () => {
     // Add all days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      const slots = daySlots[dateStr] || [];
       currentWeek.push({
         day,
         dateStr,
-        capacity: dailyCapacity[dateStr] || { available: 3, total: 3 },
+        slots,
         isSelected: selectedDates.includes(dateStr)
       });
 
@@ -111,10 +142,8 @@ const Calendar = () => {
     const allSelected = weekDates.every(date => selectedDates.includes(date));
     
     if (allSelected) {
-      // Deselect all dates in this week
       setSelectedDates(prev => prev.filter(date => !weekDates.includes(date)));
     } else {
-      // Select all dates in this week
       setSelectedDates(prev => [...new Set([...prev, ...weekDates])]);
     }
   };
@@ -129,12 +158,80 @@ const Calendar = () => {
     const allSelected = columnDates.every(date => selectedDates.includes(date));
     
     if (allSelected) {
-      // Deselect all dates in this column
       setSelectedDates(prev => prev.filter(date => !columnDates.includes(date)));
     } else {
-      // Select all dates in this column
       setSelectedDates(prev => [...new Set([...prev, ...columnDates])]);
     }
+  };
+
+  const handleSlotEdit = (dateStr: string, slotId: string, field: string, value: string | number) => {
+    setDaySlots(prev => ({
+      ...prev,
+      [dateStr]: prev[dateStr]?.map(slot => 
+        slot.id === slotId 
+          ? { ...slot, [field]: value }
+          : slot
+      ) || []
+    }));
+  };
+
+  const handleSlotDelete = (dateStr: string, slotId: string) => {
+    setDaySlots(prev => ({
+      ...prev,
+      [dateStr]: prev[dateStr]?.filter(slot => slot.id !== slotId) || []
+    }));
+    toast({
+      title: "Success",
+      description: "Slot deleted successfully",
+    });
+  };
+
+  const handleSlotDisable = (dateStr: string, slotId: string) => {
+    setDaySlots(prev => ({
+      ...prev,
+      [dateStr]: prev[dateStr]?.map(slot => 
+        slot.id === slotId 
+          ? { ...slot, status: slot.status === 'disabled' ? 'available' : 'disabled' }
+          : slot
+      ) || []
+    }));
+  };
+
+  const applySlotToSelected = () => {
+    if (!newSlot.title || !newSlot.startTime || !newSlot.endTime || selectedDates.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please fill all fields and select dates",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const updatedSlots = { ...daySlots };
+    selectedDates.forEach(date => {
+      const newSlotId = Date.now().toString() + Math.random().toString();
+      if (!updatedSlots[date]) {
+        updatedSlots[date] = [];
+      }
+      updatedSlots[date].push({
+        id: newSlotId,
+        title: newSlot.title,
+        startTime: newSlot.startTime,
+        endTime: newSlot.endTime,
+        capacity: newSlot.capacity,
+        booked: 0,
+        status: 'available'
+      });
+    });
+    
+    setDaySlots(updatedSlots);
+    setSelectedDates([]);
+    setNewSlot({ title: '', startTime: '', endTime: '', capacity: 1 });
+    
+    toast({
+      title: "Success",
+      description: `Added slot to ${selectedDates.length} dates`,
+    });
   };
 
   const applyAvailabilityToSelected = () => {
@@ -176,6 +273,12 @@ const Calendar = () => {
 
   const handleCancel = () => {
     navigate('/profile');
+  };
+
+  const getSlotStatusColor = (slot: Slot) => {
+    if (slot.status === 'disabled') return 'bg-gray-100 text-gray-500';
+    if (slot.booked >= slot.capacity) return 'bg-red-50 text-red-700 border-red-200';
+    return 'bg-green-50 text-green-700 border-green-200';
   };
 
   const weeks = generateCalendarGrid();
@@ -249,7 +352,7 @@ const Calendar = () => {
           </CardContent>
         </Card>
 
-        {/* Advanced Calendar Grid */}
+        {/* Advanced Calendar Grid with Slot Management */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -273,7 +376,7 @@ const Calendar = () => {
                 </button>
               ))}
 
-              {/* Calendar grid with week selectors */}
+              {/* Calendar grid with week selectors and slot details */}
               {weeks.map((week, weekIndex) => (
                 <React.Fragment key={weekIndex}>
                   {/* Week selector button */}
@@ -288,26 +391,99 @@ const Calendar = () => {
                   {week.map((day, dayIndex) => (
                     <div
                       key={`${weekIndex}-${dayIndex}`}
-                      className={`border border-gray-200 min-h-[60px] ${
+                      className={`border border-gray-200 min-h-[120px] ${
                         day === null ? 'bg-gray-50' : ''
                       }`}
                     >
                       {day && (
-                        <button
-                          onClick={() => handleDateClick(day.dateStr)}
-                          className={`w-full h-full p-1 text-sm hover:bg-gray-100 flex flex-col items-center justify-center ${
+                        <div
+                          className={`w-full h-full p-1 ${
                             day.isSelected 
-                              ? 'bg-[#FF6B00] text-white' 
-                              : day.capacity.available === 0
-                              ? 'bg-red-50 text-red-700'
+                              ? 'bg-[#FF6B00]/10 border-[#FF6B00]' 
                               : 'bg-white'
                           }`}
                         >
-                          <span className="font-medium">{day.day}</span>
-                          <span className="text-xs mt-1">
-                            {day.capacity.available}/{day.capacity.total}
-                          </span>
-                        </button>
+                          <button
+                            onClick={() => handleDateClick(day.dateStr)}
+                            className={`w-full text-xs font-medium mb-2 p-1 rounded ${
+                              day.isSelected ? 'bg-[#FF6B00] text-white' : 'hover:bg-gray-100'
+                            }`}
+                          >
+                            {day.day}
+                          </button>
+                          
+                          {/* Slot details */}
+                          <div className="space-y-1">
+                            {day.slots.map((slot) => (
+                              <div
+                                key={slot.id}
+                                className={`text-xs p-1 rounded border ${getSlotStatusColor(slot)}`}
+                              >
+                                <div className="font-medium truncate">{slot.title}</div>
+                                <div className="flex items-center justify-between">
+                                  <span>{slot.startTime}-{slot.endTime}</span>
+                                  <div className="flex items-center space-x-1">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="10"
+                                      value={slot.capacity}
+                                      onChange={(e) => handleSlotEdit(day.dateStr, slot.id, 'capacity', parseInt(e.target.value) || 0)}
+                                      className="w-8 h-4 text-xs p-0 text-center border-0 bg-transparent"
+                                    />
+                                    <span>/</span>
+                                    <span>{slot.booked}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <Badge 
+                                    variant={slot.status === 'available' ? 'default' : slot.status === 'booked' ? 'destructive' : 'secondary'}
+                                    className="text-xs px-1"
+                                  >
+                                    {slot.status}
+                                  </Badge>
+                                  <div className="flex space-x-1">
+                                    <button
+                                      onClick={() => handleSlotDisable(day.dateStr, slot.id)}
+                                      className="text-gray-400 hover:text-gray-600"
+                                    >
+                                      <Edit2 className="h-3 w-3" />
+                                    </button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <button className="text-red-400 hover:text-red-600">
+                                          <Trash2 className="h-3 w-3" />
+                                        </button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Slot</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Are you sure you want to delete "{slot.title}"? This action cannot be undone.
+                                            {slot.booked > 0 && (
+                                              <span className="text-red-600 block mt-2">
+                                                Warning: This slot has {slot.booked} active booking(s).
+                                              </span>
+                                            )}
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction 
+                                            onClick={() => handleSlotDelete(day.dateStr, slot.id)}
+                                            className="bg-red-600 hover:bg-red-700"
+                                          >
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -321,7 +497,8 @@ const Calendar = () => {
                 <li>Click individual dates to select them</li>
                 <li>Click "W1", "W2", etc. to select entire weeks</li>
                 <li>Click day names (Mon, Tue, etc.) to select all dates in that column</li>
-                <li>Numbers show available/total parking spots per day</li>
+                <li>Edit capacity directly in each slot</li>
+                <li>Use edit/delete buttons to manage individual slots</li>
               </ul>
             </div>
           </CardContent>
@@ -365,6 +542,65 @@ const Calendar = () => {
                   <Button onClick={applyAvailabilityToSelected} className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90">
                     <Plus className="mr-2 h-4 w-4" />
                     Apply to Selected
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                <strong>Selected dates:</strong> {selectedDates.slice(0, 10).join(', ')}
+                {selectedDates.length > 10 && ` and ${selectedDates.length - 10} more...`}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Add New Slot to Selected Dates */}
+        {selectedDates.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Add Slot to Selected Dates</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Slot Title</label>
+                  <Input
+                    type="text"
+                    placeholder="e.g., Front Yard"
+                    value={newSlot.title}
+                    onChange={(e) => setNewSlot(prev => ({ ...prev, title: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Start Time</label>
+                  <Input
+                    type="time"
+                    value={newSlot.startTime}
+                    onChange={(e) => setNewSlot(prev => ({ ...prev, startTime: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">End Time</label>
+                  <Input
+                    type="time"
+                    value={newSlot.endTime}
+                    onChange={(e) => setNewSlot(prev => ({ ...prev, endTime: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Capacity</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={newSlot.capacity}
+                    onChange={(e) => setNewSlot(prev => ({ ...prev, capacity: parseInt(e.target.value) || 1 }))}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={applySlotToSelected} className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Slot
                   </Button>
                 </div>
               </div>
