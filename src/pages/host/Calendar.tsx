@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -17,6 +18,8 @@ const Calendar = () => {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState<'individual' | 'week' | 'month'>('individual');
   const [isAddSlotOpen, setIsAddSlotOpen] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [newSlot, setNewSlot] = useState({
     startTime: '',
     endTime: ''
@@ -38,6 +41,28 @@ const Calendar = () => {
 
   const selectedSpotName = parkingSpots.find(spot => spot.id === listingId)?.name || 'Unknown Parking Spot';
 
+  const months = [
+    { value: 0, label: 'January' },
+    { value: 1, label: 'February' },
+    { value: 2, label: 'March' },
+    { value: 3, label: 'April' },
+    { value: 4, label: 'May' },
+    { value: 5, label: 'June' },
+    { value: 6, label: 'July' },
+    { value: 7, label: 'August' },
+    { value: 8, label: 'September' },
+    { value: 9, label: 'October' },
+    { value: 10, label: 'November' },
+    { value: 11, label: 'December' }
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear + i);
+
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
   const generateCalendarDays = () => {
     const days = [];
     const today = new Date();
@@ -55,6 +80,17 @@ const Calendar = () => {
       });
     }
     return days;
+  };
+
+  const generateMonthDates = (month: number, year: number) => {
+    const dates = [];
+    const daysInMonth = getDaysInMonth(month, year);
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      dates.push(dateStr);
+    }
+    return dates;
   };
 
   const handleDateClick = (dateStr: string) => {
@@ -83,11 +119,13 @@ const Calendar = () => {
 
   const handleMonthSelection = () => {
     if (selectionMode === 'month') {
-      const monthDates = [];
-      for (let day = 1; day <= 31; day++) {
-        monthDates.push(`2024-01-${day.toString().padStart(2, '0')}`);
-      }
+      const monthDates = generateMonthDates(selectedMonth, selectedYear);
       setSelectedDates(monthDates);
+      
+      toast({
+        title: "Month Selected",
+        description: `Selected all dates for ${months[selectedMonth].label} ${selectedYear} (${monthDates.length} days)`,
+      });
     }
   };
 
@@ -275,15 +313,68 @@ const Calendar = () => {
                 <CardTitle>Select Entire Month</CardTitle>
               </CardHeader>
               <CardContent>
-                <Button
-                  onClick={handleMonthSelection}
-                  className="w-full h-20 bg-[#FF6B00] hover:bg-[#FF6B00]/90"
-                >
-                  <div className="flex flex-col items-center">
-                    <span className="font-semibold text-lg">January 2024</span>
-                    <span className="text-sm">Select entire month</span>
+                <div className="space-y-4">
+                  {/* Month and Year Selectors */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Month</label>
+                      <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month) => (
+                            <SelectItem key={month.value} value={month.value.toString()}>
+                              {month.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Year</label>
+                      <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </Button>
+
+                  {/* Selection Button */}
+                  <Button
+                    onClick={handleMonthSelection}
+                    className="w-full h-20 bg-[#FF6B00] hover:bg-[#FF6B00]/90"
+                  >
+                    <div className="flex flex-col items-center">
+                      <span className="font-semibold text-lg">
+                        {months[selectedMonth].label} {selectedYear}
+                      </span>
+                      <span className="text-sm">
+                        Select entire month ({getDaysInMonth(selectedMonth, selectedYear)} days)
+                      </span>
+                    </div>
+                  </Button>
+
+                  {/* Selected dates preview */}
+                  {selectedDates.length > 0 && selectionMode === 'month' && (
+                    <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                      <p className="text-sm font-medium text-orange-800 mb-2">
+                        Selected: {months[selectedMonth].label} {selectedYear}
+                      </p>
+                      <p className="text-xs text-orange-600">
+                        {selectedDates.length} dates selected ({selectedDates[0]} to {selectedDates[selectedDates.length - 1]})
+                      </p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
