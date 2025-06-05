@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -160,7 +159,7 @@ const AdvancedCalendar: React.FC<AdvancedCalendarProps> = ({
       ...daySlots,
       [dateStr]: daySlots[dateStr]?.map(slot => 
         slot.id === slotId 
-          ? { ...slot, [field]: value }
+          ? { ...slot, [field]: field === 'status' ? value as 'available' | 'booked' | 'disabled' : value }
           : slot
       ) || []
     };
@@ -186,7 +185,7 @@ const AdvancedCalendar: React.FC<AdvancedCalendarProps> = ({
       ...daySlots,
       [dateStr]: daySlots[dateStr]?.map(slot => 
         slot.id === slotId 
-          ? { ...slot, status: slot.status === 'disabled' ? 'available' : 'disabled' }
+          ? { ...slot, status: (slot.status === 'disabled' ? 'available' : 'disabled') as 'available' | 'disabled' }
           : slot
       ) || []
     };
