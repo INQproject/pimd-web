@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -255,7 +256,7 @@ const Calendar = () => {
     
     setDailyCapacity(updatedCapacity);
     setSelectedDates([]);
-    setNewSlot({ startTime: '', endTime: '', capacity: 1 });
+    setNewSlot({ title: '', startTime: '', endTime: '', capacity: 1 });
     
     toast({
       title: "Success",
