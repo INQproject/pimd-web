@@ -66,8 +66,7 @@ const App = () => (
             {/* Admin Routes */}
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/admin-manage-hosts" element={<AdminUsers />} />
-            <Route path="/admin-manage-seekers" element={<AdminUsers />} />
+            <Route path="/admin-manage-users" element={<AdminUsers />} />
             <Route path="/admin-manage-listings" element={<AdminListings />} />
             <Route path="/admin-manage-events" element={<AdminEvents />} />
             <Route path="/admin-book-for-seeker" element={<AdminBookForSeeker />} />

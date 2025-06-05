@@ -61,13 +61,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       icon: LayoutDashboard,
     },
     {
-      title: "Manage Hosts",
-      url: "/admin-manage-hosts",
-      icon: Users,
-    },
-    {
-      title: "Manage Seekers",
-      url: "/admin-manage-seekers",
+      title: "Manage Users",
+      url: "/admin-manage-users",
       icon: Users,
     },
     {
