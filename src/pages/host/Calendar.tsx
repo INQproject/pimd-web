@@ -1,19 +1,21 @@
-
 import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Calendar as CalendarIcon, Plus, Edit, Trash2, Lock, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useNavigate } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar as CalendarIcon, Plus, Edit, Trash2, Lock, ArrowLeft, Save, X } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const Calendar = () => {
+  const { listingId } = useParams();
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState<string>('2024-01-15');
-  const [selectedSpot, setSelectedSpot] = useState<string>('');
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [selectionMode, setSelectionMode] = useState<'individual' | 'week' | 'month'>('individual');
   const [isAddSlotOpen, setIsAddSlotOpen] = useState(false);
   const [newSlot, setNewSlot] = useState({
     startTime: '',
@@ -28,16 +30,101 @@ const Calendar = () => {
   ];
 
   const [slots, setSlots] = useState([
-    { id: 1, spotId: '1', date: '2024-01-15', startTime: '9:00 AM', endTime: '5:00 PM', available: true, booked: false },
-    { id: 2, spotId: '1', date: '2024-01-15', startTime: '6:00 PM', endTime: '10:00 PM', available: true, booked: true },
-    { id: 3, spotId: '1', date: '2024-01-16', startTime: '8:00 AM', endTime: '6:00 PM', available: true, booked: false },
-    { id: 4, spotId: '2', date: '2024-01-15', startTime: '10:00 AM', endTime: '4:00 PM', available: false, booked: false },
-    { id: 5, spotId: '2', date: '2024-01-17', startTime: '9:00 AM', endTime: '3:00 PM', available: true, booked: true },
+    { id: 1, spotId: listingId, date: '2024-01-15', startTime: '9:00 AM', endTime: '5:00 PM', available: true, booked: false },
+    { id: 2, spotId: listingId, date: '2024-01-15', startTime: '6:00 PM', endTime: '10:00 PM', available: true, booked: true },
+    { id: 3, spotId: listingId, date: '2024-01-16', startTime: '8:00 AM', endTime: '6:00 PM', available: true, booked: false },
+    { id: 4, spotId: listingId, date: '2024-01-17', startTime: '9:00 AM', endTime: '3:00 PM', available: true, booked: true },
   ]);
 
-  const toggleAvailability = (slotId: number) => {
+  const selectedSpotName = parkingSpots.find(spot => spot.id === listingId)?.name || 'Unknown Parking Spot';
+
+  const generateCalendarDays = () => {
+    const days = [];
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    // Generate days for current month (simplified for demo)
+    for (let day = 1; day <= 31; day++) {
+      const dateStr = `2024-01-${day.toString().padStart(2, '0')}`;
+      days.push({
+        date: dateStr,
+        day: day,
+        hasSlots: slots.some(slot => slot.date === dateStr),
+        isSelected: selectedDates.includes(dateStr)
+      });
+    }
+    return days;
+  };
+
+  const handleDateClick = (dateStr: string) => {
+    if (selectionMode === 'individual') {
+      setSelectedDates(prev => 
+        prev.includes(dateStr) 
+          ? prev.filter(d => d !== dateStr)
+          : [...prev, dateStr]
+      );
+    }
+  };
+
+  const handleWeekSelection = (weekNumber: number) => {
+    if (selectionMode === 'week') {
+      const startDay = (weekNumber - 1) * 7 + 1;
+      const weekDates = [];
+      for (let i = 0; i < 7; i++) {
+        const day = startDay + i;
+        if (day <= 31) {
+          weekDates.push(`2024-01-${day.toString().padStart(2, '0')}`);
+        }
+      }
+      setSelectedDates(weekDates);
+    }
+  };
+
+  const handleMonthSelection = () => {
+    if (selectionMode === 'month') {
+      const monthDates = [];
+      for (let day = 1; day <= 31; day++) {
+        monthDates.push(`2024-01-${day.toString().padStart(2, '0')}`);
+      }
+      setSelectedDates(monthDates);
+    }
+  };
+
+  const addBulkSlots = () => {
+    if (!newSlot.startTime || !newSlot.endTime || selectedDates.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select dates and time slots",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newSlots = selectedDates.map(date => ({
+      id: Math.max(...slots.map(s => s.id)) + Math.random(),
+      spotId: listingId!,
+      date: date,
+      startTime: newSlot.startTime,
+      endTime: newSlot.endTime,
+      available: true,
+      booked: false
+    }));
+
+    setSlots(prev => [...prev, ...newSlots]);
+    setNewSlot({ startTime: '', endTime: '' });
+    setSelectedDates([]);
+    setIsAddSlotOpen(false);
+    
+    toast({
+      title: "Success",
+      description: `Added slots for ${selectedDates.length} dates`,
+    });
+  };
+
+  const toggleSlotAvailability = (slotId: number) => {
     const slot = slots.find(s => s.id === slotId);
-    if (slot?.booked) return; // Prevent toggling booked slots
+    if (slot?.booked) return;
     
     setSlots(prev => prev.map(slot => 
       slot.id === slotId ? { ...slot, available: !slot.available } : slot
@@ -46,27 +133,21 @@ const Calendar = () => {
 
   const deleteSlot = (slotId: number) => {
     const slot = slots.find(s => s.id === slotId);
-    if (slot?.booked) return; // Prevent deleting booked slots
+    if (slot?.booked) return;
     
     setSlots(prev => prev.filter(slot => slot.id !== slotId));
   };
 
-  const addNewSlot = () => {
-    if (!selectedSpot || !newSlot.startTime || !newSlot.endTime) return;
+  const handleSave = () => {
+    toast({
+      title: "Success",
+      description: "Availability updated successfully",
+    });
+    navigate('/profile');
+  };
 
-    const newSlotData = {
-      id: Math.max(...slots.map(s => s.id)) + 1,
-      spotId: selectedSpot,
-      date: selectedDate,
-      startTime: newSlot.startTime,
-      endTime: newSlot.endTime,
-      available: true,
-      booked: false
-    };
-
-    setSlots(prev => [...prev, newSlotData]);
-    setNewSlot({ startTime: '', endTime: '' });
-    setIsAddSlotOpen(false);
+  const handleCancel = () => {
+    navigate('/profile');
   };
 
   const getSlotStatusBadge = (slot: any) => {
@@ -79,187 +160,187 @@ const Calendar = () => {
     }
   };
 
-  const selectedDateSlots = slots.filter(slot => 
-    slot.date === selectedDate && slot.spotId === selectedSpot
-  );
-
-  const allSlotsForSpot = slots.filter(slot => slot.spotId === selectedSpot);
-
-  const selectedSpotName = parkingSpots.find(spot => spot.id === selectedSpot)?.name;
+  const calendarDays = generateCalendarDays();
 
   return (
-    <Layout title="Manage Availability">
+    <Layout title={`Manage Calendar - ${selectedSpotName}`}>
       <div className="space-y-6">
-        {/* Back Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/dashboard-host')}
-          className="flex items-center space-x-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Back</span>
-        </Button>
+        {/* Header with Save/Cancel */}
+        <div className="flex justify-between items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCancel}
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Profile</span>
+          </Button>
+          
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={handleCancel}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={handleSave} className="bg-[#FF6B00] hover:bg-[#FF6B00]/90">
+              <Save className="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
+          </div>
+        </div>
 
-        {/* Parking Spot Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Select a Parking Spot</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select value={selectedSpot} onValueChange={setSelectedSpot}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Choose a verified parking spot..." />
-              </SelectTrigger>
-              <SelectContent>
-                {parkingSpots.map(spot => (
-                  <SelectItem key={spot.id} value={spot.id}>
-                    {spot.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
+        {/* Selection Mode Tabs */}
+        <Tabs value={selectionMode} onValueChange={(value) => {
+          setSelectionMode(value as 'individual' | 'week' | 'month');
+          setSelectedDates([]);
+        }}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="individual">Individual Dates</TabsTrigger>
+            <TabsTrigger value="week">Weekly Selection</TabsTrigger>
+            <TabsTrigger value="month">Monthly Selection</TabsTrigger>
+          </TabsList>
 
-        {selectedSpot && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Calendar */}
+          <TabsContent value="individual" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CalendarIcon className="mr-2 h-5 w-5" />
-                  January 2024
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <CalendarIcon className="mr-2 h-5 w-5" />
+                    Select Individual Dates
+                  </div>
+                  {selectedDates.length > 0 && (
+                    <Badge variant="secondary">{selectedDates.length} dates selected</Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-7 gap-2 text-center">
+                <div className="grid grid-cols-7 gap-2 text-center mb-4">
                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                     <div key={day} className="p-2 font-medium text-sm">{day}</div>
                   ))}
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map(day => {
-                    const dateStr = `2024-01-${day.toString().padStart(2, '0')}`;
-                    const hasSlots = slots.some(slot => slot.date === dateStr && slot.spotId === selectedSpot);
-                    
-                    return (
-                      <button
-                        key={day}
-                        onClick={() => setSelectedDate(dateStr)}
-                        className={`p-2 text-sm rounded hover:bg-gray-100 relative ${
-                          selectedDate === dateStr 
-                            ? 'bg-primary text-white' 
-                            : ''
-                        }`}
-                      >
-                        {day}
-                        {hasSlots && (
-                          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-orange-500 rounded-full"></div>
-                        )}
-                      </button>
-                    );
-                  })}
+                  {calendarDays.map(({ date, day, hasSlots, isSelected }) => (
+                    <button
+                      key={date}
+                      onClick={() => handleDateClick(date)}
+                      className={`p-2 text-sm rounded hover:bg-gray-100 relative border ${
+                        isSelected 
+                          ? 'bg-[#FF6B00] text-white border-[#FF6B00]' 
+                          : hasSlots
+                          ? 'bg-blue-50 border-blue-200'
+                          : 'border-gray-200'
+                      }`}
+                    >
+                      {day}
+                      {hasSlots && (
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-orange-500 rounded-full"></div>
+                      )}
+                    </button>
+                  ))}
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Slots for Selected Date */}
+          <TabsContent value="week" className="space-y-4">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Slots for {selectedDate}</CardTitle>
-                <Dialog open={isAddSlotOpen} onOpenChange={setIsAddSlotOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" className="btn-primary">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add New Slot
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add New Slot</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Start Time</label>
-                        <Input
-                          type="time"
-                          value={newSlot.startTime}
-                          onChange={(e) => setNewSlot(prev => ({ ...prev, startTime: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">End Time</label>
-                        <Input
-                          type="time"
-                          value={newSlot.endTime}
-                          onChange={(e) => setNewSlot(prev => ({ ...prev, endTime: e.target.value }))}
-                        />
-                      </div>
-                      <Button onClick={addNewSlot} className="w-full btn-primary">
-                        Add Slot
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+              <CardHeader>
+                <CardTitle>Select Entire Weeks</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {selectedDateSlots.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No slots scheduled for this date</p>
-                  ) : (
-                    selectedDateSlots.map(slot => (
-                      <div key={slot.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <p className="font-medium">{slot.startTime} - {slot.endTime}</p>
-                          <div className="mt-1">
-                            {getSlotStatusBadge(slot)}
-                          </div>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            disabled={slot.booked}
-                            className={slot.booked ? 'opacity-50' : ''}
-                          >
-                            {slot.booked ? <Lock className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant={slot.available ? "destructive" : "default"}
-                            onClick={() => toggleAvailability(slot.id)}
-                            disabled={slot.booked}
-                            className={slot.booked ? 'opacity-50' : ''}
-                          >
-                            {slot.booked ? 'Booked' : (slot.available ? 'Disable' : 'Enable')}
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => deleteSlot(slot.id)}
-                            disabled={slot.booked}
-                            className={slot.booked ? 'opacity-50' : ''}
-                          >
-                            {slot.booked ? <Lock className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[1, 2, 3, 4].map(weekNum => (
+                    <Button
+                      key={weekNum}
+                      variant="outline"
+                      onClick={() => handleWeekSelection(weekNum)}
+                      className="h-20 flex flex-col items-center justify-center"
+                    >
+                      <span className="font-semibold">Week {weekNum}</span>
+                      <span className="text-xs text-gray-500">
+                        {weekNum === 1 && "Jan 1-7"}
+                        {weekNum === 2 && "Jan 8-14"}
+                        {weekNum === 3 && "Jan 15-21"}
+                        {weekNum === 4 && "Jan 22-28"}
+                      </span>
+                    </Button>
+                  ))}
                 </div>
               </CardContent>
             </Card>
-          </div>
-        )}
+          </TabsContent>
 
-        {/* All Slots for Selected Spot */}
-        {selectedSpot && allSlotsForSpot.length > 0 && (
+          <TabsContent value="month" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Select Entire Month</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={handleMonthSelection}
+                  className="w-full h-20 bg-[#FF6B00] hover:bg-[#FF6B00]/90"
+                >
+                  <div className="flex flex-col items-center">
+                    <span className="font-semibold text-lg">January 2024</span>
+                    <span className="text-sm">Select entire month</span>
+                  </div>
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Selected Dates and Time Slot Addition */}
+        {selectedDates.length > 0 && (
           <Card>
-            <CardHeader>
-              <CardTitle>All Slots for {selectedSpotName}</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Add Time Slots to Selected Dates</CardTitle>
+              <Badge variant="secondary">{selectedDates.length} dates selected</Badge>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {allSlotsForSpot.map(slot => (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Start Time</label>
+                  <Input
+                    type="time"
+                    value={newSlot.startTime}
+                    onChange={(e) => setNewSlot(prev => ({ ...prev, startTime: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">End Time</label>
+                  <Input
+                    type="time"
+                    value={newSlot.endTime}
+                    onChange={(e) => setNewSlot(prev => ({ ...prev, endTime: e.target.value }))}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={addBulkSlots} className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add to All Selected
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                <strong>Selected dates:</strong> {selectedDates.slice(0, 5).join(', ')}
+                {selectedDates.length > 5 && ` and ${selectedDates.length - 5} more...`}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Existing Slots */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Current Time Slots</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {slots.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No slots created yet</p>
+              ) : (
+                slots.map(slot => (
                   <div key={slot.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
                       <p className="font-medium">{slot.date}</p>
@@ -280,7 +361,7 @@ const Calendar = () => {
                       <Button 
                         size="sm" 
                         variant={slot.available ? "destructive" : "default"}
-                        onClick={() => toggleAvailability(slot.id)}
+                        onClick={() => toggleSlotAvailability(slot.id)}
                         disabled={slot.booked}
                         className={slot.booked ? 'opacity-50' : ''}
                       >
@@ -297,11 +378,11 @@ const Calendar = () => {
                       </Button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
