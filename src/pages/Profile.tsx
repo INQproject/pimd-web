@@ -138,7 +138,7 @@ const Profile = () => {
   }, {} as Record<string, Record<string, typeof mockHostBookings>>);
 
   const handleManageAvailability = (listingId: number) => {
-    navigate(`/manage-availability/${listingId}`);
+    navigate(`/calendar/${listingId}`);
   };
 
   return (
