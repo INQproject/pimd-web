@@ -9,36 +9,69 @@ import { Calendar, MapPin, Car } from 'lucide-react';
 const mockEvents = [
   {
     id: 1,
-    name: 'Austin City Limits Music Festival',
-    date: 'Oct 6-8, 2024',
-    time: '2:00 PM - 11:00 PM',
+    name: 'Austin Food & Wine Festival',
+    date: 'June 18-20, 2025',
+    time: '5:00 PM - 11:00 PM',
     location: 'Zilker Park, Austin',
-    category: 'Music',
-    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=500',
-    description: 'Three days of amazing music featuring top artists from around the world.',
+    category: 'Food',
+    image: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=500',
+    description: 'Savor the best of Austin\'s culinary scene with top chefs, local vendors, and live music.',
     city: 'austin'
   },
   {
     id: 2,
-    name: 'Dallas Cowboys vs Giants',
-    date: 'Nov 24, 2024',
-    time: '7:30 PM',
-    location: 'AT&T Stadium, Dallas',
-    category: 'Sports',
-    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=500',
-    description: 'Don\'t miss this epic NFL showdown between two giants!',
+    name: 'Dallas Jazz Night',
+    date: 'June 25, 2025',
+    time: '7:00 PM - 12:00 AM',
+    location: 'Deep Ellum District, Dallas',
+    category: 'Music',
+    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=500',
+    description: 'An evening of smooth jazz featuring local and touring artists in the heart of Deep Ellum.',
     city: 'dallas'
   },
   {
     id: 3,
-    name: 'South by Southwest (SXSW)',
-    date: 'Mar 10-19, 2025',
-    time: 'All Day',
-    location: 'Downtown Austin',
-    category: 'Music',
-    image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=500',
-    description: 'The ultimate music, interactive, and film festival.',
+    name: 'Austin Tech Conference 2025',
+    date: 'July 8-10, 2025',
+    time: '9:00 AM - 6:00 PM',
+    location: 'Austin Convention Center',
+    category: 'Business',
+    image: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=500',
+    description: 'Connect with innovators and learn about the latest trends in technology and startups.',
     city: 'austin'
+  },
+  {
+    id: 4,
+    name: 'Dallas Summer Arts Festival',
+    date: 'July 15-17, 2025',
+    time: '10:00 AM - 8:00 PM',
+    location: 'Klyde Warren Park, Dallas',
+    category: 'Arts',
+    image: 'https://images.unsplash.com/photo-1500673922987-e212871fec22?w=500',
+    description: 'Experience local and regional artists showcasing paintings, sculptures, and live performances.',
+    city: 'dallas'
+  },
+  {
+    id: 5,
+    name: 'Austin Film Festival',
+    date: 'August 5-12, 2025',
+    time: '6:00 PM - 11:00 PM',
+    location: 'Various Theaters, Austin',
+    category: 'Film',
+    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500',
+    description: 'Celebrate independent filmmaking with screenings, panels, and networking events.',
+    city: 'austin'
+  },
+  {
+    id: 6,
+    name: 'Dallas Marathon Weekend',
+    date: 'August 20-22, 2025',
+    time: '6:00 AM - 3:00 PM',
+    location: 'Downtown Dallas',
+    category: 'Sports',
+    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=500',
+    description: 'Join thousands of runners for a weekend of races through the scenic streets of Dallas.',
+    city: 'dallas'
   }
 ];
 
@@ -61,6 +94,7 @@ const Events = () => {
       'Business': 'bg-green-100 text-green-800',
       'Food': 'bg-orange-100 text-orange-800',
       'Arts': 'bg-pink-100 text-pink-800',
+      'Film': 'bg-red-100 text-red-800',
     };
     return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -108,8 +142,8 @@ const Events = () => {
           </Button>
         </div>
 
-        {/* Events Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Events Grid - 2 Column Layout */}
+        <div className="grid md:grid-cols-2 gap-6">
           {filteredEvents.map((event) => (
             <Card key={event.id} className="hover:shadow-lg transition-all duration-200 group">
               <div className="aspect-video relative overflow-hidden rounded-t-lg">
