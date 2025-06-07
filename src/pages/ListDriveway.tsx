@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { Shield, Eye, Clock } from 'lucide-react';
 
 const ListDriveway = () => {
   const { user } = useAuth();
@@ -25,6 +26,8 @@ const ListDriveway = () => {
     weeklyRate: '',
     monthlyRate: ''
   });
+
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
   const handleLoginToStart = () => {
     navigate('/login', { state: { returnTo: '/list-driveway', context: 'listing' } });
@@ -51,6 +54,27 @@ const ListDriveway = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleFeature = (feature: string) => {
+    setSelectedFeatures(prev => 
+      prev.includes(feature) 
+        ? prev.filter(f => f !== feature)
+        : [...prev, feature]
+    );
+  };
+
+  const getFeatureIcon = (feature: string) => {
+    switch (feature) {
+      case '24/7':
+        return <Clock className="h-4 w-4" />;
+      case 'CCTV':
+        return <Eye className="h-4 w-4" />;
+      case 'WELL-LIT':
+        return <Shield className="h-4 w-4" />;
+      default:
+        return null;
+    }
   };
 
   if (!user) {
@@ -180,6 +204,34 @@ const ListDriveway = () => {
                 <Label>Upload Images</Label>
                 <Input type="file" accept="image/*" multiple />
                 <p className="text-sm text-gray-500">Select up to 3 images of your parking space</p>
+              </div>
+
+              {/* Features Selection Section */}
+              <div className="bg-orange-50 rounded-lg p-6 border border-orange-200">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900">Tap to Select FEATURES</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {['24/7', 'CCTV', 'WELL-LIT'].map((feature) => (
+                    <Button
+                      key={feature}
+                      type="button"
+                      variant={selectedFeatures.includes(feature) ? "default" : "outline"}
+                      onClick={() => toggleFeature(feature)}
+                      className={`flex flex-col items-center justify-center p-4 h-20 text-sm font-medium transition-all ${
+                        selectedFeatures.includes(feature)
+                          ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white border-[#FF6B00]'
+                          : 'bg-white hover:bg-orange-100 text-gray-700 border-gray-300'
+                      }`}
+                    >
+                      {getFeatureIcon(feature)}
+                      <span className="mt-1">{feature}</span>
+                    </Button>
+                  ))}
+                </div>
+                {selectedFeatures.length > 0 && (
+                  <p className="text-sm text-gray-600 mt-3">
+                    Selected: {selectedFeatures.join(', ')}
+                  </p>
+                )}
               </div>
 
               <Button 

@@ -412,7 +412,7 @@ const ManageAvailability = () => {
 
   const deleteSlot = (slotId: string) => {
     const slot = slots.find(s => s.id === slotId);
-    if (slot && slot.status !== 'booked') {
+    if (slot && slot.status === 'available') {
       setSlots(prev => prev.filter(s => s.id !== slotId));
       toast({
         title: "Slot deleted",
@@ -421,7 +421,7 @@ const ManageAvailability = () => {
     } else {
       toast({
         title: "Cannot delete slot",
-        description: "Cannot delete a booked slot.",
+        description: "Cannot delete a booked or cancelled slot.",
         variant: "destructive"
       });
     }
