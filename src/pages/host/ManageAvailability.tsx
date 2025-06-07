@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -410,11 +411,11 @@ const ManageAvailability = () => {
     }
   };
 
-  const deleteSlot = (slotId: number) => {
+  const deleteSlot = (slotId: string) => {
     const slot = slots.find(s => s.id === slotId);
     if (!slot) return;
 
-    // Check if slot has bookings - only allow deletion of available slots
+    // Check if slot has bookings - only allow deletion of available or cancelled slots
     if (slot.status === 'booked') {
       toast({
         title: "Cannot delete slot",
