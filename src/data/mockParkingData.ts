@@ -6,9 +6,7 @@ export const mockParkingSpots = [
     address: '123 Congress Ave, Austin, TX',
     price: 15,
     city: 'austin',
-    image: '/lovable-uploads/1acc54cb-a045-49aa-868e-38790be2e26e.png',
-    description: 'Secure private driveway located in the heart of downtown Austin. Perfect for events, work, or shopping. Easy access to major attractions.',
-    amenities: ['CCTV', 'Well-lit', '24/7 Access'],
+    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
     coordinates: { x: 35, y: 40 },
     slots: [
       { 
@@ -37,9 +35,7 @@ export const mockParkingSpots = [
     address: '456 Elm St, Dallas, TX',
     price: 12,
     city: 'dallas',
-    image: '/lovable-uploads/f7341dd4-b7f2-4967-86d5-ffd43e2c1a63.png',
-    description: 'Modern underground parking garage with excellent security features. Climate controlled and well-maintained.',
-    amenities: ['CCTV', 'Well-lit'],
+    image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
     coordinates: { x: 65, y: 25 },
     slots: [
       { 
@@ -68,9 +64,7 @@ export const mockParkingSpots = [
     address: '789 Phoenix Way, Austin, TX',
     price: 8,
     city: 'austin',
-    image: '/lovable-uploads/c3cd7517-8418-4aee-81a8-1236238c8e77.png',
-    description: 'Convenient outdoor parking area near shopping and entertainment districts. Well-marked spaces with easy navigation.',
-    amenities: ['Well-lit', '24/7 Access'],
+    image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
     coordinates: { x: 50, y: 60 },
     slots: [
       { 
