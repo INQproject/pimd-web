@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { HelpCircle, Phone, Mail } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import FeaturesSelector from '@/components/FeaturesSelector';
 
 const ListDriveway = () => {
   const { user } = useAuth();
@@ -28,8 +26,6 @@ const ListDriveway = () => {
     weeklyRate: '',
     monthlyRate: ''
   });
-
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
   const handleLoginToStart = () => {
     navigate('/login', { state: { returnTo: '/list-driveway', context: 'listing' } });
@@ -169,12 +165,6 @@ const ListDriveway = () => {
                   required
                 />
               </div>
-
-              {/* Features Section */}
-              <FeaturesSelector 
-                selectedFeatures={selectedFeatures}
-                onFeaturesChange={setSelectedFeatures}
-              />
 
               {/* Set Your Rates Section */}
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
