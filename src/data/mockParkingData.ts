@@ -8,6 +8,8 @@ export const mockParkingSpots = [
     city: 'austin',
     image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
     coordinates: { x: 35, y: 40 },
+    description: 'Great downtown location with easy access to the main business district. Perfect for daily commuters.',
+    amenities: ['CCTV', 'Well-lit', '24/7 Access'],
     slots: [
       { 
         id: 1, 
@@ -37,6 +39,8 @@ export const mockParkingSpots = [
     city: 'dallas',
     image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
     coordinates: { x: 65, y: 25 },
+    description: 'Secure private parking spot in the heart of Deep Ellum. Close to restaurants and nightlife.',
+    amenities: ['CCTV', '24/7 Access'],
     slots: [
       { 
         id: 3, 
@@ -66,6 +70,8 @@ export const mockParkingSpots = [
     city: 'austin',
     image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
     coordinates: { x: 50, y: 60 },
+    description: 'Convenient mall parking with covered spaces available. Great for shopping trips.',
+    amenities: ['Well-lit'],
     slots: [
       { 
         id: 5, 

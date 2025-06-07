@@ -6,6 +6,7 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -13,6 +14,7 @@ import { MapPin, Car, Shield, Sun, Clock, Circle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { mockParkingSpots } from '@/data/mockParkingData';
 import DateSelector from '@/components/DateSelector';
+import MultiSelectDatePicker from '@/components/MultiSelectDatePicker';
 
 const allTimeOptions = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'];
 
@@ -21,12 +23,14 @@ const BookSlot = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedMultipleDates, setSelectedMultipleDates] = useState<string[]>([]);
   const [vehicleCount, setVehicleCount] = useState('1');
   const [vehicleBookings, setVehicleBookings] = useState([{
     slotId: '',
     startTime: '',
     endTime: '',
-    price: 0
+    price: 0,
+    vehicleNumber: ''
   }]);
 
   const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
@@ -59,13 +63,15 @@ const BookSlot = () => {
     }
   }, [availableDates, selectedDate]);
 
-  // Filter slots based on selected date
+  // Filter slots based on selected date(s)
   const availableSlotsForDate = useMemo(() => {
-    if (!selectedDate) return [];
+    const datesToCheck = selectedMultipleDates.length > 0 ? selectedMultipleDates : (selectedDate ? [selectedDate] : []);
+    if (datesToCheck.length === 0) return [];
+    
     return spot.slots.filter(slot => 
-      slot.availableDates && slot.availableDates.includes(selectedDate)
+      slot.availableDates && datesToCheck.some(date => slot.availableDates.includes(date))
     );
-  }, [spot.slots, selectedDate]);
+  }, [spot.slots, selectedDate, selectedMultipleDates]);
 
   const handleVehicleCountChange = (count: string) => {
     setVehicleCount(count);
@@ -73,7 +79,8 @@ const BookSlot = () => {
       slotId: '',
       startTime: '',
       endTime: '',
-      price: 0
+      price: 0,
+      vehicleNumber: ''
     }));
     setVehicleBookings(newBookings);
   };
@@ -135,8 +142,26 @@ const BookSlot = () => {
 
   const handleDateSelect = (date: string) => {
     setSelectedDate(date);
+    setSelectedMultipleDates([]);
     // Reset all vehicle bookings when date changes
-    const resetBookings = vehicleBookings.map(() => ({
+    const resetBookings = vehicleBookings.map((booking) => ({
+      ...booking,
+      slotId: '',
+      startTime: '',
+      endTime: '',
+      price: 0
+    }));
+    setVehicleBookings(resetBookings);
+  };
+
+  const handleMultipleDatesChange = (dates: string[]) => {
+    setSelectedMultipleDates(dates);
+    if (dates.length > 0) {
+      setSelectedDate(null);
+    }
+    // Reset all vehicle bookings when dates change
+    const resetBookings = vehicleBookings.map((booking) => ({
+      ...booking,
       slotId: '',
       startTime: '',
       endTime: '',
@@ -146,16 +171,31 @@ const BookSlot = () => {
   };
 
   const handleProceedToPayment = () => {
+    // Validate vehicle numbers
+    const invalidVehicles = vehicleBookings.filter(booking => !booking.vehicleNumber.trim());
+    if (invalidVehicles.length > 0) {
+      toast({
+        title: "Missing Vehicle Numbers",
+        description: "Please enter vehicle numbers for all vehicles.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const totalPrice = vehicleBookings.reduce((sum, booking) => sum + booking.price, 0);
+    const dateInfo = selectedMultipleDates.length > 0 
+      ? `${selectedMultipleDates.length} selected dates` 
+      : selectedDate;
+    
     toast({
       title: "Booking Confirmed",
-      description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s) at ${spot.name} on ${selectedDate}`
+      description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s) at ${spot.name} on ${dateInfo}`
     });
     navigate('/profile');
   };
 
   const isBookingValid = vehicleBookings.every(booking => 
-    booking.slotId && booking.startTime && booking.endTime && booking.price > 0
+    booking.slotId && booking.startTime && booking.endTime && booking.price > 0 && booking.vehicleNumber.trim()
   );
 
   const getAmenityIcon = (amenity: string) => {
@@ -171,12 +211,21 @@ const BookSlot = () => {
     }
   };
 
+  const displayDate = selectedMultipleDates.length > 0 
+    ? `${selectedMultipleDates.length} dates selected`
+    : selectedDate 
+      ? new Date(selectedDate).toLocaleDateString('en-US', { 
+          month: 'long', 
+          day: 'numeric', 
+          year: 'numeric' 
+        })
+      : null;
+
   return (
     <Layout title={`Book Parking at ${spot.name}`} showBackButton={true}>
       <div className="space-y-4">
         {/* Compact Header Section */}
         <div className="max-w-4xl mx-auto">
-          {/* Hero Image - Very Compact */}
           <div className="relative mb-4">
             <div className="aspect-[16/9] max-w-[600px] mx-auto relative overflow-hidden rounded-lg border shadow-sm" style={{
               maxHeight: '200px'
@@ -190,10 +239,8 @@ const BookSlot = () => {
             </div>
           </div>
 
-          {/* Enhanced Spot Details Card */}
           <Card className="mb-4 bg-[#F9FAFB] shadow-md">
             <CardContent className="p-6">
-              {/* Title and Address */}
               <div className="mb-5">
                 <h1 className="text-xl font-bold text-[#1C1C1C] mb-3">{spot.name}</h1>
                 <div className="flex items-center space-x-2 text-[#606060] mb-4">
@@ -202,14 +249,12 @@ const BookSlot = () => {
                 </div>
               </div>
               
-              {/* Description */}
               <div className="mb-5">
                 <p className="text-base text-[#1C1C1C] leading-relaxed max-w-3xl">
                   {spot.description}
                 </p>
               </div>
               
-              {/* Amenities/Features */}
               <div className="mb-5">
                 <div className="flex flex-wrap gap-2">
                   {spot.amenities && spot.amenities.map((amenity, index) => (
@@ -228,23 +273,28 @@ const BookSlot = () => {
           </Card>
         </div>
 
-        {/* Main Content Grid - Compact */}
         <div className="grid lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
-          {/* Left Column - Booking Form */}
           <div className="lg:col-span-2">
             <Card className="shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold">Select Your Parking</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Date Selector */}
+                {/* Single Date Selector */}
                 <DateSelector
                   availableDates={availableDates}
                   selectedDate={selectedDate}
                   onDateSelect={handleDateSelect}
                 />
 
-                {/* Vehicle Count - Compact */}
+                {/* Multi-Select Date Picker */}
+                <MultiSelectDatePicker
+                  availableDates={availableDates}
+                  selectedDates={selectedMultipleDates}
+                  onDatesChange={handleMultipleDatesChange}
+                />
+
+                {/* Vehicle Count */}
                 <div>
                   <Label className="text-sm font-medium">Number of vehicles</Label>
                   <Select value={vehicleCount} onValueChange={handleVehicleCountChange}>
@@ -261,15 +311,11 @@ const BookSlot = () => {
                   </Select>
                 </div>
 
-                {/* Available Slots for Selected Date */}
-                {selectedDate && availableSlotsForDate.length > 0 && (
+                {/* Available Slots for Selected Date(s) */}
+                {displayDate && availableSlotsForDate.length > 0 && (
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <h4 className="font-semibold text-blue-900 mb-2">
-                      Available Slots for {new Date(selectedDate).toLocaleDateString('en-US', { 
-                        month: 'long', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })}
+                      Available Slots for {displayDate}
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {availableSlotsForDate.map(slot => (
@@ -288,63 +334,77 @@ const BookSlot = () => {
                   </div>
                 )}
 
-                {/* Vehicle Assignments - Enhanced Cards */}
-                {selectedDate && availableSlotsForDate.length > 0 && vehicleBookings.map((booking, index) => (
+                {/* Vehicle Assignments */}
+                {displayDate && availableSlotsForDate.length > 0 && vehicleBookings.map((booking, index) => (
                   <Card key={index} className="p-4 bg-[#F8F9FA] border shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl">
                     <div className="flex items-center space-x-2 mb-3">
                       <Car className="w-4 h-4 text-[#FF6B00]" />
                       <h4 className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</h4>
                     </div>
                     
-                    <div className="flex flex-wrap gap-3 items-end">
-                      <div className="flex-1 min-w-0">
-                        <Label className="text-xs font-medium text-[#606060]">Time Slot</Label>
-                        <Select value={booking.slotId} onValueChange={value => updateVehicleBooking(index, 'slotId', value)}>
-                          <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
-                            <SelectValue placeholder="Choose slot" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableSlotsForDate.map(slot => (
-                              <SelectItem key={slot.id} value={slot.id.toString()}>
-                                {slot.name} ({slot.timeRange})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                    <div className="space-y-3">
+                      {/* Vehicle Number Input */}
+                      <div>
+                        <Label className="text-xs font-medium text-[#606060]">Enter Vehicle Number</Label>
+                        <Input
+                          type="text"
+                          placeholder="e.g., ABC1234"
+                          value={booking.vehicleNumber}
+                          onChange={(e) => updateVehicleBooking(index, 'vehicleNumber', e.target.value)}
+                          className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20"
+                        />
                       </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <Label className="text-xs font-medium text-[#606060]">Start Time</Label>
-                        <Select value={booking.startTime} onValueChange={value => updateVehicleBooking(index, 'startTime', value)} disabled={!booking.slotId}>
-                          <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
-                            <SelectValue placeholder="Start" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getAvailableStartTimes(booking.slotId).map(time => (
-                              <SelectItem key={time} value={time}>{time}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <Label className="text-xs font-medium text-[#606060]">End Time</Label>
-                        <Select value={booking.endTime} onValueChange={value => updateVehicleBooking(index, 'endTime', value)} disabled={!booking.startTime}>
-                          <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
-                            <SelectValue placeholder="End" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getAvailableEndTimes(booking.slotId, booking.startTime).map(time => (
-                              <SelectItem key={time} value={time}>{time}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="flex-shrink-0">
-                        <Label className="text-xs font-medium text-[#606060]">Price</Label>
-                        <div className="h-9 px-3 bg-white border rounded-md text-center font-bold text-lg flex items-center justify-center min-w-[80px] mt-1 text-[#FF6B00]">
-                          ${booking.price.toFixed(2)}
+
+                      <div className="flex flex-wrap gap-3 items-end">
+                        <div className="flex-1 min-w-0">
+                          <Label className="text-xs font-medium text-[#606060]">Time Slot</Label>
+                          <Select value={booking.slotId} onValueChange={value => updateVehicleBooking(index, 'slotId', value)}>
+                            <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
+                              <SelectValue placeholder="Choose slot" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableSlotsForDate.map(slot => (
+                                <SelectItem key={slot.id} value={slot.id.toString()}>
+                                  {slot.name} ({slot.timeRange})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <Label className="text-xs font-medium text-[#606060]">Start Time</Label>
+                          <Select value={booking.startTime} onValueChange={value => updateVehicleBooking(index, 'startTime', value)} disabled={!booking.slotId}>
+                            <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
+                              <SelectValue placeholder="Start" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getAvailableStartTimes(booking.slotId).map(time => (
+                                <SelectItem key={time} value={time}>{time}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <Label className="text-xs font-medium text-[#606060]">End Time</Label>
+                          <Select value={booking.endTime} onValueChange={value => updateVehicleBooking(index, 'endTime', value)} disabled={!booking.startTime}>
+                            <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
+                              <SelectValue placeholder="End" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getAvailableEndTimes(booking.slotId, booking.startTime).map(time => (
+                                <SelectItem key={time} value={time}>{time}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="flex-shrink-0">
+                          <Label className="text-xs font-medium text-[#606060]">Price</Label>
+                          <div className="h-9 px-3 bg-white border rounded-md text-center font-bold text-lg flex items-center justify-center min-w-[80px] mt-1 text-[#FF6B00]">
+                            ${booking.price.toFixed(2)}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -352,11 +412,11 @@ const BookSlot = () => {
                 ))}
 
                 {/* No slots message */}
-                {selectedDate && availableSlotsForDate.length === 0 && (
+                {displayDate && availableSlotsForDate.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p>No slots available for the selected date.</p>
-                    <p className="text-sm">Please choose a different date.</p>
+                    <p>No slots available for the selected date(s).</p>
+                    <p className="text-sm">Please choose different dates.</p>
                   </div>
                 )}
               </CardContent>
@@ -371,17 +431,10 @@ const BookSlot = () => {
                   <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Booking Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {selectedDate && (
+                  {displayDate && (
                     <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="text-sm font-medium text-blue-900">Selected Date</div>
-                      <div className="text-blue-700">
-                        {new Date(selectedDate).toLocaleDateString('en-US', { 
-                          weekday: 'long',
-                          month: 'long', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })}
-                      </div>
+                      <div className="text-sm font-medium text-blue-900">Selected Date(s)</div>
+                      <div className="text-blue-700">{displayDate}</div>
                     </div>
                   )}
 
@@ -392,6 +445,9 @@ const BookSlot = () => {
                         <div className="flex justify-between items-start">
                           <div className="text-sm">
                             <span className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</span>
+                            {booking.vehicleNumber && (
+                              <div className="text-xs text-[#666]">{booking.vehicleNumber}</div>
+                            )}
                             {slot && booking.startTime && booking.endTime && (
                               <div className="text-xs text-[#666]">
                                 {slot.name}: {booking.startTime} - {booking.endTime}
@@ -417,7 +473,7 @@ const BookSlot = () => {
                   <Button 
                     onClick={handleProceedToPayment} 
                     className="w-full bg-[#FF6B00] hover:bg-[#e55a00] text-white h-12 mt-4 font-semibold text-base rounded-lg shadow-md hover:shadow-lg transition-all duration-200" 
-                    disabled={!isBookingValid || !selectedDate}
+                    disabled={!isBookingValid || (!selectedDate && selectedMultipleDates.length === 0)}
                   >
                     Proceed to Payment
                   </Button>

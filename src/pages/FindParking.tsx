@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -300,9 +299,7 @@ const FindParking = () => {
           </CardHeader>
           <CardContent>
             <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ height: '400px' }}>
-              {/* Static Map Background */}
               <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100">
-                {/* Grid pattern to simulate map */}
                 <div className="absolute inset-0 opacity-20">
                   <svg width="100%" height="100%">
                     <defs>
@@ -314,14 +311,12 @@ const FindParking = () => {
                   </svg>
                 </div>
                 
-                {/* Streets simulation */}
                 <div className="absolute top-1/3 left-0 right-0 h-2 bg-gray-300 opacity-50"></div>
                 <div className="absolute top-2/3 left-0 right-0 h-2 bg-gray-300 opacity-50"></div>
                 <div className="absolute left-1/4 top-0 bottom-0 w-2 bg-gray-300 opacity-50"></div>
                 <div className="absolute left-3/4 top-0 bottom-0 w-2 bg-gray-300 opacity-50"></div>
               </div>
 
-              {/* Parking Spot Pins */}
               {filteredSpots.map((spot) => (
                 <div
                   key={spot.id}
@@ -336,13 +331,11 @@ const FindParking = () => {
                   title={`${spot.name} - $${spot.price}/hr`}
                 >
                   <div className={`relative ${selectedSpotId === spot.id ? 'animate-bounce' : ''}`}>
-                    {/* Pin Icon */}
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg ${
                       selectedSpotId === spot.id ? 'bg-[#FF6B00] ring-4 ring-orange-200' : 'bg-[#FF6B00] hover:bg-[#FF6B00]/90'
                     }`}>
                       <DollarSign className="w-4 h-4" />
                     </div>
-                    {/* Price Label */}
                     <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded shadow-md text-xs font-semibold text-[#FF6B00] whitespace-nowrap">
                       ${spot.price}/hr
                     </div>
@@ -350,11 +343,10 @@ const FindParking = () => {
                 </div>
               ))}
 
-              {/* User Location Pin (if available) */}
               {userLocation && (
                 <div
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-30"
-                  style={{ left: '20%', top: '30%' }} // Simulated user position
+                  style={{ left: '20%', top: '30%' }}
                 >
                   <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
                   <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-2 py-1 rounded shadow-md text-xs font-semibold whitespace-nowrap">
@@ -395,7 +387,6 @@ const FindParking = () => {
                     onClick={() => handleCardClick(spot.id)}
                   >
                     <CardContent className="p-5 h-full flex flex-col">
-                      {/* Header with name and price */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-lg text-[#1C1C1C] mb-2 group-hover:text-[#FF6B00] transition-colors">
@@ -414,7 +405,6 @@ const FindParking = () => {
                         </div>
                       </div>
 
-                      {/* Available dates */}
                       <div className="mb-4">
                         <div className="flex items-center space-x-2 text-sm text-gray-700 mb-2">
                           <Calendar className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
@@ -425,7 +415,6 @@ const FindParking = () => {
                         </div>
                       </div>
 
-                      {/* Available times */}
                       <div className="flex-1 mb-4">
                         <div className="flex items-center space-x-2 text-sm text-gray-700 mb-3">
                           <Clock className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
@@ -445,7 +434,6 @@ const FindParking = () => {
                         </div>
                       </div>
 
-                      {/* Book button */}
                       <div className="flex justify-center md:justify-end pt-2">
                         <Button 
                           onClick={(e) => {
