@@ -66,7 +66,7 @@ const FindParking = () => {
     }
   }, []);
 
-  const getUniqueDatesForSpot = (spot: any) => {
+  const getUniqueDatesForSpot = (spot: any): string[] => {
     const allDates = spot.slots.flatMap((slot: any) => slot.availableDates || []);
     // Ensure all dates are strings and filter out any non-string values
     const stringDates = allDates.filter((date: unknown): date is string => typeof date === 'string');
