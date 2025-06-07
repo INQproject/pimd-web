@@ -13,34 +13,6 @@ import { Switch } from '@/components/ui/switch';
 import { MapPin, Car, Shield, Sun, Clock, Circle, Calendar } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-// Generate available dates with slot data
-const generateAvailableDatesWithSlots = (spotId: number) => {
-  const dates = [];
-  const today = new Date();
-  
-  // Different spots have different availability patterns
-  const availabilityPattern = spotId === 1 ? [0, 1, 3, 4, 6] : spotId === 2 ? [0, 2, 4, 5] : [1, 2, 3, 5, 6];
-  
-  availabilityPattern.forEach(dayOffset => {
-    const date = new Date(today);
-    date.setDate(today.getDate() + dayOffset);
-    dates.push({
-      value: date.toISOString().split('T')[0],
-      label: date.toLocaleDateString('en-US', { 
-        weekday: 'short',
-        month: 'short', 
-        day: 'numeric' 
-      }),
-      shortLabel: date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
-      })
-    });
-  });
-  
-  return dates;
-};
-
 // Mock data with date-specific slot availability
 const mockParkingSpots = [{
   id: 1,
@@ -51,7 +23,6 @@ const mockParkingSpots = [{
   image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
   description: 'Secure private driveway in the heart of downtown Austin. Perfect for business meetings and shopping.',
   amenities: ['CCTV', 'Well-lit', '24/7 Access'],
-  availableDates: generateAvailableDatesWithSlots(1),
   slotsByDate: {
     [new Date().toISOString().split('T')[0]]: [
       {
@@ -88,6 +59,34 @@ const mockParkingSpots = [{
         startTime: '2:00 PM',
         endTime: '7:00 PM'
       }
+    ],
+    [new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 5,
+        name: 'Slot A',
+        timeRange: '10:00 AM - 3:00 PM',
+        capacity: 2,
+        startTime: '10:00 AM',
+        endTime: '3:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 4 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 6,
+        name: 'Slot A',
+        timeRange: '9:00 AM - 2:00 PM',
+        capacity: 1,
+        startTime: '9:00 AM',
+        endTime: '2:00 PM'
+      },
+      {
+        id: 7,
+        name: 'Slot B',
+        timeRange: '3:00 PM - 8:00 PM',
+        capacity: 3,
+        startTime: '3:00 PM',
+        endTime: '8:00 PM'
+      }
     ]
   }
 }, {
@@ -99,11 +98,10 @@ const mockParkingSpots = [{
   image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
   description: 'Private parking spot in trendy Deep Ellum district. Walking distance to restaurants and nightlife.',
   amenities: ['CCTV', 'Covered'],
-  availableDates: generateAvailableDatesWithSlots(2),
   slotsByDate: {
     [new Date().toISOString().split('T')[0]]: [
       {
-        id: 5,
+        id: 8,
         name: 'Slot A',
         timeRange: '9:00 AM - 2:00 PM',
         capacity: 3,
@@ -111,12 +109,32 @@ const mockParkingSpots = [{
         endTime: '2:00 PM'
       },
       {
-        id: 6,
+        id: 9,
         name: 'Slot B',
         timeRange: '3:00 PM - 8:00 PM',
         capacity: 2,
         startTime: '3:00 PM',
         endTime: '8:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 10,
+        name: 'Slot A',
+        timeRange: '8:00 AM - 1:00 PM',
+        capacity: 2,
+        startTime: '8:00 AM',
+        endTime: '1:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 4 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 11,
+        name: 'Slot A',
+        timeRange: '10:00 AM - 4:00 PM',
+        capacity: 1,
+        startTime: '10:00 AM',
+        endTime: '4:00 PM'
       }
     ]
   }
@@ -129,11 +147,10 @@ const mockParkingSpots = [{
   image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
   description: 'Convenient parking near Phoenix Mall with easy access to shopping and dining.',
   amenities: ['CCTV', 'Well-lit'],
-  availableDates: generateAvailableDatesWithSlots(3),
   slotsByDate: {
     [new Date(Date.now() + 86400000).toISOString().split('T')[0]]: [
       {
-        id: 7,
+        id: 12,
         name: 'Slot A',
         timeRange: '10:00 AM - 4:00 PM',
         capacity: 5,
@@ -141,12 +158,32 @@ const mockParkingSpots = [{
         endTime: '4:00 PM'
       },
       {
-        id: 8,
+        id: 13,
         name: 'Slot B',
         timeRange: '5:00 PM - 10:00 PM',
         capacity: 3,
         startTime: '5:00 PM',
         endTime: '10:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 14,
+        name: 'Slot A',
+        timeRange: '9:00 AM - 3:00 PM',
+        capacity: 4,
+        startTime: '9:00 AM',
+        endTime: '3:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 15,
+        name: 'Slot A',
+        timeRange: '8:00 AM - 5:00 PM',
+        capacity: 2,
+        startTime: '8:00 AM',
+        endTime: '5:00 PM'
       }
     ]
   }
@@ -170,6 +207,38 @@ const BookSlot = () => {
 
   const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
 
+  // Generate available dates based on actual slot data
+  const getAvailableDates = () => {
+    if (!spot) return [];
+    
+    const availableDates = [];
+    const slotDates = Object.keys(spot.slotsByDate);
+    
+    slotDates.forEach(dateString => {
+      const slots = spot.slotsByDate[dateString];
+      if (slots && slots.length > 0) {
+        const date = new Date(dateString);
+        availableDates.push({
+          value: dateString,
+          label: date.toLocaleDateString('en-US', { 
+            weekday: 'short',
+            month: 'short', 
+            day: 'numeric' 
+          }),
+          shortLabel: date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+          })
+        });
+      }
+    });
+    
+    // Sort by date
+    return availableDates.sort((a, b) => new Date(a.value).getTime() - new Date(b.value).getTime());
+  };
+
+  const availableDates = getAvailableDates();
+
   useEffect(() => {
     if (!spot) {
       navigate('/find-parking');
@@ -187,10 +256,10 @@ const BookSlot = () => {
     }
 
     // Set default selected date to first available date
-    if (spot.availableDates.length > 0) {
-      setSelectedDates([spot.availableDates[0].value]);
+    if (availableDates.length > 0) {
+      setSelectedDates([availableDates[0].value]);
     }
-  }, [spot, user, navigate, spotId]);
+  }, [spot, user, navigate, spotId, availableDates]);
 
   if (!spot || !user) {
     return null;
@@ -248,8 +317,8 @@ const BookSlot = () => {
   const handleModeToggle = (checked: boolean) => {
     setIsMultiDate(checked);
     // Reset to first available date when switching modes
-    if (spot.availableDates.length > 0) {
-      setSelectedDates([spot.availableDates[0].value]);
+    if (availableDates.length > 0) {
+      setSelectedDates([availableDates[0].value]);
     }
     // Reset all vehicle bookings
     const newBookings = Array(parseInt(vehicleCount)).fill(null).map(() => ({
@@ -326,7 +395,7 @@ const BookSlot = () => {
   const handleProceedToPayment = () => {
     const totalPrice = vehicleBookings.reduce((sum, booking) => sum + booking.price, 0);
     const selectedDateLabels = selectedDates.map(date => 
-      spot.availableDates.find(d => d.value === date)?.shortLabel || date
+      availableDates.find(d => d.value === date)?.shortLabel || date
     ).join(', ');
     
     toast({
@@ -439,71 +508,81 @@ const BookSlot = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {spot.availableDates.map((date) => (
-                <Button
-                  key={date.value}
-                  variant={selectedDates.includes(date.value) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleDateToggle(date.value)}
-                  disabled={!isMultiDate && selectedDates.includes(date.value)}
-                  className={`px-4 py-2 ${
-                    selectedDates.includes(date.value) 
-                      ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white' 
-                      : 'hover:bg-[#FF6B00]/10 hover:border-[#FF6B00] hover:text-[#FF6B00]'
-                  }`}
-                >
-                  {date.label}
-                </Button>
-              ))}
-            </div>
-            {selectedDates.length > 1 && (
-              <div className="mt-3 text-sm text-[#606060]">
-                Selected {selectedDates.length} dates
+            {availableDates.length === 0 ? (
+              <div className="text-[#606060] text-sm bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                No available booking dates for this parking spot.
               </div>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-3">
+                  {availableDates.map((date) => (
+                    <Button
+                      key={date.value}
+                      variant={selectedDates.includes(date.value) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleDateToggle(date.value)}
+                      disabled={!isMultiDate && selectedDates.includes(date.value)}
+                      className={`px-4 py-2 ${
+                        selectedDates.includes(date.value) 
+                          ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white' 
+                          : 'hover:bg-[#FF6B00]/10 hover:border-[#FF6B00] hover:text-[#FF6B00]'
+                      }`}
+                    >
+                      {date.label}
+                    </Button>
+                  ))}
+                </div>
+                {selectedDates.length > 1 && (
+                  <div className="mt-3 text-sm text-[#606060]">
+                    Selected {selectedDates.length} dates
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
 
         {/* Available Slots Status Message */}
-        <Card className="mb-4 max-w-4xl mx-auto">
-          <CardContent className="p-6">
-            <h3 className="text-base font-semibold text-[#1C1C1C] mb-3">
-              {selectedDates.length === 0 ? 'Please select at least one date' :
-               !isMultiDate || selectedDates.length === 1 ? 
-                 `Showing slots for ${spot.availableDates.find(d => d.value === selectedDates[0])?.shortLabel}` :
-                 'Common Slots Available Across All Selected Dates'
-              }
-            </h3>
-            {selectedDates.length === 0 ? (
-              <div className="text-[#606060] text-sm bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                Please select at least one date to see available slots.
-              </div>
-            ) : availableSlotsForSelectedDates.length > 0 ? (
-              <div className="flex flex-wrap gap-3">
-                {availableSlotsForSelectedDates.map(slot => (
-                  <div key={slot.id} className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
-                    <Circle className="w-3 h-3 fill-blue-500 text-blue-500" />
-                    <div className="text-sm">
-                      <span className="font-medium text-[#1C1C1C]">{slot.name}</span>
-                      <span className="text-[#606060] ml-2">({slot.timeRange})</span>
-                      <div className="text-xs text-[#606060] mt-1">
-                        {slot.capacity} spot{slot.capacity > 1 ? 's' : ''} available
+        {availableDates.length > 0 && (
+          <Card className="mb-4 max-w-4xl mx-auto">
+            <CardContent className="p-6">
+              <h3 className="text-base font-semibold text-[#1C1C1C] mb-3">
+                {selectedDates.length === 0 ? 'Please select at least one date' :
+                 !isMultiDate || selectedDates.length === 1 ? 
+                   `Showing slots for ${availableDates.find(d => d.value === selectedDates[0])?.shortLabel}` :
+                   'Common Slots Available Across All Selected Dates'
+                }
+              </h3>
+              {selectedDates.length === 0 ? (
+                <div className="text-[#606060] text-sm bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  Please select at least one date to see available slots.
+                </div>
+              ) : availableSlotsForSelectedDates.length > 0 ? (
+                <div className="flex flex-wrap gap-3">
+                  {availableSlotsForSelectedDates.map(slot => (
+                    <div key={slot.id} className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
+                      <Circle className="w-3 h-3 fill-blue-500 text-blue-500" />
+                      <div className="text-sm">
+                        <span className="font-medium text-[#1C1C1C]">{slot.name}</span>
+                        <span className="text-[#606060] ml-2">({slot.timeRange})</span>
+                        <div className="text-xs text-[#606060] mt-1">
+                          {slot.capacity} spot{slot.capacity > 1 ? 's' : ''} available
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-[#606060] text-sm bg-red-50 border border-red-200 rounded-lg p-4">
-                {isMultiDate && selectedDates.length > 1 
-                  ? "No common time slots available for selected dates. Please select different dates or fewer dates."
-                  : "No slots available for the selected date."
-                }
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-[#606060] text-sm bg-red-50 border border-red-200 rounded-lg p-4">
+                  {isMultiDate && selectedDates.length > 1 
+                    ? "No common time slots available for selected dates. Please select different dates or fewer dates."
+                    : "No slots available for the selected date."
+                  }
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Main Content Grid - Only show if slots are available */}
         {selectedDates.length > 0 && availableSlotsForSelectedDates.length > 0 && (
@@ -608,7 +687,7 @@ const BookSlot = () => {
                   <CardContent className="space-y-3">
                     <div className="text-sm text-[#606060] mb-3">
                       <strong>Date(s):</strong> {selectedDates.map(date => 
-                        spot.availableDates.find(d => d.value === date)?.shortLabel
+                        availableDates.find(d => d.value === date)?.shortLabel
                       ).join(', ')}
                     </div>
                     
