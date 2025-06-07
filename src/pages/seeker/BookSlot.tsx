@@ -52,6 +52,7 @@ const timeOptions = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '
 
 interface VehicleBooking {
   vehicleNumber: string;
+  selectedSlot: string;
   startTime: string;
   endTime: string;
   price: number;
@@ -65,7 +66,7 @@ const BookSlot = () => {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [vehicleCount, setVehicleCount] = useState(1);
   const [vehicleBookings, setVehicleBookings] = useState<VehicleBooking[]>([
-    { vehicleNumber: '', startTime: '', endTime: '', price: 0 }
+    { vehicleNumber: '', selectedSlot: '', startTime: '', endTime: '', price: 0 }
   ]);
 
   const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
@@ -137,6 +138,7 @@ const BookSlot = () => {
     setVehicleCount(count);
     const newBookings = Array(count).fill(null).map(() => ({
       vehicleNumber: '',
+      selectedSlot: '',
       startTime: '',
       endTime: '',
       price: 0
@@ -150,6 +152,13 @@ const BookSlot = () => {
       ...newBookings[index],
       [field]: value
     };
+
+    // Reset time selections when slot changes
+    if (field === 'selectedSlot') {
+      newBookings[index].startTime = '';
+      newBookings[index].endTime = '';
+      newBookings[index].price = 0;
+    }
 
     // Calculate price when time changes
     if (field === 'startTime' || field === 'endTime') {
@@ -168,6 +177,25 @@ const BookSlot = () => {
     setVehicleBookings(newBookings);
   };
 
+  const getSlotTimeOptions = (slotId: string, isEndTime: boolean = false, startTime?: string) => {
+    if (!slotId) return [];
+    
+    const selectedSlot = availableSlots.find(slot => slot.id.toString() === slotId);
+    if (!selectedSlot) return [];
+
+    const slotStartIndex = timeOptions.indexOf(selectedSlot.startTime);
+    const slotEndIndex = timeOptions.indexOf(selectedSlot.endTime);
+    
+    if (slotStartIndex === -1 || slotEndIndex === -1) return [];
+
+    if (isEndTime && startTime) {
+      const startIndex = timeOptions.indexOf(startTime);
+      return timeOptions.slice(Math.max(startIndex + 1, slotStartIndex), slotEndIndex + 1);
+    }
+
+    return timeOptions.slice(slotStartIndex, slotEndIndex + 1);
+  };
+
   const getEndTimeOptions = (startTime: string) => {
     if (!startTime) return [];
     const startIndex = timeOptions.indexOf(startTime);
@@ -184,7 +212,7 @@ const BookSlot = () => {
   };
 
   const isBookingValid = vehicleBookings.every(booking => 
-    booking.vehicleNumber && booking.startTime && booking.endTime && booking.price > 0
+    booking.vehicleNumber && booking.selectedSlot && booking.startTime && booking.endTime && booking.price > 0
   );
 
   const totalPrice = vehicleBookings.reduce((sum, booking) => sum + booking.price, 0);
@@ -369,7 +397,7 @@ const BookSlot = () => {
                       <h4 className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</h4>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                       <div>
                         <Label className="text-sm font-medium text-[#606060]">Vehicle Number</Label>
                         <Input
@@ -379,18 +407,38 @@ const BookSlot = () => {
                           className="mt-1"
                         />
                       </div>
+
+                      <div>
+                        <Label className="text-sm font-medium text-[#606060]">Select Slot</Label>
+                        <Select 
+                          value={booking.selectedSlot} 
+                          onValueChange={(value) => updateVehicleBooking(index, 'selectedSlot', value)}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Choose slot" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableSlots.map(slot => (
+                              <SelectItem key={slot.id} value={slot.id.toString()}>
+                                {slot.name} ({slot.timeRange})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       
                       <div>
                         <Label className="text-sm font-medium text-[#606060]">Start Time</Label>
                         <Select 
                           value={booking.startTime} 
                           onValueChange={(value) => updateVehicleBooking(index, 'startTime', value)}
+                          disabled={!booking.selectedSlot}
                         >
                           <SelectTrigger className="mt-1">
                             <SelectValue placeholder="Select start time" />
                           </SelectTrigger>
                           <SelectContent>
-                            {timeOptions.map(time => (
+                            {getSlotTimeOptions(booking.selectedSlot).map(time => (
                               <SelectItem key={time} value={time}>{time}</SelectItem>
                             ))}
                           </SelectContent>
@@ -402,12 +450,13 @@ const BookSlot = () => {
                         <Select 
                           value={booking.endTime} 
                           onValueChange={(value) => updateVehicleBooking(index, 'endTime', value)}
+                          disabled={!booking.selectedSlot || !booking.startTime}
                         >
                           <SelectTrigger className="mt-1">
                             <SelectValue placeholder="Select end time" />
                           </SelectTrigger>
                           <SelectContent>
-                            {getEndTimeOptions(booking.startTime).map(time => (
+                            {getSlotTimeOptions(booking.selectedSlot, true, booking.startTime).map(time => (
                               <SelectItem key={time} value={time}>{time}</SelectItem>
                             ))}
                           </SelectContent>
@@ -425,37 +474,14 @@ const BookSlot = () => {
                     {selectedDates.length > 0 && (
                       <div className="mt-3 text-sm text-gray-600">
                         Date(s): {selectedDates.map(date => formatDatePill(date)).join(', ')}
+                        {booking.selectedSlot && (
+                          <span className="ml-2 text-blue-600">
+                            • Slot: {availableSlots.find(s => s.id.toString() === booking.selectedSlot)?.name}
+                          </span>
+                        )}
                       </div>
                     )}
                   </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 6. PAYMENT CTA */}
-        {selectedDates.length > 0 && availableSlots.length > 0 && (
-          <Card className="bg-[#FFF8F2] border-[#FF6B00]/30 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-[#1C1C1C]">Booking Summary</h3>
-                <div className="text-right">
-                  <div className="text-sm text-[#606060]">Total Amount</div>
-                  <div className="text-2xl font-bold text-[#FF6B00]">${totalPrice.toFixed(2)}</div>
-                </div>
-              </div>
-
-              <Separator className="my-4" />
-
-              <div className="space-y-2 mb-6">
-                {vehicleBookings.map((booking, index) => (
-                  booking.price > 0 && (
-                    <div key={index} className="flex justify-between text-sm">
-                      <span>Vehicle {index + 1} ({booking.startTime} - {booking.endTime})</span>
-                      <span className="font-semibold">${booking.price.toFixed(2)}</span>
-                    </div>
-                  )
                 ))}
               </div>
 
