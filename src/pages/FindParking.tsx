@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,7 +68,9 @@ const FindParking = () => {
 
   const getUniqueDatesForSpot = (spot: any) => {
     const allDates = spot.slots.flatMap((slot: any) => slot.availableDates || []);
-    return [...new Set(allDates)].sort();
+    // Ensure all dates are strings and filter out any non-string values
+    const stringDates = allDates.filter((date: unknown): date is string => typeof date === 'string');
+    return [...new Set(stringDates)].sort();
   };
 
   const formatAvailableDates = (dates: string[]) => {
