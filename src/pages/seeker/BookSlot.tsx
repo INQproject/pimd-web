@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { MapPin, Car, Shield, Sun, Clock, Circle, Calendar } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -264,7 +265,8 @@ const BookSlot = () => {
     slotId: '',
     startTime: '',
     endTime: '',
-    price: 0
+    price: 0,
+    vehicleNumber: ''
   }]);
 
   const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
@@ -339,7 +341,8 @@ const BookSlot = () => {
       slotId: '',
       startTime: '',
       endTime: '',
-      price: 0
+      price: 0,
+      vehicleNumber: ''
     }));
     setVehicleBookings(newBookings);
   };
@@ -355,7 +358,8 @@ const BookSlot = () => {
       slotId: '',
       startTime: '',
       endTime: '',
-      price: 0
+      price: 0,
+      vehicleNumber: ''
     }));
     setVehicleBookings(newBookings);
   };
@@ -366,7 +370,8 @@ const BookSlot = () => {
       slotId: '',
       startTime: '',
       endTime: '',
-      price: 0
+      price: 0,
+      vehicleNumber: ''
     }));
     setVehicleBookings(newBookings);
   };
@@ -639,12 +644,24 @@ const BookSlot = () => {
                     </Select>
                   </div>
 
-                  {/* Vehicle Assignments - Enhanced Cards */}
+                  {/* Vehicle Assignments - Enhanced Cards with Vehicle Number */}
                   {vehicleBookings.map((booking, index) => (
                     <Card key={index} className="p-4 bg-[#F8F9FA] border shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl">
                       <div className="flex items-center space-x-2 mb-3">
                         <Car className="w-4 h-4 text-[#FF6B00]" />
                         <h4 className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</h4>
+                      </div>
+                      
+                      {/* Vehicle Number Input */}
+                      <div className="mb-3">
+                        <Label className="text-xs font-medium text-[#606060]">Enter Vehicle Number</Label>
+                        <Input
+                          type="text"
+                          placeholder="e.g., ABC1234"
+                          value={booking.vehicleNumber}
+                          onChange={(e) => updateVehicleBooking(index, 'vehicleNumber', e.target.value)}
+                          className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20"
+                        />
                       </div>
                       
                       <div className="flex flex-wrap gap-3 items-end">
