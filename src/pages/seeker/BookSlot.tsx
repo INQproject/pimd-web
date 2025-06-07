@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -5,11 +6,9 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
 import { MapPin, Car, Shield, Sun, Clock, Circle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { mockParkingSpots } from '@/data/mockParkingData';
@@ -23,13 +22,11 @@ const BookSlot = () => {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [vehicleCount, setVehicleCount] = useState('1');
-  const [isMultiSelect, setIsMultiSelect] = useState(false);
   const [vehicleBookings, setVehicleBookings] = useState([{
     slotId: '',
     startTime: '',
     endTime: '',
-    price: 0,
-    vehicleNumber: ''
+    price: 0
   }]);
 
   const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
@@ -76,8 +73,7 @@ const BookSlot = () => {
       slotId: '',
       startTime: '',
       endTime: '',
-      price: 0,
-      vehicleNumber: ''
+      price: 0
     }));
     setVehicleBookings(newBookings);
   };
@@ -144,8 +140,7 @@ const BookSlot = () => {
       slotId: '',
       startTime: '',
       endTime: '',
-      price: 0,
-      vehicleNumber: ''
+      price: 0
     }));
     setVehicleBookings(resetBookings);
   };
@@ -160,7 +155,7 @@ const BookSlot = () => {
   };
 
   const isBookingValid = vehicleBookings.every(booking => 
-    booking.slotId && booking.startTime && booking.endTime && booking.price > 0 && booking.vehicleNumber.trim()
+    booking.slotId && booking.startTime && booking.endTime && booking.price > 0
   );
 
   const getAmenityIcon = (amenity: string) => {
@@ -249,18 +244,6 @@ const BookSlot = () => {
                   onDateSelect={handleDateSelect}
                 />
 
-                {/* Multi-select Toggle */}
-                <div className="flex items-center space-x-3">
-                  <Label className="text-sm font-medium">Multi-select mode</Label>
-                  <Switch
-                    checked={isMultiSelect}
-                    onCheckedChange={setIsMultiSelect}
-                  />
-                  <span className="text-xs text-gray-500">
-                    {isMultiSelect ? 'Select multiple slots/times' : 'Single selection mode'}
-                  </span>
-                </div>
-
                 {/* Vehicle Count - Compact */}
                 <div>
                   <Label className="text-sm font-medium">Number of vehicles</Label>
@@ -305,7 +288,7 @@ const BookSlot = () => {
                   </div>
                 )}
 
-                {/* Vehicle Assignments - Enhanced Cards with Vehicle Number */}
+                {/* Vehicle Assignments - Enhanced Cards */}
                 {selectedDate && availableSlotsForDate.length > 0 && vehicleBookings.map((booking, index) => (
                   <Card key={index} className="p-4 bg-[#F8F9FA] border shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl">
                     <div className="flex items-center space-x-2 mb-3">
@@ -313,69 +296,55 @@ const BookSlot = () => {
                       <h4 className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</h4>
                     </div>
                     
-                    <div className="space-y-3">
-                      {/* Vehicle Number Input */}
-                      <div>
-                        <Label className="text-xs font-medium text-[#606060]">Vehicle Number</Label>
-                        <Input
-                          value={booking.vehicleNumber}
-                          onChange={(e) => updateVehicleBooking(index, 'vehicleNumber', e.target.value)}
-                          placeholder="Enter vehicle number"
-                          className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20"
-                          required
-                        />
+                    <div className="flex flex-wrap gap-3 items-end">
+                      <div className="flex-1 min-w-0">
+                        <Label className="text-xs font-medium text-[#606060]">Time Slot</Label>
+                        <Select value={booking.slotId} onValueChange={value => updateVehicleBooking(index, 'slotId', value)}>
+                          <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
+                            <SelectValue placeholder="Choose slot" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableSlotsForDate.map(slot => (
+                              <SelectItem key={slot.id} value={slot.id.toString()}>
+                                {slot.name} ({slot.timeRange})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-
-                      <div className="flex flex-wrap gap-3 items-end">
-                        <div className="flex-1 min-w-0">
-                          <Label className="text-xs font-medium text-[#606060]">Time Slot</Label>
-                          <Select value={booking.slotId} onValueChange={value => updateVehicleBooking(index, 'slotId', value)}>
-                            <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
-                              <SelectValue placeholder="Choose slot" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableSlotsForDate.map(slot => (
-                                <SelectItem key={slot.id} value={slot.id.toString()}>
-                                  {slot.name} ({slot.timeRange})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <Label className="text-xs font-medium text-[#606060]">Start Time</Label>
-                          <Select value={booking.startTime} onValueChange={value => updateVehicleBooking(index, 'startTime', value)} disabled={!booking.slotId}>
-                            <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
-                              <SelectValue placeholder="Start" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getAvailableStartTimes(booking.slotId).map(time => (
-                                <SelectItem key={time} value={time}>{time}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <Label className="text-xs font-medium text-[#606060]">End Time</Label>
-                          <Select value={booking.endTime} onValueChange={value => updateVehicleBooking(index, 'endTime', value)} disabled={!booking.startTime}>
-                            <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
-                              <SelectValue placeholder="End" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getAvailableEndTimes(booking.slotId, booking.startTime).map(time => (
-                                <SelectItem key={time} value={time}>{time}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="flex-shrink-0">
-                          <Label className="text-xs font-medium text-[#606060]">Price</Label>
-                          <div className="h-9 px-3 bg-white border rounded-md text-center font-bold text-lg flex items-center justify-center min-w-[80px] mt-1 text-[#FF6B00]">
-                            ${booking.price.toFixed(2)}
-                          </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <Label className="text-xs font-medium text-[#606060]">Start Time</Label>
+                        <Select value={booking.startTime} onValueChange={value => updateVehicleBooking(index, 'startTime', value)} disabled={!booking.slotId}>
+                          <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
+                            <SelectValue placeholder="Start" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getAvailableStartTimes(booking.slotId).map(time => (
+                              <SelectItem key={time} value={time}>{time}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <Label className="text-xs font-medium text-[#606060]">End Time</Label>
+                        <Select value={booking.endTime} onValueChange={value => updateVehicleBooking(index, 'endTime', value)} disabled={!booking.startTime}>
+                          <SelectTrigger className="h-9 text-sm mt-1 focus:ring-2 focus:ring-[#FF6B00]/20">
+                            <SelectValue placeholder="End" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getAvailableEndTimes(booking.slotId, booking.startTime).map(time => (
+                              <SelectItem key={time} value={time}>{time}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="flex-shrink-0">
+                        <Label className="text-xs font-medium text-[#606060]">Price</Label>
+                        <div className="h-9 px-3 bg-white border rounded-md text-center font-bold text-lg flex items-center justify-center min-w-[80px] mt-1 text-[#FF6B00]">
+                          ${booking.price.toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -423,11 +392,6 @@ const BookSlot = () => {
                         <div className="flex justify-between items-start">
                           <div className="text-sm">
                             <span className="font-semibold text-[#1C1C1C]">Vehicle {index + 1}</span>
-                            {booking.vehicleNumber && (
-                              <div className="text-xs text-[#666]">
-                                {booking.vehicleNumber}
-                              </div>
-                            )}
                             {slot && booking.startTime && booking.endTime && (
                               <div className="text-xs text-[#666]">
                                 {slot.name}: {booking.startTime} - {booking.endTime}

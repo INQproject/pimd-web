@@ -8,14 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { HelpCircle, Phone, Mail, Shield, Sun, Clock } from 'lucide-react';
+import { HelpCircle, Phone, Mail } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const ListDriveway = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     spotName: '',
@@ -27,20 +26,6 @@ const ListDriveway = () => {
     weeklyRate: '',
     monthlyRate: ''
   });
-
-  const availableFeatures = [
-    { id: '24-7', label: '24/7', icon: Clock },
-    { id: 'cctv', label: 'CCTV', icon: Shield },
-    { id: 'well-lit', label: 'Well-lit', icon: Sun }
-  ];
-
-  const handleFeatureToggle = (featureId: string) => {
-    setSelectedFeatures(prev => 
-      prev.includes(featureId) 
-        ? prev.filter(id => id !== featureId)
-        : [...prev, featureId]
-    );
-  };
 
   const handleLoginToStart = () => {
     navigate('/login', { state: { returnTo: '/list-driveway', context: 'listing' } });
@@ -179,32 +164,6 @@ const ListDriveway = () => {
                   onChange={(e) => handleInputChange('totalSpots', e.target.value)}
                   required
                 />
-              </div>
-
-              {/* Tap to Select Features Section */}
-              <div className="space-y-3">
-                <Label>Tap to Select Features</Label>
-                <div className="flex flex-wrap gap-3">
-                  {availableFeatures.map((feature) => {
-                    const IconComponent = feature.icon;
-                    const isSelected = selectedFeatures.includes(feature.id);
-                    return (
-                      <button
-                        key={feature.id}
-                        type="button"
-                        onClick={() => handleFeatureToggle(feature.id)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all duration-200 ${
-                          isSelected
-                            ? 'bg-[#FF6B00] border-[#FF6B00] text-white shadow-md'
-                            : 'bg-white border-gray-300 text-gray-700 hover:border-[#FF6B00] hover:text-[#FF6B00]'
-                        }`}
-                      >
-                        <IconComponent className="w-4 h-4" />
-                        <span className="text-sm font-medium">{feature.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
 
               {/* Set Your Rates Section */}

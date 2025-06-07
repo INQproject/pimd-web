@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,7 +17,6 @@ import AreasWeServe from "./pages/AreasWeServe";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
-import ChangePassword from "./pages/ChangePassword";
 import BookSlot from "./pages/seeker/BookSlot";
 import EventBooking from "./pages/seeker/EventBooking";
 import ManageAvailability from "./pages/host/ManageAvailability";
@@ -42,7 +42,6 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/book-slot/:spotId" element={<BookSlot />} />
             <Route path="/event-booking/:eventId" element={<EventBooking />} />
             <Route path="/manage-availability/:listingId" element={<ManageAvailability />} />
