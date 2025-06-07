@@ -457,7 +457,6 @@ const ManageAvailability = () => {
       });
       return;
     }
-    // The filtering is handled in getSlotsByDate function
   };
 
   const resetDateFilter = () => {
@@ -469,12 +468,10 @@ const ManageAvailability = () => {
     const groupedSlots: { [key: string]: HostSlot[] } = {};
     let filteredSlots = slots;
 
-    // Apply status filter
     if (statusFilter !== 'all') {
       filteredSlots = filteredSlots.filter(slot => slot.status === statusFilter);
     }
 
-    // Apply date range filter
     if (fromDate || toDate) {
       filteredSlots = filteredSlots.filter(slot => {
         const slotDate = new Date(slot.date + 'T00:00:00');
