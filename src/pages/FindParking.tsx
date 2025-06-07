@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -409,7 +410,7 @@ const FindParking = () => {
                   <Card 
                     key={spot.id} 
                     id={`spot-card-${spot.id}`}
-                    className={`w-full min-h-[320px] hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
+                    className={`w-full min-h-[380px] hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
                       selectedSpotId === spot.id ? 'ring-2 ring-[#FF6B00] shadow-lg border-[#FF6B00]/50' : 'hover:shadow-lg'
                     }`}
                     onClick={() => handleCardClick(spot.id)}
@@ -434,23 +435,8 @@ const FindParking = () => {
                         </div>
                       </div>
 
-                      {/* Available Dates */}
-                      <div className="mb-4">
-                        <div className="flex items-center space-x-2 text-sm text-gray-700 mb-2">
-                          <Calendar className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
-                          <span className="font-semibold">Available Dates:</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 max-h-16 overflow-y-auto">
-                          {spot.availableDates.map((date, index) => (
-                            <div key={index} className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-medium border border-blue-200">
-                              {date}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
                       {/* Available times */}
-                      <div className="flex-1 mb-4">
+                      <div className="mb-4">
                         <div className="flex items-center space-x-2 text-sm text-gray-700 mb-3">
                           <Clock className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
                           <span className="font-semibold">Available Times:</span>
@@ -464,6 +450,21 @@ const FindParking = () => {
                               <div className="text-xs text-gray-600 mt-1">
                                 Capacity: {slot.capacity} vehicle{slot.capacity !== 1 ? 's' : ''}
                               </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Available Dates */}
+                      <div className="mb-4 flex-1">
+                        <div className="flex items-center space-x-2 text-sm text-gray-700 mb-2">
+                          <Calendar className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
+                          <span className="font-semibold">Available Dates:</span>
+                        </div>
+                        <div className="flex overflow-x-auto gap-2 max-h-16 pb-2">
+                          {spot.availableDates.map((date, index) => (
+                            <div key={index} className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-medium border border-blue-200 whitespace-nowrap flex-shrink-0">
+                              {date}
                             </div>
                           ))}
                         </div>

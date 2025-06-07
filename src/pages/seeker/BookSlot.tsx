@@ -258,35 +258,6 @@ const BookSlot = () => {
   return (
     <Layout title={`Book Parking at ${spot.name}`} showBackButton={true}>
       <div className="space-y-4">
-        {/* Date Selector */}
-        <Card className="mb-6 bg-[#FFF8F2] border-[#FF6B00]/30">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center space-x-2 text-lg">
-              <Calendar className="h-5 w-5 text-[#FF6B00]" />
-              <span>Choose Date:</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {spot.availableDates.map((date) => (
-                <Button
-                  key={date.value}
-                  variant={selectedDate === date.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleDateChange(date.value)}
-                  className={`px-4 py-2 ${
-                    selectedDate === date.value 
-                      ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white' 
-                      : 'hover:bg-[#FF6B00]/10 hover:border-[#FF6B00] hover:text-[#FF6B00]'
-                  }`}
-                >
-                  {date.label}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Compact Header Section */}
         <div className="max-w-4xl mx-auto">
           {/* Hero Image - Very Compact */}
@@ -337,36 +308,67 @@ const BookSlot = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Available Slots for Selected Date */}
-              <div>
-                <h3 className="text-base font-semibold text-[#1C1C1C] mb-3">
-                  Available Slots for {spot.availableDates.find(d => d.value === selectedDate)?.shortLabel}
-                </h3>
-                {availableSlotsForDate.length > 0 ? (
-                  <div className="flex flex-wrap gap-3">
-                    {availableSlotsForDate.map(slot => (
-                      <div key={slot.id} className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
-                        <Circle className="w-3 h-3 fill-blue-500 text-blue-500" />
-                        <div className="text-sm">
-                          <span className="font-medium text-[#1C1C1C]">{slot.name}</span>
-                          <span className="text-[#606060] ml-2">({slot.timeRange})</span>
-                          <div className="text-xs text-[#606060] mt-1">
-                            {slot.capacity} spot{slot.capacity > 1 ? 's' : ''} available
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-[#606060] text-sm bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    No slots available for this date. Please select a different date.
-                  </div>
-                )}
-              </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Date Selector */}
+        <Card className="mb-6 bg-[#FFF8F2] border-[#FF6B00]/30 max-w-4xl mx-auto">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-lg">
+              <Calendar className="h-5 w-5 text-[#FF6B00]" />
+              <span>Select Available Date:</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {spot.availableDates.map((date) => (
+                <Button
+                  key={date.value}
+                  variant={selectedDate === date.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleDateChange(date.value)}
+                  className={`px-4 py-2 ${
+                    selectedDate === date.value 
+                      ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white' 
+                      : 'hover:bg-[#FF6B00]/10 hover:border-[#FF6B00] hover:text-[#FF6B00]'
+                  }`}
+                >
+                  {date.label}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Available Slots for Selected Date */}
+        <Card className="mb-4 max-w-4xl mx-auto">
+          <CardContent className="p-6">
+            <h3 className="text-base font-semibold text-[#1C1C1C] mb-3">
+              Available Slots for {spot.availableDates.find(d => d.value === selectedDate)?.shortLabel}
+            </h3>
+            {availableSlotsForDate.length > 0 ? (
+              <div className="flex flex-wrap gap-3">
+                {availableSlotsForDate.map(slot => (
+                  <div key={slot.id} className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
+                    <Circle className="w-3 h-3 fill-blue-500 text-blue-500" />
+                    <div className="text-sm">
+                      <span className="font-medium text-[#1C1C1C]">{slot.name}</span>
+                      <span className="text-[#606060] ml-2">({slot.timeRange})</span>
+                      <div className="text-xs text-[#606060] mt-1">
+                        {slot.capacity} spot{slot.capacity > 1 ? 's' : ''} available
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[#606060] text-sm bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                No slots available for this date. Please select a different date.
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Main Content Grid - Only show if slots are available */}
         {availableSlotsForDate.length > 0 && (
