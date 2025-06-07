@@ -10,121 +10,107 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, MapPin, DollarSign, Plus, Lock, User, Clock } from 'lucide-react';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
-
 const Profile = () => {
-  const { user, logout } = useAuth();
+  const {
+    user,
+    logout
+  } = useAuth();
   const navigate = useNavigate();
   const [selectedSpot, setSelectedSpot] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<string>('upcoming');
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
-
   if (!user) {
     navigate('/login');
     return null;
   }
-
-  const mockBookings = [
-    {
-      id: 1,
-      spotName: 'Downtown Austin Driveway',
-      date: '2024-03-20',
-      time: '2:00 PM - 4:00 PM',
-      amount: 30,
-      status: 'confirmed'
-    },
-    {
-      id: 2,
-      spotName: 'Safe Street Parking',
-      date: '2024-03-15',
-      time: '10:00 AM - 12:00 PM',
-      amount: 24,
-      status: 'completed'
-    }
-  ];
-
-  const mockUploads = [
-    {
-      id: 1,
-      name: 'My Driveway Spot',
-      address: '123 Main St, Austin, TX',
-      status: 'active',
-      rate: '$15/hr',
-      bookings: 8,
-      earnings: '$450'
-    },
-    {
-      id: 2,
-      name: 'Side Yard Parking',
-      address: '456 Oak Ave, Austin, TX',
-      status: 'pending',
-      rate: '$12/hr',
-      bookings: 0,
-      earnings: '$0'
-    }
-  ];
+  const mockBookings = [{
+    id: 1,
+    spotName: 'Downtown Austin Driveway',
+    date: '2024-03-20',
+    time: '2:00 PM - 4:00 PM',
+    amount: 30,
+    status: 'confirmed'
+  }, {
+    id: 2,
+    spotName: 'Safe Street Parking',
+    date: '2024-03-15',
+    time: '10:00 AM - 12:00 PM',
+    amount: 24,
+    status: 'completed'
+  }];
+  const mockUploads = [{
+    id: 1,
+    name: 'My Driveway Spot',
+    address: '123 Main St, Austin, TX',
+    status: 'active',
+    rate: '$15/hr',
+    bookings: 8,
+    earnings: '$450'
+  }, {
+    id: 2,
+    name: 'Side Yard Parking',
+    address: '456 Oak Ave, Austin, TX',
+    status: 'pending',
+    rate: '$12/hr',
+    bookings: 0,
+    earnings: '$0'
+  }];
 
   // Mock host booking history data
-  const mockHostBookings = [
-    {
-      id: 1,
-      spotName: 'My Driveway Spot',
-      spotId: 1,
-      date: '2024-03-25',
-      timeSlot: '9:00 AM - 11:00 AM',
-      duration: '2 hours',
-      bookedBy: 'John Smith',
-      bookedByEmail: 'john.smith@email.com',
-      amount: 30,
-      status: 'upcoming'
-    },
-    {
-      id: 2,
-      spotName: 'My Driveway Spot',
-      spotId: 1,
-      date: '2024-03-22',
-      timeSlot: '2:00 PM - 5:00 PM',
-      duration: '3 hours',
-      bookedBy: 'Sarah Johnson',
-      bookedByEmail: 'sarah.j@email.com',
-      amount: 45,
-      status: 'completed'
-    },
-    {
-      id: 3,
-      spotName: 'Side Yard Parking',
-      spotId: 2,
-      date: '2024-03-20',
-      timeSlot: '10:00 AM - 12:00 PM',
-      duration: '2 hours',
-      bookedBy: 'Mike Davis',
-      bookedByEmail: 'mike.davis@email.com',
-      amount: 24,
-      status: 'completed'
-    },
-    {
-      id: 4,
-      spotName: 'My Driveway Spot',
-      spotId: 1,
-      date: '2024-03-28',
-      timeSlot: '1:00 PM - 4:00 PM',
-      duration: '3 hours',
-      bookedBy: 'Emma Wilson',
-      bookedByEmail: 'emma.w@email.com',
-      amount: 45,
-      status: 'upcoming'
-    }
-  ];
+  const mockHostBookings = [{
+    id: 1,
+    spotName: 'My Driveway Spot',
+    spotId: 1,
+    date: '2024-03-25',
+    timeSlot: '9:00 AM - 11:00 AM',
+    duration: '2 hours',
+    bookedBy: 'John Smith',
+    bookedByEmail: 'john.smith@email.com',
+    amount: 30,
+    status: 'upcoming'
+  }, {
+    id: 2,
+    spotName: 'My Driveway Spot',
+    spotId: 1,
+    date: '2024-03-22',
+    timeSlot: '2:00 PM - 5:00 PM',
+    duration: '3 hours',
+    bookedBy: 'Sarah Johnson',
+    bookedByEmail: 'sarah.j@email.com',
+    amount: 45,
+    status: 'completed'
+  }, {
+    id: 3,
+    spotName: 'Side Yard Parking',
+    spotId: 2,
+    date: '2024-03-20',
+    timeSlot: '10:00 AM - 12:00 PM',
+    duration: '2 hours',
+    bookedBy: 'Mike Davis',
+    bookedByEmail: 'mike.davis@email.com',
+    amount: 24,
+    status: 'completed'
+  }, {
+    id: 4,
+    spotName: 'My Driveway Spot',
+    spotId: 1,
+    date: '2024-03-28',
+    timeSlot: '1:00 PM - 4:00 PM',
+    duration: '3 hours',
+    bookedBy: 'Emma Wilson',
+    bookedByEmail: 'emma.w@email.com',
+    amount: 45,
+    status: 'upcoming'
+  }];
 
   // Filter and sort bookings
-  const filteredBookings = mockHostBookings
-    .filter(booking => selectedSpot === 'all' || booking.spotId.toString() === selectedSpot)
-    .sort((a, b) => {
-      if (sortOrder === 'upcoming') {
-        return new Date(a.date).getTime() - new Date(b.date).getTime();
-      } else {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      }
-    });
+  const filteredBookings = mockHostBookings.filter(booking => selectedSpot === 'all' || booking.spotId.toString() === selectedSpot).sort((a, b) => {
+    if (sortOrder === 'upcoming') {
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    } else {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    }
+  });
 
   // Group bookings by spot and date
   const groupedBookings = filteredBookings.reduce((acc, booking) => {
@@ -138,13 +124,10 @@ const Profile = () => {
     acc[spotKey][booking.date].push(booking);
     return acc;
   }, {} as Record<string, Record<string, typeof mockHostBookings>>);
-
   const handleManageAvailability = (listingId: number) => {
     navigate(`/manage-availability/${listingId}`);
   };
-
-  return (
-    <Layout title="My Profile">
+  return <Layout title="My Profile">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* User Info Card */}
         <Card>
@@ -179,8 +162,7 @@ const Profile = () => {
             </div>
             
             <div className="space-y-4">
-              {mockBookings.map((booking) => (
-                <Card key={booking.id}>
+              {mockBookings.map(booking => <Card key={booking.id}>
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start">
                       <div>
@@ -195,17 +177,13 @@ const Profile = () => {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-[#FF6B00]">${booking.amount}</p>
-                        <Badge 
-                          variant={booking.status === 'completed' ? 'default' : 'secondary'}
-                          className={booking.status === 'completed' ? 'bg-green-100 text-green-800' : ''}
-                        >
+                        <Badge variant={booking.status === 'completed' ? 'default' : 'secondary'} className={booking.status === 'completed' ? 'bg-green-100 text-green-800' : ''}>
                           {booking.status}
                         </Badge>
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>)}
             </div>
           </TabsContent>
           
@@ -219,8 +197,7 @@ const Profile = () => {
             </div>
             
             <div className="space-y-4">
-              {mockUploads.map((upload) => (
-                <Card key={upload.id}>
+              {mockUploads.map(upload => <Card key={upload.id}>
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -236,54 +213,35 @@ const Profile = () => {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Badge 
-                          variant={upload.status === 'active' ? 'default' : 'secondary'}
-                          className={upload.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
-                        >
+                        <Badge variant={upload.status === 'active' ? 'default' : 'secondary'} className={upload.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
                           {upload.status}
                         </Badge>
                         
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleManageAvailability(upload.id)}
-                                disabled={upload.status === 'pending'}
-                                className={upload.status === 'pending' ? 'opacity-50' : ''}
-                              >
-                                {upload.status === 'pending' ? (
-                                  <Lock className="h-3 w-3" />
-                                ) : (
-                                  <Calendar className="h-3 w-3" />
-                                )}
+                              <Button size="sm" variant="outline" onClick={() => handleManageAvailability(upload.id)} disabled={upload.status === 'pending'} className={upload.status === 'pending' ? 'opacity-50' : ''}>
+                                {upload.status === 'pending' ? <Lock className="h-3 w-3" /> : <Calendar className="h-3 w-3" />}
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              {upload.status === 'pending' 
-                                ? 'Approval required to add slots' 
-                                : 'Manage Availability'
-                              }
+                              {upload.status === 'pending' ? 'Approval required to add slots' : 'Manage Availability'}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>)}
               
-              {mockUploads.length === 0 && (
-                <Card>
+              {mockUploads.length === 0 && <Card>
                   <CardContent className="p-8 text-center">
                     <p className="text-[#606060] mb-4">You haven't listed any parking spaces yet.</p>
                     <Button onClick={() => navigate('/list-driveway')} className="bg-[#FF6B00] hover:bg-[#FF6B00]/90">
                       List Your First Parking Space
                     </Button>
                   </CardContent>
-                </Card>
-              )}
+                </Card>}
             </div>
           </TabsContent>
 
@@ -298,11 +256,9 @@ const Profile = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Parking Spots</SelectItem>
-                    {mockUploads.map((upload) => (
-                      <SelectItem key={upload.id} value={upload.id.toString()}>
+                    {mockUploads.map(upload => <SelectItem key={upload.id} value={upload.id.toString()}>
                         {upload.name}
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
                 </Select>
                 
@@ -319,37 +275,31 @@ const Profile = () => {
             </div>
 
             <div className="space-y-6">
-              {Object.keys(groupedBookings).length === 0 ? (
-                <Card>
+              {Object.keys(groupedBookings).length === 0 ? <Card>
                   <CardContent className="p-8 text-center">
                     <p className="text-[#606060] mb-4">No bookings found for your parking spots.</p>
                     <Button onClick={() => navigate('/list-driveway')} className="bg-[#FF6B00] hover:bg-[#FF6B00]/90">
                       List Your First Parking Space
                     </Button>
                   </CardContent>
-                </Card>
-              ) : (
-                Object.entries(groupedBookings).map(([spotName, dateGroups]) => (
-                  <div key={spotName} className="space-y-4">
+                </Card> : Object.entries(groupedBookings).map(([spotName, dateGroups]) => <div key={spotName} className="space-y-4">
                     <h4 className="text-lg font-semibold text-[#FF6B00] border-b border-gray-200 pb-2">
                       {spotName}
                     </h4>
                     
-                    {Object.entries(dateGroups).map(([date, bookings]) => (
-                      <div key={date} className="space-y-2">
+                    {Object.entries(dateGroups).map(([date, bookings]) => <div key={date} className="space-y-2">
                         <h5 className="text-md font-medium text-[#606060] flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
-                          {new Date(date).toLocaleDateString('en-US', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}
+                          {new Date(date).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
                         </h5>
                         
                         <div className="space-y-2 ml-6">
-                          {bookings.map((booking) => (
-                            <Card key={booking.id} className="shadow-sm">
+                          {bookings.map(booking => <Card key={booking.id} className="shadow-sm">
                               <CardContent className="p-4">
                                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                                   <div className="flex-1 space-y-2">
@@ -376,27 +326,16 @@ const Profile = () => {
                                       </p>
                                     </div>
                                     
-                                    <Badge 
-                                      variant={booking.status === 'completed' ? 'default' : 'secondary'}
-                                      className={
-                                        booking.status === 'completed' 
-                                          ? 'bg-green-100 text-green-800' 
-                                          : 'bg-blue-100 text-blue-800'
-                                      }
-                                    >
+                                    <Badge variant={booking.status === 'completed' ? 'default' : 'secondary'} className={booking.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
                                       {booking.status === 'upcoming' ? 'Upcoming' : 'Completed'}
                                     </Badge>
                                   </div>
                                 </div>
                               </CardContent>
-                            </Card>
-                          ))}
+                            </Card>)}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ))
-              )}
+                      </div>)}
+                  </div>)}
             </div>
           </TabsContent>
           
@@ -422,13 +361,7 @@ const Profile = () => {
                   <Button variant="outline" className="mt-4">
                     Edit Profile
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
-                    onClick={() => setIsForgotPasswordOpen(true)}
-                  >
-                    Forgot Password
-                  </Button>
+                  
                 </div>
               </CardContent>
             </Card>
@@ -436,12 +369,7 @@ const Profile = () => {
         </Tabs>
       </div>
 
-      <ForgotPasswordModal 
-        isOpen={isForgotPasswordOpen}
-        onClose={() => setIsForgotPasswordOpen(false)}
-      />
-    </Layout>
-  );
+      <ForgotPasswordModal isOpen={isForgotPasswordOpen} onClose={() => setIsForgotPasswordOpen(false)} />
+    </Layout>;
 };
-
 export default Profile;
