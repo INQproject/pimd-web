@@ -14,19 +14,19 @@ const mockEvents = [
     time: '2:00 PM - 11:00 PM',
     location: 'Zilker Park, Austin',
     category: 'Music',
-    image: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=500&h=300&fit=crop',
+    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=500',
     description: 'Three days of amazing music featuring top artists from around the world.',
     city: 'austin'
   },
   {
     id: 2,
-    name: 'Dallas Marathon 2025',
-    date: 'Dec 8, 2024',
-    time: '7:00 AM - 2:00 PM',
-    location: 'Downtown Dallas',
+    name: 'Dallas Cowboys vs Giants',
+    date: 'Nov 24, 2024',
+    time: '7:30 PM',
+    location: 'AT&T Stadium, Dallas',
     category: 'Sports',
-    image: 'https://images.unsplash.com/photo-1571008887538-b36bb32f4571?w=500&h=300&fit=crop',
-    description: 'Join thousands of runners in this premier marathon event through the heart of Dallas.',
+    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=500',
+    description: 'Don\'t miss this epic NFL showdown between two giants!',
     city: 'dallas'
   },
   {
@@ -36,42 +36,9 @@ const mockEvents = [
     time: 'All Day',
     location: 'Downtown Austin',
     category: 'Music',
-    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&h=300&fit=crop',
+    image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=500',
     description: 'The ultimate music, interactive, and film festival.',
     city: 'austin'
-  },
-  {
-    id: 4,
-    name: 'State Fair of Texas',
-    date: 'Sep 27 - Oct 20, 2024',
-    time: '10:00 AM - 10:00 PM',
-    location: 'Fair Park, Dallas',
-    category: 'Fair',
-    image: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=500&h=300&fit=crop',
-    description: 'The biggest state fair in the United States with rides, food, and entertainment.',
-    city: 'dallas'
-  },
-  {
-    id: 5,
-    name: 'Austin Food + Wine Festival',
-    date: 'Apr 26-28, 2025',
-    time: '12:00 PM - 10:00 PM',
-    location: 'Auditorium Shores, Austin',
-    category: 'Food',
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&h=300&fit=crop',
-    description: 'Celebrate Austin\'s incredible food scene with top chefs and local restaurants.',
-    city: 'austin'
-  },
-  {
-    id: 6,
-    name: 'Dallas Arts District Festival',
-    date: 'May 17-18, 2025',
-    time: '11:00 AM - 9:00 PM',
-    location: 'Dallas Arts District',
-    category: 'Arts',
-    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=300&fit=crop',
-    description: 'Experience the vibrant arts scene with galleries, performances, and street art.',
-    city: 'dallas'
   }
 ];
 
@@ -94,7 +61,6 @@ const Events = () => {
       'Business': 'bg-green-100 text-green-800',
       'Food': 'bg-orange-100 text-orange-800',
       'Arts': 'bg-pink-100 text-pink-800',
-      'Fair': 'bg-yellow-100 text-yellow-800',
     };
     return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -106,7 +72,7 @@ const Events = () => {
         <div 
           className="relative h-64 bg-cover bg-center rounded-2xl overflow-hidden"
           style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&h=400&fit=crop')"
+            backgroundImage: "url('https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200')"
           }}
         >
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">

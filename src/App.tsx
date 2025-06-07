@@ -20,21 +20,7 @@ import Profile from "./pages/Profile";
 import BookSlot from "./pages/seeker/BookSlot";
 import EventBooking from "./pages/seeker/EventBooking";
 import ManageAvailability from "./pages/host/ManageAvailability";
-import Calendar from "./pages/host/Calendar";
 import NotFound from "./pages/NotFound";
-
-// Admin Pages
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminRefunds from "./pages/admin/AdminRefunds";
-import AdminBookings from "./pages/admin/AdminBookings";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminListings from "./pages/admin/AdminListings";
-import AdminEvents from "./pages/admin/AdminEvents";
-import AdminBookForSeeker from "./pages/admin/AdminBookForSeeker";
-import AdminCreateSlot from "./pages/admin/AdminCreateSlot";
-import AdminPayouts from "./pages/admin/AdminPayouts";
 
 const queryClient = new QueryClient();
 
@@ -59,20 +45,6 @@ const App = () => (
             <Route path="/book-slot/:spotId" element={<BookSlot />} />
             <Route path="/event-booking/:eventId" element={<EventBooking />} />
             <Route path="/manage-availability/:listingId" element={<ManageAvailability />} />
-            <Route path="/calendar/:listingId" element={<Calendar />} />
-            
-            {/* Admin Routes */}
-            <Route path="/admin-login" element={<AdminLogin />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/admin-manage-users" element={<AdminUsers />} />
-            <Route path="/admin-manage-listings" element={<AdminListings />} />
-            <Route path="/admin-manage-events" element={<AdminEvents />} />
-            <Route path="/admin-book-for-seeker" element={<AdminBookForSeeker />} />
-            <Route path="/admin-create-slot-host" element={<AdminCreateSlot />} />
-            <Route path="/admin-refunds" element={<AdminRefunds />} />
-            <Route path="/admin-payouts" element={<AdminPayouts />} />
-            <Route path="/admin-settings" element={<AdminSettings />} />
-            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
