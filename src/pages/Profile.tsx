@@ -1,322 +1,429 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, Calendar, Clock, Car, DollarSign, Edit, Eye } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import ForgotPasswordModal from '@/components/ForgotPasswordModal';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar, MapPin, DollarSign, Plus, Lock, User, Clock } from 'lucide-react';
 
 const Profile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: '+1 (555) 123-4567',
-    address: '123 Main St, Austin, TX 78701'
-  });
-
-  const mockBookings = [
-    {
-      id: 1,
-      spotName: 'Downtown Austin Driveway',
-      address: '123 Congress Ave, Austin, TX',
-      date: '2024-12-15',
-      time: '9:00 AM - 5:00 PM',
-      price: 64,
-      status: 'confirmed',
-      vehicleNumber: 'ABC1234'
-    },
-    {
-      id: 2,
-      spotName: 'Deep Ellum Private Spot',
-      address: '456 Elm St, Dallas, TX',
-      date: '2024-12-18',
-      time: '2:00 PM - 8:00 PM',
-      price: 72,
-      status: 'upcoming',
-      vehicleNumber: 'XYZ5678'
-    }
-  ];
-
-  const mockListings = [
-    {
-      id: 1,
-      name: 'My Downtown Spot',
-      address: '789 Oak Street, Austin, TX',
-      price: 15,
-      status: 'active',
-      totalBookings: 23,
-      earnings: 1840
-    }
-  ];
+  const [selectedSpot, setSelectedSpot] = useState<string>('all');
+  const [sortOrder, setSortOrder] = useState<string>('upcoming');
 
   if (!user) {
     navigate('/login');
     return null;
   }
 
-  const handleSaveProfile = () => {
-    setIsEditing(false);
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been saved successfully.",
-    });
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800';
-      case 'upcoming':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const mockBookings = [
+    {
+      id: 1,
+      spotName: 'Downtown Austin Driveway',
+      date: '2024-03-20',
+      time: '2:00 PM - 4:00 PM',
+      amount: 30,
+      status: 'confirmed'
+    },
+    {
+      id: 2,
+      spotName: 'Safe Street Parking',
+      date: '2024-03-15',
+      time: '10:00 AM - 12:00 PM',
+      amount: 24,
+      status: 'completed'
     }
+  ];
+
+  const mockUploads = [
+    {
+      id: 1,
+      name: 'My Driveway Spot',
+      address: '123 Main St, Austin, TX',
+      status: 'active',
+      rate: '$15/hr',
+      bookings: 8,
+      earnings: '$450'
+    },
+    {
+      id: 2,
+      name: 'Side Yard Parking',
+      address: '456 Oak Ave, Austin, TX',
+      status: 'pending',
+      rate: '$12/hr',
+      bookings: 0,
+      earnings: '$0'
+    }
+  ];
+
+  // Mock host booking history data
+  const mockHostBookings = [
+    {
+      id: 1,
+      spotName: 'My Driveway Spot',
+      spotId: 1,
+      date: '2024-03-25',
+      timeSlot: '9:00 AM - 11:00 AM',
+      duration: '2 hours',
+      bookedBy: 'John Smith',
+      bookedByEmail: 'john.smith@email.com',
+      amount: 30,
+      status: 'upcoming'
+    },
+    {
+      id: 2,
+      spotName: 'My Driveway Spot',
+      spotId: 1,
+      date: '2024-03-22',
+      timeSlot: '2:00 PM - 5:00 PM',
+      duration: '3 hours',
+      bookedBy: 'Sarah Johnson',
+      bookedByEmail: 'sarah.j@email.com',
+      amount: 45,
+      status: 'completed'
+    },
+    {
+      id: 3,
+      spotName: 'Side Yard Parking',
+      spotId: 2,
+      date: '2024-03-20',
+      timeSlot: '10:00 AM - 12:00 PM',
+      duration: '2 hours',
+      bookedBy: 'Mike Davis',
+      bookedByEmail: 'mike.davis@email.com',
+      amount: 24,
+      status: 'completed'
+    },
+    {
+      id: 4,
+      spotName: 'My Driveway Spot',
+      spotId: 1,
+      date: '2024-03-28',
+      timeSlot: '1:00 PM - 4:00 PM',
+      duration: '3 hours',
+      bookedBy: 'Emma Wilson',
+      bookedByEmail: 'emma.w@email.com',
+      amount: 45,
+      status: 'upcoming'
+    }
+  ];
+
+  // Filter and sort bookings
+  const filteredBookings = mockHostBookings
+    .filter(booking => selectedSpot === 'all' || booking.spotId.toString() === selectedSpot)
+    .sort((a, b) => {
+      if (sortOrder === 'upcoming') {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      } else {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }
+    });
+
+  // Group bookings by spot and date
+  const groupedBookings = filteredBookings.reduce((acc, booking) => {
+    const spotKey = booking.spotName;
+    if (!acc[spotKey]) {
+      acc[spotKey] = {};
+    }
+    if (!acc[spotKey][booking.date]) {
+      acc[spotKey][booking.date] = [];
+    }
+    acc[spotKey][booking.date].push(booking);
+    return acc;
+  }, {} as Record<string, Record<string, typeof mockHostBookings>>);
+
+  const handleManageAvailability = (listingId: number) => {
+    navigate(`/manage-availability/${listingId}`);
   };
 
   return (
-    <Layout title="PROFILE">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Profile Header */}
+    <Layout title="My Profile">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* User Info Card */}
         <Card>
           <CardHeader>
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={user?.avatar} alt={user?.name} />
-                <AvatarFallback className="text-xl">
-                  {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-[#1C1C1C]">{user?.name}</h1>
-                <p className="text-[#606060]">{user?.email}</p>
-                <Badge variant="secondary" className="mt-2">
-                  {user?.role === 'host' ? 'Host' : 'Parker'}
-                </Badge>
-              </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditing(!isEditing)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  {isEditing ? 'Cancel' : 'Edit'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Personal Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>My Info</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={profileData.name}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
-                  disabled={!isEditing}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={profileData.email}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                  disabled={!isEditing}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={profileData.phone}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
-                  disabled={!isEditing}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={profileData.address}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
-                  disabled={!isEditing}
-                />
-              </div>
-              
-              {isEditing && (
-                <Button onClick={handleSaveProfile} className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90">
-                  Save Changes
-                </Button>
-              )}
-              
-              {/* Forgot Password Button */}
-              <Separator className="my-4" />
-              <Button 
-                variant="outline" 
-                className="w-full border-[#FF6B00] text-[#FF6B00] hover:bg-[#FF6B00] hover:text-white"
-                onClick={() => setShowForgotPassword(true)}
-              >
-                Forgot Password
+            <CardTitle className="flex justify-between items-center">
+              <span>Welcome, {user.name}!</span>
+              <Button variant="outline" onClick={logout}>
+                Logout
               </Button>
-            </CardContent>
-          </Card>
-
-          {/* Quick Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{mockBookings.length}</div>
-                  <div className="text-sm text-blue-800">Total Bookings</div>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{mockListings.length}</div>
-                  <div className="text-sm text-green-800">Active Listings</div>
-                </div>
-                <div className="text-center p-4 bg-orange-50 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600">
-                    ${mockListings.reduce((sum, listing) => sum + listing.earnings, 0)}
-                  </div>
-                  <div className="text-sm text-orange-800">Total Earnings</div>
-                </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">4.8</div>
-                  <div className="text-sm text-purple-800">Rating</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Bookings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Bookings</CardTitle>
-            <CardDescription>Your recent parking reservations</CardDescription>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {mockBookings.map((booking) => (
-                <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-shrink-0">
-                      <Car className="h-8 w-8 text-[#FF6B00]" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-[#1C1C1C]">{booking.spotName}</h4>
-                      <div className="flex items-center space-x-2 text-sm text-[#606060]">
-                        <MapPin className="h-4 w-4" />
-                        <span>{booking.address}</span>
-                      </div>
-                      <div className="flex items-center space-x-4 text-sm text-[#606060] mt-1">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{booking.date}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-4 w-4" />
-                          <span>{booking.time}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Car className="h-4 w-4" />
-                          <span>{booking.vehicleNumber}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-[#1C1C1C]">${booking.price}</div>
-                    <Badge className={getStatusColor(booking.status)}>
-                      {booking.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <p className="text-[#606060]">Email: {user.email}</p>
           </CardContent>
         </Card>
 
-        {/* My Listings (if user is a host) */}
-        {user.role === 'host' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>My Listings</CardTitle>
-              <CardDescription>Manage your parking spots</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mockListings.map((listing) => (
-                  <div key={listing.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                    <div>
-                      <h4 className="font-semibold text-[#1C1C1C]">{listing.name}</h4>
-                      <div className="flex items-center space-x-2 text-sm text-[#606060]">
-                        <MapPin className="h-4 w-4" />
-                        <span>{listing.address}</span>
+        {/* Tabs for different sections */}
+        <Tabs defaultValue="bookings" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="bookings">My Bookings</TabsTrigger>
+            <TabsTrigger value="uploads">My Uploads</TabsTrigger>
+            <TabsTrigger value="host-history">Host Booking History</TabsTrigger>
+            <TabsTrigger value="info">My Info</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="bookings" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold">Your Parking Bookings</h3>
+              <Button onClick={() => navigate('/find-parking')} className="bg-[#FF6B00] hover:bg-[#FF6B00]/90">
+                Book More Parking
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {mockBookings.map((booking) => (
+                <Card key={booking.id}>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold">{booking.spotName}</h4>
+                        <div className="flex items-center space-x-4 text-sm text-[#606060] mt-1">
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="w-4 h-4" />
+                            <span>{booking.date}</span>
+                          </div>
+                          <span>{booking.time}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-4 text-sm text-[#606060] mt-1">
-                        <span>{listing.totalBookings} bookings</span>
-                        <span>${listing.earnings} earned</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge className="bg-green-100 text-green-800">{listing.status}</Badge>
                       <div className="text-right">
-                        <div className="font-semibold text-[#FF6B00]">${listing.price}/hr</div>
+                        <p className="font-semibold text-[#FF6B00]">${booking.amount}</p>
+                        <Badge 
+                          variant={booking.status === 'completed' ? 'default' : 'secondary'}
+                          className={booking.status === 'completed' ? 'bg-green-100 text-green-800' : ''}
+                        >
+                          {booking.status}
+                        </Badge>
                       </div>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="uploads" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold">Your Parking Listings</h3>
+              <Button onClick={() => navigate('/list-driveway')} className="bg-[#FF6B00] hover:bg-[#FF6B00]/90">
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Listing
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {mockUploads.map((upload) => (
+                <Card key={upload.id}>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{upload.name}</h4>
+                        <div className="flex items-center space-x-2 text-sm text-[#606060] mt-1">
+                          <MapPin className="w-4 h-4" />
+                          <span>{upload.address}</span>
+                        </div>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <span className="text-sm">Rate: <span className="font-semibold text-[#FF6B00]">{upload.rate}</span></span>
+                          <span className="text-sm">Bookings: <span className="font-semibold">{upload.bookings}</span></span>
+                          <span className="text-sm">Earnings: <span className="font-semibold text-green-600">{upload.earnings}</span></span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge 
+                          variant={upload.status === 'active' ? 'default' : 'secondary'}
+                          className={upload.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
+                        >
+                          {upload.status}
+                        </Badge>
+                        
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleManageAvailability(upload.id)}
+                                disabled={upload.status === 'pending'}
+                                className={upload.status === 'pending' ? 'opacity-50' : ''}
+                              >
+                                {upload.status === 'pending' ? (
+                                  <Lock className="h-3 w-3" />
+                                ) : (
+                                  <Calendar className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {upload.status === 'pending' 
+                                ? 'Approval required to add slots' 
+                                : 'Manage Availability'
+                              }
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              
+              {mockUploads.length === 0 && (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <p className="text-[#606060] mb-4">You haven't listed any parking spaces yet.</p>
+                    <Button onClick={() => navigate('/list-driveway')} className="bg-[#FF6B00] hover:bg-[#FF6B00]/90">
+                      List Your First Parking Space
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
 
-      <ForgotPasswordModal 
-        isOpen={showForgotPassword}
-        onClose={() => setShowForgotPassword(false)}
-      />
+          <TabsContent value="host-history" className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h3 className="text-xl font-semibold">Host Booking History</h3>
+              
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Select value={selectedSpot} onValueChange={setSelectedSpot}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Filter by spot" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Parking Spots</SelectItem>
+                    {mockUploads.map((upload) => (
+                      <SelectItem key={upload.id} value={upload.id.toString()}>
+                        {upload.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={sortOrder} onValueChange={setSortOrder}>
+                  <SelectTrigger className="w-full sm:w-40">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="upcoming">Upcoming First</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {Object.keys(groupedBookings).length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <p className="text-[#606060] mb-4">No bookings found for your parking spots.</p>
+                    <Button onClick={() => navigate('/list-driveway')} className="bg-[#FF6B00] hover:bg-[#FF6B00]/90">
+                      List Your First Parking Space
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                Object.entries(groupedBookings).map(([spotName, dateGroups]) => (
+                  <div key={spotName} className="space-y-4">
+                    <h4 className="text-lg font-semibold text-[#FF6B00] border-b border-gray-200 pb-2">
+                      {spotName}
+                    </h4>
+                    
+                    {Object.entries(dateGroups).map(([date, bookings]) => (
+                      <div key={date} className="space-y-2">
+                        <h5 className="text-md font-medium text-[#606060] flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          {new Date(date).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </h5>
+                        
+                        <div className="space-y-2 ml-6">
+                          {bookings.map((booking) => (
+                            <Card key={booking.id} className="shadow-sm">
+                              <CardContent className="p-4">
+                                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                                  <div className="flex-1 space-y-2">
+                                    <div className="flex items-center space-x-4 text-sm">
+                                      <div className="flex items-center space-x-1">
+                                        <Clock className="w-4 h-4 text-[#606060]" />
+                                        <span className="font-medium">{booking.timeSlot}</span>
+                                      </div>
+                                      <span className="text-[#606060]">({booking.duration})</span>
+                                    </div>
+                                    
+                                    <div className="flex items-center space-x-2 text-sm">
+                                      <User className="w-4 h-4 text-[#606060]" />
+                                      <span className="font-medium">{booking.bookedBy}</span>
+                                      <span className="text-[#606060]">({booking.bookedByEmail})</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center space-x-3">
+                                    <div className="text-right">
+                                      <p className="font-semibold text-[#FF6B00] flex items-center gap-1">
+                                        <DollarSign className="w-4 h-4" />
+                                        ${booking.amount}
+                                      </p>
+                                    </div>
+                                    
+                                    <Badge 
+                                      variant={booking.status === 'completed' ? 'default' : 'secondary'}
+                                      className={
+                                        booking.status === 'completed' 
+                                          ? 'bg-green-100 text-green-800' 
+                                          : 'bg-blue-100 text-blue-800'
+                                      }
+                                    >
+                                      {booking.status === 'upcoming' ? 'Upcoming' : 'Completed'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="info" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Full Name</label>
+                  <p className="text-[#606060]">{user.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Email Address</label>
+                  <p className="text-[#606060]">{user.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Account Type</label>
+                  <p className="text-[#606060]">Standard User</p>
+                </div>
+                <Button variant="outline" className="mt-4">
+                  Edit Profile
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </Layout>
   );
 };

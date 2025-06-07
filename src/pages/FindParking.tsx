@@ -7,11 +7,50 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { MapPin, Calendar, Clock, Filter, Car, Navigation, Search, DollarSign, HelpCircle, Phone, Mail } from 'lucide-react';
+import { MapPin, Calendar, Clock, Filter, Car, Navigation, Search, DollarSign } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { mockParkingSpots } from '@/data/mockParkingData';
-import { format } from 'date-fns';
+
+const mockParkingSpots = [
+  {
+    id: 1,
+    name: 'Downtown Austin Driveway',
+    address: '123 Congress Ave, Austin, TX',
+    price: 15,
+    city: 'austin',
+    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
+    coordinates: { x: 35, y: 40 }, // Position on static map (percentage)
+    slots: [
+      { id: 1, name: 'Slot A', timeRange: '8:00 AM - 12:00 PM', capacity: 2 },
+      { id: 2, name: 'Slot B', timeRange: '1:00 PM - 6:00 PM', capacity: 1 }
+    ]
+  },
+  {
+    id: 2,
+    name: 'Deep Ellum Private Spot',
+    address: '456 Elm St, Dallas, TX',
+    price: 12,
+    city: 'dallas',
+    image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
+    coordinates: { x: 65, y: 25 },
+    slots: [
+      { id: 3, name: 'Slot A', timeRange: '9:00 AM - 2:00 PM', capacity: 3 },
+      { id: 4, name: 'Slot B', timeRange: '3:00 PM - 8:00 PM', capacity: 2 }
+    ]
+  },
+  {
+    id: 3,
+    name: 'Phoenix Mall Parking',
+    address: '789 Phoenix Way, Austin, TX',
+    price: 8,
+    city: 'austin',
+    image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
+    coordinates: { x: 50, y: 60 },
+    slots: [
+      { id: 5, name: 'Slot A', timeRange: '10:00 AM - 4:00 PM', capacity: 5 },
+      { id: 6, name: 'Slot B', timeRange: '5:00 PM - 10:00 PM', capacity: 3 }
+    ]
+  }
+];
 
 const FindParking = () => {
   const navigate = useNavigate();
@@ -65,26 +104,6 @@ const FindParking = () => {
       );
     }
   }, []);
-
-  const getUniqueDatesForSpot = (spot: any) => {
-    const allDates = spot.slots.flatMap((slot: any) => slot.availableDates || []);
-    return [...new Set(allDates)].sort();
-  };
-
-  const formatAvailableDates = (dates: string[]) => {
-    if (dates.length === 0) return 'No dates available';
-    
-    const formattedDates = dates.slice(0, 3).map(date => {
-      const dateObj = new Date(date);
-      return format(dateObj, 'MMM d');
-    });
-    
-    if (dates.length > 3) {
-      return `${formattedDates.join(', ')} +${dates.length - 3} more`;
-    }
-    
-    return formattedDates.join(', ');
-  };
 
   const handleStartTimeChange = (value: string) => {
     setStartTime(value);
@@ -177,24 +196,6 @@ const FindParking = () => {
   return (
     <Layout title="Find Parking">
       <div className="space-y-6">
-        {/* Support Message */}
-        <Alert className="bg-yellow-50 border-yellow-200">
-          <HelpCircle className="h-5 w-5 text-yellow-600" />
-          <AlertDescription className="text-yellow-800">
-            <div className="font-medium mb-2">If you're facing any issues while listing your driveway or booking a parking spot, please contact our support team.</div>
-            <div className="flex flex-col sm:flex-row gap-2 text-sm">
-              <div className="flex items-center gap-1">
-                <Phone className="h-4 w-4" />
-                <span>Phone: (123) 456-7890</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Mail className="h-4 w-4" />
-                <span>Email: support@parkinmydriveway.com</span>
-              </div>
-            </div>
-          </AlertDescription>
-        </Alert>
-
         {/* Search and Filters */}
         <Card>
           <CardHeader>
@@ -299,7 +300,9 @@ const FindParking = () => {
           </CardHeader>
           <CardContent>
             <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ height: '400px' }}>
+              {/* Static Map Background */}
               <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100">
+                {/* Grid pattern to simulate map */}
                 <div className="absolute inset-0 opacity-20">
                   <svg width="100%" height="100%">
                     <defs>
@@ -311,12 +314,14 @@ const FindParking = () => {
                   </svg>
                 </div>
                 
+                {/* Streets simulation */}
                 <div className="absolute top-1/3 left-0 right-0 h-2 bg-gray-300 opacity-50"></div>
                 <div className="absolute top-2/3 left-0 right-0 h-2 bg-gray-300 opacity-50"></div>
                 <div className="absolute left-1/4 top-0 bottom-0 w-2 bg-gray-300 opacity-50"></div>
                 <div className="absolute left-3/4 top-0 bottom-0 w-2 bg-gray-300 opacity-50"></div>
               </div>
 
+              {/* Parking Spot Pins */}
               {filteredSpots.map((spot) => (
                 <div
                   key={spot.id}
@@ -331,11 +336,13 @@ const FindParking = () => {
                   title={`${spot.name} - $${spot.price}/hr`}
                 >
                   <div className={`relative ${selectedSpotId === spot.id ? 'animate-bounce' : ''}`}>
+                    {/* Pin Icon */}
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg ${
                       selectedSpotId === spot.id ? 'bg-[#FF6B00] ring-4 ring-orange-200' : 'bg-[#FF6B00] hover:bg-[#FF6B00]/90'
                     }`}>
                       <DollarSign className="w-4 h-4" />
                     </div>
+                    {/* Price Label */}
                     <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded shadow-md text-xs font-semibold text-[#FF6B00] whitespace-nowrap">
                       ${spot.price}/hr
                     </div>
@@ -343,10 +350,11 @@ const FindParking = () => {
                 </div>
               ))}
 
+              {/* User Location Pin (if available) */}
               {userLocation && (
                 <div
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-30"
-                  style={{ left: '20%', top: '30%' }}
+                  style={{ left: '20%', top: '30%' }} // Simulated user position
                 >
                   <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
                   <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-2 py-1 rounded shadow-md text-xs font-semibold whitespace-nowrap">
@@ -381,12 +389,13 @@ const FindParking = () => {
                   <Card 
                     key={spot.id} 
                     id={`spot-card-${spot.id}`}
-                    className={`w-full min-h-[280px] hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
+                    className={`w-full min-h-[240px] hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
                       selectedSpotId === spot.id ? 'ring-2 ring-[#FF6B00] shadow-lg border-[#FF6B00]/50' : 'hover:shadow-lg'
                     }`}
                     onClick={() => handleCardClick(spot.id)}
                   >
                     <CardContent className="p-5 h-full flex flex-col">
+                      {/* Header with name and price */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-lg text-[#1C1C1C] mb-2 group-hover:text-[#FF6B00] transition-colors">
@@ -405,20 +414,11 @@ const FindParking = () => {
                         </div>
                       </div>
 
-                      <div className="mb-4">
-                        <div className="flex items-center space-x-2 text-sm text-gray-700 mb-2">
-                          <Calendar className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
-                          <span className="font-semibold">Available:</span>
-                          <span className="text-[#FF6B00] font-medium">
-                            {formatAvailableDates(getUniqueDatesForSpot(spot))}
-                          </span>
-                        </div>
-                      </div>
-
+                      {/* Available times */}
                       <div className="flex-1 mb-4">
                         <div className="flex items-center space-x-2 text-sm text-gray-700 mb-3">
                           <Clock className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
-                          <span className="font-semibold">Time Slots:</span>
+                          <span className="font-semibold">Available Times:</span>
                         </div>
                         <div className="space-y-2">
                           {spot.slots.map(slot => (
@@ -434,6 +434,7 @@ const FindParking = () => {
                         </div>
                       </div>
 
+                      {/* Book button */}
                       <div className="flex justify-center md:justify-end pt-2">
                         <Button 
                           onClick={(e) => {
