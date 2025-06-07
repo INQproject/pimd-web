@@ -414,7 +414,7 @@ const ManageAvailability = () => {
     const slot = slots.find(s => s.id === slotId);
     if (!slot) return;
 
-    // Check if slot has bookings - only allow deletion of available slots
+    // Check if slot has bookings - only allow deletion of available or cancelled slots
     if (slot.status === 'booked') {
       toast({
         title: "Cannot delete slot",
