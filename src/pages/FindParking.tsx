@@ -69,7 +69,7 @@ const FindParking = () => {
 
   const getUniqueDatesForSpot = (spot: any) => {
     const allDates = spot.slots.flatMap((slot: any) => slot.availableDates || []);
-    return [...new Set(allDates)].sort();
+    return [...new Set(allDates.filter((date: any) => typeof date === 'string'))].sort();
   };
 
   const formatAvailableDates = (dates: string[]) => {
@@ -178,6 +178,19 @@ const FindParking = () => {
   return (
     <Layout title="Find Parking">
       <div className="space-y-6">
+        {/* Top Banner Image - Updated with parking-related image */}
+        <div className="relative h-48 bg-cover bg-center rounded-lg overflow-hidden mb-6" style={{
+          backgroundImage: "url('https://images.unsplash.com/photo-1471958680802-1345a694ba6d?w=1200')"
+        }}>
+          <div className="absolute inset-0 bg-black bg-opacity-40" />
+          <div className="relative h-full flex items-center justify-center text-center text-white px-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">Find Your Perfect Parking Spot</h1>
+              <p className="text-lg">Discover affordable parking in residential driveways</p>
+            </div>
+          </div>
+        </div>
+
         {/* Support Message */}
         <Alert className="bg-yellow-50 border-yellow-200">
           <HelpCircle className="h-5 w-5 text-yellow-600" />

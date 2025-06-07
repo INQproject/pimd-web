@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, MapPin, DollarSign, Plus, Lock, User, Clock } from 'lucide-react';
+import { Calendar, MapPin, DollarSign, Plus, Lock, User, Clock, Settings } from 'lucide-react';
+import ChangePasswordModal from '@/components/ChangePasswordModal';
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -266,6 +267,18 @@ const Profile = () => {
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
+
+                        {/* Manage Availability Button */}
+                        <Button 
+                          size="sm" 
+                          variant="default"
+                          onClick={() => handleManageAvailability(upload.id)}
+                          disabled={upload.status === 'pending'}
+                          className={`bg-[#FF6B00] hover:bg-[#FF6B00]/90 ${upload.status === 'pending' ? 'opacity-50' : ''}`}
+                        >
+                          <Settings className="h-3 w-3 mr-1" />
+                          Manage Availability
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -416,9 +429,12 @@ const Profile = () => {
                   <label className="text-sm font-medium">Account Type</label>
                   <p className="text-[#606060]">Standard User</p>
                 </div>
-                <Button variant="outline" className="mt-4">
-                  Edit Profile
-                </Button>
+                <div className="flex gap-4 mt-4">
+                  <Button variant="outline" className="mt-4">
+                    Edit Profile
+                  </Button>
+                  <ChangePasswordModal />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

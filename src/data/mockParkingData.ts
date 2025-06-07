@@ -6,8 +6,10 @@ export const mockParkingSpots = [
     address: '123 Congress Ave, Austin, TX',
     price: 15,
     city: 'austin',
-    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
+    image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
     coordinates: { x: 35, y: 40 },
+    description: 'Safe and secure parking spot in downtown Austin. Perfect for events and business trips.',
+    amenities: ['24/7 Access', 'Security Camera', 'Well Lit', 'Covered'],
     slots: [
       { 
         id: 1, 
@@ -37,6 +39,8 @@ export const mockParkingSpots = [
     city: 'dallas',
     image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
     coordinates: { x: 65, y: 25 },
+    description: 'Convenient parking spot in the heart of Deep Ellum. Close to restaurants and nightlife.',
+    amenities: ['CCTV', 'Well Lit'],
     slots: [
       { 
         id: 3, 
@@ -64,8 +68,10 @@ export const mockParkingSpots = [
     address: '789 Phoenix Way, Austin, TX',
     price: 8,
     city: 'austin',
-    image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
+    image: 'https://images.unsplash.com/photo-1471958680802-1345a694ba6d?w=400',
     coordinates: { x: 50, y: 60 },
+    description: 'Affordable parking near Phoenix Mall with easy access to shopping and dining.',
+    amenities: ['24/7 Access', 'Well Lit'],
     slots: [
       { 
         id: 5, 

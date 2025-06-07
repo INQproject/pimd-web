@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Car, DollarSign, Calendar, Star, Shield, Clock, Users, CheckCircle } from 'lucide-react';
+
 const mockEvents = [{
   id: 1,
   name: 'Austin City Limits Music Festival',
@@ -16,30 +18,34 @@ const mockEvents = [{
   name: 'Dallas Cowboys vs Giants',
   date: 'Nov 24, 2024',
   location: 'AT&T Stadium, Dallas',
-  image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=500',
+  image: 'https://images.unsplash.com/photo-1459865264687-595d652de67e?w=500',
   city: 'dallas'
 }, {
   id: 3,
   name: 'South by Southwest (SXSW)',
   date: 'Mar 10-19, 2025',
   location: 'Downtown Austin',
-  image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=500',
+  image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=500',
   city: 'austin'
 }];
+
 const Index = () => {
   const navigate = useNavigate();
   const [selectedCity, setSelectedCity] = useState<'all' | 'austin' | 'dallas'>('all');
   const filteredEvents = selectedCity === 'all' ? mockEvents : mockEvents.filter(event => event.city === selectedCity);
+
   const handleFindParking = () => {
     navigate('/find-parking');
   };
+
   const handleListDriveway = () => {
     navigate('/list-driveway');
   };
+
   return <Layout showNavigation={true}>
-      {/* Hero Banner Section */}
+      {/* Hero Banner Section - Updated with parking-related image */}
       <section className="relative h-96 bg-cover bg-center rounded-2xl mb-12 overflow-hidden" style={{
-      backgroundImage: "url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=1200')"
+      backgroundImage: "url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200')"
     }}>
         <div className="absolute inset-0 bg-black bg-opacity-50" />
         <div className="relative h-full flex items-center justify-center text-center text-white px-4">
@@ -102,7 +108,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Featured Events Section */}
+      {/* Featured Events Section - Updated event images */}
       <section className="py-12">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-[#1C1C1C] mb-4">Featured Events</h2>
@@ -265,4 +271,5 @@ const Index = () => {
       </footer>
     </Layout>;
 };
+
 export default Index;
