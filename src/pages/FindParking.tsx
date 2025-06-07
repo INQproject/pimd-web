@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MapPin, Calendar, Clock, Filter, Car, Navigation, Search, DollarSign } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
+// Mock data with actual available dates for slots
 const mockParkingSpots = [
   {
     id: 1,
@@ -18,10 +19,14 @@ const mockParkingSpots = [
     price: 15,
     city: 'austin',
     image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
-    coordinates: { x: 35, y: 40 }, // Position on static map (percentage)
+    coordinates: { x: 35, y: 40 },
+    availableDates: ['2024-06-09', '2024-06-12', '2024-06-15', '2024-06-18'], // Only these dates have slots
     slots: [
-      { id: 1, name: 'Slot A', timeRange: '8:00 AM - 12:00 PM', capacity: 2 },
-      { id: 2, name: 'Slot B', timeRange: '1:00 PM - 6:00 PM', capacity: 1 }
+      { id: 1, name: 'Slot A', timeRange: '8:00 AM - 12:00 PM', capacity: 2, date: '2024-06-09' },
+      { id: 2, name: 'Slot B', timeRange: '1:00 PM - 6:00 PM', capacity: 1, date: '2024-06-09' },
+      { id: 3, name: 'Slot A', timeRange: '8:00 AM - 12:00 PM', capacity: 2, date: '2024-06-12' },
+      { id: 4, name: 'Slot B', timeRange: '2:00 PM - 7:00 PM', capacity: 1, date: '2024-06-15' },
+      { id: 5, name: 'Slot A', timeRange: '9:00 AM - 1:00 PM', capacity: 2, date: '2024-06-18' }
     ]
   },
   {
@@ -32,9 +37,11 @@ const mockParkingSpots = [
     city: 'dallas',
     image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
     coordinates: { x: 65, y: 25 },
+    availableDates: ['2024-06-10', '2024-06-14', '2024-06-17'], // Only these dates have slots
     slots: [
-      { id: 3, name: 'Slot A', timeRange: '9:00 AM - 2:00 PM', capacity: 3 },
-      { id: 4, name: 'Slot B', timeRange: '3:00 PM - 8:00 PM', capacity: 2 }
+      { id: 6, name: 'Slot A', timeRange: '9:00 AM - 2:00 PM', capacity: 3, date: '2024-06-10' },
+      { id: 7, name: 'Slot B', timeRange: '3:00 PM - 8:00 PM', capacity: 2, date: '2024-06-14' },
+      { id: 8, name: 'Slot A', timeRange: '10:00 AM - 3:00 PM', capacity: 3, date: '2024-06-17' }
     ]
   },
   {
@@ -45,9 +52,11 @@ const mockParkingSpots = [
     city: 'austin',
     image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
     coordinates: { x: 50, y: 60 },
+    availableDates: ['2024-06-11', '2024-06-16', '2024-06-20'], // Only these dates have slots
     slots: [
-      { id: 5, name: 'Slot A', timeRange: '10:00 AM - 4:00 PM', capacity: 5 },
-      { id: 6, name: 'Slot B', timeRange: '5:00 PM - 10:00 PM', capacity: 3 }
+      { id: 9, name: 'Slot A', timeRange: '10:00 AM - 4:00 PM', capacity: 5, date: '2024-06-11' },
+      { id: 10, name: 'Slot B', timeRange: '5:00 PM - 10:00 PM', capacity: 3, date: '2024-06-16' },
+      { id: 11, name: 'Slot A', timeRange: '8:00 AM - 2:00 PM', capacity: 4, date: '2024-06-20' }
     ]
   }
 ];
@@ -147,6 +156,11 @@ const FindParking = () => {
     
     // Check if the selected time range fits within the slot
     return selectedStart24 >= slotStart24 && selectedEnd24 <= slotEnd24;
+  };
+
+  const formatDatePill = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const applyFilters = () => {
@@ -389,7 +403,7 @@ const FindParking = () => {
                   <Card 
                     key={spot.id} 
                     id={`spot-card-${spot.id}`}
-                    className={`w-full min-h-[240px] hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
+                    className={`w-full min-h-[280px] hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
                       selectedSpotId === spot.id ? 'ring-2 ring-[#FF6B00] shadow-lg border-[#FF6B00]/50' : 'hover:shadow-lg'
                     }`}
                     onClick={() => handleCardClick(spot.id)}
@@ -414,20 +428,32 @@ const FindParking = () => {
                         </div>
                       </div>
 
-                      {/* Available times */}
+                      {/* Available Dates */}
                       <div className="flex-1 mb-4">
                         <div className="flex items-center space-x-2 text-sm text-gray-700 mb-3">
+                          <Calendar className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
+                          <span className="font-semibold">Available Dates:</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {spot.availableDates.map(date => (
+                            <div key={date} className="bg-[#FF6B00]/10 px-3 py-1 rounded-full border border-[#FF6B00]/20">
+                              <span className="text-sm font-medium text-[#FF6B00]">
+                                {formatDatePill(date)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 text-sm text-gray-700 mb-3">
                           <Clock className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
-                          <span className="font-semibold">Available Times:</span>
+                          <span className="font-semibold">Time Slots:</span>
                         </div>
                         <div className="space-y-2">
-                          {spot.slots.map(slot => (
-                            <div key={slot.id} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                          {/* Show unique time ranges from all slots */}
+                          {[...new Set(spot.slots.map(slot => slot.timeRange))].map(timeRange => (
+                            <div key={timeRange} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                               <div className="text-sm font-medium text-gray-800">
-                                {slot.timeRange}
-                              </div>
-                              <div className="text-xs text-gray-600 mt-1">
-                                Capacity: {slot.capacity} vehicle{slot.capacity !== 1 ? 's' : ''}
+                                {timeRange}
                               </div>
                             </div>
                           ))}

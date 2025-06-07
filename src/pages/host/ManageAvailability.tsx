@@ -412,13 +412,23 @@ const ManageAvailability = () => {
 
   const deleteSlot = (slotId: string) => {
     const slot = slots.find(s => s.id === slotId);
-    if (slot && (slot.status === 'cancelled' || !slot.isBooked)) {
-      setSlots(prev => prev.filter(slot => slot.id !== slotId));
+    if (!slot) return;
+
+    // Check if slot has bookings - only allow deletion of available slots
+    if (slot.status === 'booked') {
       toast({
-        title: "Slot Deleted",
-        description: "Time slot has been removed.",
+        title: "Cannot delete slot",
+        description: "This slot has active bookings and cannot be deleted.",
+        variant: "destructive"
       });
+      return;
     }
+
+    setSlots(prevSlots => prevSlots.filter(s => s.id !== slotId));
+    toast({
+      title: "Slot deleted",
+      description: "The time slot has been successfully deleted.",
+    });
   };
 
   const nextMonth = () => {
