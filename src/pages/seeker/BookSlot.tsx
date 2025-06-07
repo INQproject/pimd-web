@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,12 +12,12 @@ import { Switch } from '@/components/ui/switch';
 import { MapPin, Car, Shield, Sun, Clock, Circle, Calendar } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-// Generate available dates with slot data
+// Generate available dates with slot data - only dates with actual slots
 const generateAvailableDatesWithSlots = (spotId: number) => {
   const dates = [];
   const today = new Date();
   
-  // Different spots have different availability patterns
+  // Different spots have different availability patterns - only dates with slots
   const availabilityPattern = spotId === 1 ? [0, 1, 3, 4, 6] : spotId === 2 ? [0, 2, 4, 5] : [1, 2, 3, 5, 6];
   
   availabilityPattern.forEach(dayOffset => {
@@ -41,7 +40,7 @@ const generateAvailableDatesWithSlots = (spotId: number) => {
   return dates;
 };
 
-// Mock data with date-specific slot availability
+// Mock data with date-specific slot availability - only include dates with slots
 const mockParkingSpots = [{
   id: 1,
   name: 'Downtown Austin Driveway',
@@ -88,6 +87,36 @@ const mockParkingSpots = [{
         startTime: '2:00 PM',
         endTime: '7:00 PM'
       }
+    ],
+    [new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 5,
+        name: 'Slot A',
+        timeRange: '10:00 AM - 3:00 PM',
+        capacity: 2,
+        startTime: '10:00 AM',
+        endTime: '3:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 4 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 6,
+        name: 'Slot B',
+        timeRange: '1:00 PM - 8:00 PM',
+        capacity: 1,
+        startTime: '1:00 PM',
+        endTime: '8:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 6 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 7,
+        name: 'Slot A',
+        timeRange: '9:00 AM - 2:00 PM',
+        capacity: 3,
+        startTime: '9:00 AM',
+        endTime: '2:00 PM'
+      }
     ]
   }
 }, {
@@ -103,7 +132,7 @@ const mockParkingSpots = [{
   slotsByDate: {
     [new Date().toISOString().split('T')[0]]: [
       {
-        id: 5,
+        id: 8,
         name: 'Slot A',
         timeRange: '9:00 AM - 2:00 PM',
         capacity: 3,
@@ -111,12 +140,42 @@ const mockParkingSpots = [{
         endTime: '2:00 PM'
       },
       {
-        id: 6,
+        id: 9,
         name: 'Slot B',
         timeRange: '3:00 PM - 8:00 PM',
         capacity: 2,
         startTime: '3:00 PM',
         endTime: '8:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 10,
+        name: 'Slot A',
+        timeRange: '10:00 AM - 4:00 PM',
+        capacity: 2,
+        startTime: '10:00 AM',
+        endTime: '4:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 4 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 11,
+        name: 'Slot B',
+        timeRange: '2:00 PM - 7:00 PM',
+        capacity: 1,
+        startTime: '2:00 PM',
+        endTime: '7:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 12,
+        name: 'Slot A',
+        timeRange: '8:00 AM - 1:00 PM',
+        capacity: 3,
+        startTime: '8:00 AM',
+        endTime: '1:00 PM'
       }
     ]
   }
@@ -133,7 +192,7 @@ const mockParkingSpots = [{
   slotsByDate: {
     [new Date(Date.now() + 86400000).toISOString().split('T')[0]]: [
       {
-        id: 7,
+        id: 13,
         name: 'Slot A',
         timeRange: '10:00 AM - 4:00 PM',
         capacity: 5,
@@ -141,12 +200,52 @@ const mockParkingSpots = [{
         endTime: '4:00 PM'
       },
       {
-        id: 8,
+        id: 14,
         name: 'Slot B',
         timeRange: '5:00 PM - 10:00 PM',
         capacity: 3,
         startTime: '5:00 PM',
         endTime: '10:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 15,
+        name: 'Slot A',
+        timeRange: '9:00 AM - 3:00 PM',
+        capacity: 4,
+        startTime: '9:00 AM',
+        endTime: '3:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 16,
+        name: 'Slot B',
+        timeRange: '1:00 PM - 9:00 PM',
+        capacity: 2,
+        startTime: '1:00 PM',
+        endTime: '9:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 17,
+        name: 'Slot A',
+        timeRange: '8:00 AM - 2:00 PM',
+        capacity: 6,
+        startTime: '8:00 AM',
+        endTime: '2:00 PM'
+      }
+    ],
+    [new Date(Date.now() + 6 * 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 18,
+        name: 'Slot B',
+        timeRange: '3:00 PM - 8:00 PM',
+        capacity: 3,
+        startTime: '3:00 PM',
+        endTime: '8:00 PM'
       }
     ]
   }
@@ -430,7 +529,7 @@ const BookSlot = () => {
           </CardContent>
         </Card>
 
-        {/* Date Selector */}
+        {/* Date Selector - Only show dates with actual slots */}
         <Card className="mb-6 bg-[#FFF8F2] border-[#FF6B00]/30 max-w-4xl mx-auto">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center space-x-2 text-lg">
@@ -439,28 +538,36 @@ const BookSlot = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {spot.availableDates.map((date) => (
-                <Button
-                  key={date.value}
-                  variant={selectedDates.includes(date.value) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleDateToggle(date.value)}
-                  disabled={!isMultiDate && selectedDates.includes(date.value)}
-                  className={`px-4 py-2 ${
-                    selectedDates.includes(date.value) 
-                      ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white' 
-                      : 'hover:bg-[#FF6B00]/10 hover:border-[#FF6B00] hover:text-[#FF6B00]'
-                  }`}
-                >
-                  {date.label}
-                </Button>
-              ))}
-            </div>
-            {selectedDates.length > 1 && (
-              <div className="mt-3 text-sm text-[#606060]">
-                Selected {selectedDates.length} dates
+            {spot.availableDates.length === 0 ? (
+              <div className="text-[#606060] text-sm bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                No available booking dates for this parking spot.
               </div>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-3">
+                  {spot.availableDates.map((date) => (
+                    <Button
+                      key={date.value}
+                      variant={selectedDates.includes(date.value) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleDateToggle(date.value)}
+                      disabled={!isMultiDate && selectedDates.includes(date.value)}
+                      className={`px-4 py-2 ${
+                        selectedDates.includes(date.value) 
+                          ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white' 
+                          : 'hover:bg-[#FF6B00]/10 hover:border-[#FF6B00] hover:text-[#FF6B00]'
+                      }`}
+                    >
+                      {date.label}
+                    </Button>
+                  ))}
+                </div>
+                {selectedDates.length > 1 && (
+                  <div className="mt-3 text-sm text-[#606060]">
+                    Selected {selectedDates.length} dates
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
