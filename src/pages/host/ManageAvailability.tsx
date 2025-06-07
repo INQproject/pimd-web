@@ -17,7 +17,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import CancelSlotModal from '@/components/CancelSlotModal';
 
-interface Slot {
+interface HostSlot {
   id: string;
   date: string;
   startTime: string;
@@ -41,12 +41,12 @@ const ManageAvailability = () => {
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
-  const [slotToCancel, setSlotToCancel] = useState<Slot | null>(null);
+  const [slotToCancel, setSlotToCancel] = useState<HostSlot | null>(null);
   
   const slotFormRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef<HTMLSelectElement>(null);
   
-  const [slots, setSlots] = useState<Slot[]>([
+  const [slots, setSlots] = useState<HostSlot[]>([
     {
       id: '1',
       date: '2024-01-15',
@@ -362,10 +362,10 @@ const ManageAvailability = () => {
     if (!validateSlot(validDates)) return;
 
     const totalSpots = parseInt(newSlot.totalSpots) || 1;
-    const newSlots: Slot[] = [];
+    const newSlots: HostSlot[] = [];
     
     validDates.forEach(date => {
-      const newSlotData: Slot = {
+      const newSlotData: HostSlot = {
         id: Math.random().toString(36).substr(2, 9),
         date,
         startTime: newSlot.startTime,
@@ -390,7 +390,7 @@ const ManageAvailability = () => {
     });
   };
 
-  const handleCancelSlot = (slot: Slot) => {
+  const handleCancelSlot = (slot: HostSlot) => {
     setSlotToCancel(slot);
     setCancelModalOpen(true);
   };
@@ -412,7 +412,7 @@ const ManageAvailability = () => {
 
   const deleteSlot = (slotId: string) => {
     const slot = slots.find(s => s.id === slotId);
-    if (slot?.status === 'cancelled' || (slot && !slot.isBooked)) {
+    if (slot && (slot.status === 'cancelled' || !slot.isBooked)) {
       setSlots(prev => prev.filter(slot => slot.id !== slotId));
       toast({
         title: "Slot Deleted",
@@ -466,7 +466,7 @@ const ManageAvailability = () => {
   };
 
   const getSlotsByDate = () => {
-    const groupedSlots: { [key: string]: Slot[] } = {};
+    const groupedSlots: { [key: string]: HostSlot[] } = {};
     let filteredSlots = slots;
 
     // Apply status filter
@@ -500,7 +500,7 @@ const ManageAvailability = () => {
     return groupedSlots;
   };
 
-  const getStatusBadge = (slot: Slot) => {
+  const getStatusBadge = (slot: HostSlot) => {
     switch (slot.status) {
       case 'available':
         return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Available</Badge>;
