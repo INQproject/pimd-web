@@ -84,7 +84,7 @@ export default function Layout({
                       to="/profile"
                       className="text-sm text-[#606060] hover:text-[#FF6B00] transition-colors"
                     >
-                      Welcome, {user.name}
+                      PROFILE
                     </Link>
                     <Button variant="outline" size="sm" onClick={handleLogout}>
                       Logout

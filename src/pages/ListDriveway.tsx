@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +13,7 @@ const ListDriveway = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     spotName: '',
@@ -25,6 +25,16 @@ const ListDriveway = () => {
     weeklyRate: '',
     monthlyRate: ''
   });
+
+  const features = ['24/7', 'CCTV', 'WELL-LIT'];
+
+  const handleFeatureToggle = (feature: string) => {
+    setSelectedFeatures(prev => 
+      prev.includes(feature)
+        ? prev.filter(f => f !== feature)
+        : [...prev, feature]
+    );
+  };
 
   const handleLoginToStart = () => {
     navigate('/login', { state: { returnTo: '/list-driveway', context: 'listing' } });
@@ -174,6 +184,33 @@ const ListDriveway = () => {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Features Selection Section */}
+              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900">Tap to Select FEATURES</h3>
+                <div className="flex flex-wrap gap-3">
+                  {features.map((feature) => (
+                    <Button
+                      key={feature}
+                      type="button"
+                      variant={selectedFeatures.includes(feature) ? "default" : "outline"}
+                      className={`${
+                        selectedFeatures.includes(feature)
+                          ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white'
+                          : 'border-gray-300 hover:border-[#FF6B00] hover:text-[#FF6B00]'
+                      }`}
+                      onClick={() => handleFeatureToggle(feature)}
+                    >
+                      {feature}
+                    </Button>
+                  ))}
+                </div>
+                {selectedFeatures.length > 0 && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    Selected: {selectedFeatures.join(', ')}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">

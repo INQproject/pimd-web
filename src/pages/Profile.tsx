@@ -9,12 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, MapPin, DollarSign, Plus, Lock, User, Clock } from 'lucide-react';
+import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 
 const Profile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [selectedSpot, setSelectedSpot] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<string>('upcoming');
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
   if (!user) {
     navigate('/login');
@@ -416,14 +418,28 @@ const Profile = () => {
                   <label className="text-sm font-medium">Account Type</label>
                   <p className="text-[#606060]">Standard User</p>
                 </div>
-                <Button variant="outline" className="mt-4">
-                  Edit Profile
-                </Button>
+                <div className="flex space-x-4">
+                  <Button variant="outline" className="mt-4">
+                    Edit Profile
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white"
+                    onClick={() => setIsForgotPasswordOpen(true)}
+                  >
+                    Forgot Password
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
+
+      <ForgotPasswordModal 
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+      />
     </Layout>
   );
 };
