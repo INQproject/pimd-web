@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { mockParkingSpots } from '@/data/mockParkingData';
@@ -15,11 +16,11 @@ import { useNavigate } from 'react-router-dom';
 const FindParking = () => {
   const [priceRange, setPriceRange] = useState<number>(50);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-	const [selectedCity, setSelectedCity] = useState<string>("");
+	const [selectedCity, setSelectedCity] = useState<string>("all");
   const navigate = useNavigate();
 
   const filteredSpots = mockParkingSpots.filter(spot => {
-    const cityMatch = !selectedCity || spot.city === selectedCity;
+    const cityMatch = selectedCity === "all" || spot.city === selectedCity;
     const priceMatch = spot.price <= priceRange;
     
     let dateMatch = true;
@@ -43,12 +44,12 @@ const FindParking = () => {
 						{/* City Filter */}
 						<div>
 							<Label htmlFor="city">City</Label>
-							<Select onValueChange={setSelectedCity}>
+							<Select onValueChange={setSelectedCity} value={selectedCity}>
 								<SelectTrigger className="w-full">
 									<SelectValue placeholder="Select a city" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="">All Cities</SelectItem>
+									<SelectItem value="all">All Cities</SelectItem>
 									<SelectItem value="austin">Austin</SelectItem>
 									<SelectItem value="dallas">Dallas</SelectItem>
 									{/* Add more cities as needed */}
