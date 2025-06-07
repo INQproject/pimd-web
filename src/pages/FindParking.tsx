@@ -398,61 +398,61 @@ const FindParking = () => {
             </Card>
           ) : (
             <div className="w-full max-w-none">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 w-full">
                 {filteredSpots.map((spot) => (
                   <Card 
                     key={spot.id} 
                     id={`spot-card-${spot.id}`}
-                    className={`w-full min-h-[280px] hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
+                    className={`w-full hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
                       selectedSpotId === spot.id ? 'ring-2 ring-[#FF6B00] shadow-lg border-[#FF6B00]/50' : 'hover:shadow-lg'
                     }`}
                     onClick={() => handleCardClick(spot.id)}
                   >
-                    <CardContent className="p-5 h-full flex flex-col">
+                    <CardContent className="p-3 h-full flex flex-col">
                       {/* Header with name and price */}
-                      <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-lg text-[#1C1C1C] mb-2 group-hover:text-[#FF6B00] transition-colors">
+                          <h3 className="font-semibold text-base text-[#1C1C1C] mb-1 group-hover:text-[#FF6B00] transition-colors">
                             {spot.name}
                           </h3>
-                          <div className="flex items-center space-x-2 text-sm text-gray-600">
-                            <MapPin className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
+                          <div className="flex items-center space-x-1 text-xs text-gray-600">
+                            <MapPin className="w-3 h-3 flex-shrink-0 text-[#FF6B00]" />
                             <span className="truncate">{spot.address}</span>
                           </div>
                         </div>
-                        <div className="flex-shrink-0 ml-4">
-                          <div className="bg-[#FF6B00]/10 px-3 py-2 rounded-lg border border-[#FF6B00]/20">
-                            <span className="text-lg font-bold text-[#FF6B00]">${spot.price}</span>
-                            <span className="text-sm text-[#FF6B00]/80">/hr</span>
+                        <div className="flex-shrink-0 ml-3">
+                          <div className="bg-[#FF6B00]/10 px-2 py-1 rounded-md border border-[#FF6B00]/20">
+                            <span className="text-sm font-bold text-[#FF6B00]">${spot.price}</span>
+                            <span className="text-xs text-[#FF6B00]/80">/hr</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Available Dates */}
-                      <div className="flex-1 mb-4">
-                        <div className="flex items-center space-x-2 text-sm text-gray-700 mb-3">
-                          <Calendar className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
-                          <span className="font-semibold">Available Dates:</span>
+                      <div className="flex-1 mb-3">
+                        <div className="flex items-center space-x-1 text-xs text-gray-700 mb-2">
+                          <Calendar className="w-3 h-3 flex-shrink-0 text-[#FF6B00]" />
+                          <span className="font-medium">Available Dates:</span>
                         </div>
-                        <div className="flex flex-wrap gap-2 mb-4">
+                        <div className="flex flex-wrap gap-1 mb-3">
                           {spot.availableDates.map(date => (
-                            <div key={date} className="bg-[#FF6B00]/10 px-3 py-1 rounded-full border border-[#FF6B00]/20">
-                              <span className="text-sm font-medium text-[#FF6B00]">
+                            <div key={date} className="bg-[#FF6B00]/10 px-2 py-0.5 rounded-full border border-[#FF6B00]/20">
+                              <span className="text-xs font-medium text-[#FF6B00]">
                                 {formatDatePill(date)}
                               </span>
                             </div>
                           ))}
                         </div>
                         
-                        <div className="flex items-center space-x-2 text-sm text-gray-700 mb-3">
-                          <Clock className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
-                          <span className="font-semibold">Time Slots:</span>
+                        <div className="flex items-center space-x-1 text-xs text-gray-700 mb-2">
+                          <Clock className="w-3 h-3 flex-shrink-0 text-[#FF6B00]" />
+                          <span className="font-medium">Time Slots:</span>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-1">
                           {/* Show unique time ranges from all slots */}
                           {[...new Set(spot.slots.map(slot => slot.timeRange))].map(timeRange => (
-                            <div key={timeRange} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                              <div className="text-sm font-medium text-gray-800">
+                            <div key={timeRange} className="bg-gray-50 rounded-md p-2 border border-gray-100">
+                              <div className="text-xs font-medium text-gray-800">
                                 {timeRange}
                               </div>
                             </div>
@@ -461,13 +461,13 @@ const FindParking = () => {
                       </div>
 
                       {/* Book button */}
-                      <div className="flex justify-center md:justify-end pt-2">
+                      <div className="flex justify-center md:justify-end pt-1">
                         <Button 
                           onClick={(e) => {
                             e.stopPropagation();
                             handleBookParking(spot);
                           }}
-                          className="bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 hover:shadow-md w-full md:w-auto"
+                          className="bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white px-4 py-1.5 rounded-md font-medium transition-all duration-200 hover:shadow-md w-full md:w-auto text-sm"
                         >
                           Book Now
                         </Button>
