@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -432,7 +431,7 @@ const FindParking = () => {
                           <span className="font-semibold">Time Slots:</span>
                         </div>
                         <div className="space-y-2">
-                          {spot.slots.map(slot => (
+                          {spot.slots.map((slot: any) => (
                             <div key={slot.id} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                               <div className="text-sm font-medium text-gray-800">
                                 {slot.timeRange}
