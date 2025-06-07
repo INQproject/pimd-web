@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { MapPin, Car, Shield, Sun, Clock, Circle, Calendar } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -157,6 +158,7 @@ const BookSlot = () => {
   const { spotId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isMultiDate, setIsMultiDate] = useState(false);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [vehicleCount, setVehicleCount] = useState('1');
   const [vehicleBookings, setVehicleBookings] = useState([{
@@ -194,15 +196,16 @@ const BookSlot = () => {
     return null;
   }
 
-  // Get common slots available across all selected dates
-  const getCommonSlotsForSelectedDates = () => {
+  // Get slots based on mode
+  const getAvailableSlotsForSelectedDates = () => {
     if (selectedDates.length === 0) return [];
     
-    if (selectedDates.length === 1) {
+    if (!isMultiDate || selectedDates.length === 1) {
+      // Single date mode - show all slots for the selected date
       return spot.slotsByDate[selectedDates[0]] || [];
     }
 
-    // Find slots that exist on all selected dates
+    // Multi-date mode - find common slots across all selected dates
     const firstDateSlots = spot.slotsByDate[selectedDates[0]] || [];
     
     return firstDateSlots.filter(slot => 
@@ -216,25 +219,46 @@ const BookSlot = () => {
     );
   };
 
-  const availableSlotsForSelectedDates = getCommonSlotsForSelectedDates();
+  const availableSlotsForSelectedDates = getAvailableSlotsForSelectedDates();
 
   const handleDateToggle = (dateValue: string) => {
-    setSelectedDates(prev => {
-      const newDates = prev.includes(dateValue) 
-        ? prev.filter(d => d !== dateValue)
-        : [...prev, dateValue];
-      
-      // Reset all vehicle bookings when dates change
-      const newBookings = Array(parseInt(vehicleCount)).fill(null).map(() => ({
-        slotId: '',
-        startTime: '',
-        endTime: '',
-        price: 0
-      }));
-      setVehicleBookings(newBookings);
-      
-      return newDates;
-    });
+    if (!isMultiDate) {
+      // Single date mode - only allow one date
+      setSelectedDates([dateValue]);
+    } else {
+      // Multi-date mode - allow multiple dates
+      setSelectedDates(prev => {
+        const newDates = prev.includes(dateValue) 
+          ? prev.filter(d => d !== dateValue)
+          : [...prev, dateValue];
+        return newDates;
+      });
+    }
+    
+    // Reset all vehicle bookings when dates change
+    const newBookings = Array(parseInt(vehicleCount)).fill(null).map(() => ({
+      slotId: '',
+      startTime: '',
+      endTime: '',
+      price: 0
+    }));
+    setVehicleBookings(newBookings);
+  };
+
+  const handleModeToggle = (checked: boolean) => {
+    setIsMultiDate(checked);
+    // Reset to first available date when switching modes
+    if (spot.availableDates.length > 0) {
+      setSelectedDates([spot.availableDates[0].value]);
+    }
+    // Reset all vehicle bookings
+    const newBookings = Array(parseInt(vehicleCount)).fill(null).map(() => ({
+      slotId: '',
+      startTime: '',
+      endTime: '',
+      price: 0
+    }));
+    setVehicleBookings(newBookings);
   };
 
   const handleVehicleCountChange = (count: string) => {
@@ -386,7 +410,27 @@ const BookSlot = () => {
           </Card>
         </div>
 
-        {/* Multi-Select Date Selector - Only show dates with actual slots */}
+        {/* Single/Multi-Date Toggle */}
+        <Card className="mb-4 bg-[#FFF8F2] border-[#FF6B00]/30 max-w-4xl mx-auto">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-4">
+              <Label htmlFor="date-mode" className="text-sm font-medium text-[#1C1C1C]">
+                Single Date
+              </Label>
+              <Switch
+                id="date-mode"
+                checked={isMultiDate}
+                onCheckedChange={handleModeToggle}
+                className="data-[state=checked]:bg-[#FF6B00]"
+              />
+              <Label htmlFor="date-mode" className="text-sm font-medium text-[#1C1C1C]">
+                Multi-Date
+              </Label>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Date Selector */}
         <Card className="mb-6 bg-[#FFF8F2] border-[#FF6B00]/30 max-w-4xl mx-auto">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center space-x-2 text-lg">
@@ -402,6 +446,7 @@ const BookSlot = () => {
                   variant={selectedDates.includes(date.value) ? "default" : "outline"}
                   size="sm"
                   onClick={() => handleDateToggle(date.value)}
+                  disabled={!isMultiDate && selectedDates.includes(date.value)}
                   className={`px-4 py-2 ${
                     selectedDates.includes(date.value) 
                       ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white' 
@@ -420,13 +465,14 @@ const BookSlot = () => {
           </CardContent>
         </Card>
 
-        {/* Available Slots for Selected Dates */}
+        {/* Available Slots Status Message */}
         <Card className="mb-4 max-w-4xl mx-auto">
           <CardContent className="p-6">
             <h3 className="text-base font-semibold text-[#1C1C1C] mb-3">
               {selectedDates.length === 0 ? 'Please select at least one date' :
-               selectedDates.length === 1 ? `Available Slots for ${spot.availableDates.find(d => d.value === selectedDates[0])?.shortLabel}` :
-               'Common Slots Available Across All Selected Dates'
+               !isMultiDate || selectedDates.length === 1 ? 
+                 `Showing slots for ${spot.availableDates.find(d => d.value === selectedDates[0])?.shortLabel}` :
+                 'Common Slots Available Across All Selected Dates'
               }
             </h3>
             {selectedDates.length === 0 ? (
@@ -450,7 +496,10 @@ const BookSlot = () => {
               </div>
             ) : (
               <div className="text-[#606060] text-sm bg-red-50 border border-red-200 rounded-lg p-4">
-                No common time slots available for selected dates. Please select different dates or fewer dates.
+                {isMultiDate && selectedDates.length > 1 
+                  ? "No common time slots available for selected dates. Please select different dates or fewer dates."
+                  : "No slots available for the selected date."
+                }
               </div>
             )}
           </CardContent>
