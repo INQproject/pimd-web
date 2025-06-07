@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
@@ -12,14 +12,17 @@ import { Separator } from '@/components/ui/separator';
 import { MapPin, Car, Shield, Sun, Clock, Circle, Calendar } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-// Generate available dates for the next 7 days
-const generateAvailableDates = () => {
+// Generate available dates with slot data
+const generateAvailableDatesWithSlots = (spotId: number) => {
   const dates = [];
   const today = new Date();
   
-  for (let i = 0; i < 7; i++) {
+  // Different spots have different availability patterns
+  const availabilityPattern = spotId === 1 ? [0, 1, 3, 4, 6] : spotId === 2 ? [0, 2, 4, 5] : [1, 2, 3, 5, 6];
+  
+  availabilityPattern.forEach(dayOffset => {
     const date = new Date(today);
-    date.setDate(today.getDate() + i);
+    date.setDate(today.getDate() + dayOffset);
     dates.push({
       value: date.toISOString().split('T')[0],
       label: date.toLocaleDateString('en-US', { 
@@ -32,7 +35,7 @@ const generateAvailableDates = () => {
         day: 'numeric' 
       })
     });
-  }
+  });
   
   return dates;
 };
@@ -47,7 +50,7 @@ const mockParkingSpots = [{
   image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
   description: 'Secure private driveway in the heart of downtown Austin. Perfect for business meetings and shopping.',
   amenities: ['CCTV', 'Well-lit', '24/7 Access'],
-  availableDates: generateAvailableDates(),
+  availableDates: generateAvailableDatesWithSlots(1),
   slotsByDate: {
     [new Date().toISOString().split('T')[0]]: [
       {
@@ -95,7 +98,7 @@ const mockParkingSpots = [{
   image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
   description: 'Private parking spot in trendy Deep Ellum district. Walking distance to restaurants and nightlife.',
   amenities: ['CCTV', 'Covered'],
-  availableDates: generateAvailableDates(),
+  availableDates: generateAvailableDatesWithSlots(2),
   slotsByDate: {
     [new Date().toISOString().split('T')[0]]: [
       {
@@ -116,6 +119,36 @@ const mockParkingSpots = [{
       }
     ]
   }
+}, {
+  id: 3,
+  name: 'Phoenix Mall Parking',
+  address: '789 Phoenix Way, Austin, TX',
+  price: 8,
+  city: 'austin',
+  image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
+  description: 'Convenient parking near Phoenix Mall with easy access to shopping and dining.',
+  amenities: ['CCTV', 'Well-lit'],
+  availableDates: generateAvailableDatesWithSlots(3),
+  slotsByDate: {
+    [new Date(Date.now() + 86400000).toISOString().split('T')[0]]: [
+      {
+        id: 7,
+        name: 'Slot A',
+        timeRange: '10:00 AM - 4:00 PM',
+        capacity: 5,
+        startTime: '10:00 AM',
+        endTime: '4:00 PM'
+      },
+      {
+        id: 8,
+        name: 'Slot B',
+        timeRange: '5:00 PM - 10:00 PM',
+        capacity: 3,
+        startTime: '5:00 PM',
+        endTime: '10:00 PM'
+      }
+    ]
+  }
 }];
 
 const allTimeOptions = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'];
@@ -124,7 +157,7 @@ const BookSlot = () => {
   const { spotId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [vehicleCount, setVehicleCount] = useState('1');
   const [vehicleBookings, setVehicleBookings] = useState([{
     slotId: '',
@@ -135,34 +168,73 @@ const BookSlot = () => {
 
   const spot = mockParkingSpots.find(s => s.id.toString() === spotId);
 
-  if (!spot) {
-    navigate('/find-parking');
+  useEffect(() => {
+    if (!spot) {
+      navigate('/find-parking');
+      return;
+    }
+
+    if (!user) {
+      navigate('/login', {
+        state: {
+          returnTo: `/book-slot/${spotId}`,
+          context: 'booking'
+        }
+      });
+      return;
+    }
+
+    // Set default selected date to first available date
+    if (spot.availableDates.length > 0) {
+      setSelectedDates([spot.availableDates[0].value]);
+    }
+  }, [spot, user, navigate, spotId]);
+
+  if (!spot || !user) {
     return null;
   }
 
-  if (!user) {
-    navigate('/login', {
-      state: {
-        returnTo: `/book-slot/${spotId}`,
-        context: 'booking'
-      }
+  // Get common slots available across all selected dates
+  const getCommonSlotsForSelectedDates = () => {
+    if (selectedDates.length === 0) return [];
+    
+    if (selectedDates.length === 1) {
+      return spot.slotsByDate[selectedDates[0]] || [];
+    }
+
+    // Find slots that exist on all selected dates
+    const firstDateSlots = spot.slotsByDate[selectedDates[0]] || [];
+    
+    return firstDateSlots.filter(slot => 
+      selectedDates.every(date => {
+        const dateSlots = spot.slotsByDate[date] || [];
+        return dateSlots.some(dateSlot => 
+          dateSlot.name === slot.name && 
+          dateSlot.timeRange === slot.timeRange
+        );
+      })
+    );
+  };
+
+  const availableSlotsForSelectedDates = getCommonSlotsForSelectedDates();
+
+  const handleDateToggle = (dateValue: string) => {
+    setSelectedDates(prev => {
+      const newDates = prev.includes(dateValue) 
+        ? prev.filter(d => d !== dateValue)
+        : [...prev, dateValue];
+      
+      // Reset all vehicle bookings when dates change
+      const newBookings = Array(parseInt(vehicleCount)).fill(null).map(() => ({
+        slotId: '',
+        startTime: '',
+        endTime: '',
+        price: 0
+      }));
+      setVehicleBookings(newBookings);
+      
+      return newDates;
     });
-    return null;
-  }
-
-  // Get slots for selected date
-  const availableSlotsForDate = spot.slotsByDate[selectedDate] || [];
-
-  const handleDateChange = (date: string) => {
-    setSelectedDate(date);
-    // Reset all vehicle bookings when date changes
-    const newBookings = Array(parseInt(vehicleCount)).fill(null).map(() => ({
-      slotId: '',
-      startTime: '',
-      endTime: '',
-      price: 0
-    }));
-    setVehicleBookings(newBookings);
   };
 
   const handleVehicleCountChange = (count: string) => {
@@ -177,7 +249,7 @@ const BookSlot = () => {
   };
 
   const getSlotById = (slotId: string) => {
-    return availableSlotsForDate.find(slot => slot.id.toString() === slotId);
+    return availableSlotsForSelectedDates.find(slot => slot.id.toString() === slotId);
   };
 
   const getAvailableStartTimes = (slotId: string) => {
@@ -220,7 +292,7 @@ const BookSlot = () => {
         const startIndex = allTimeOptions.indexOf(booking.startTime);
         const endIndex = allTimeOptions.indexOf(booking.endTime);
         const hours = endIndex - startIndex;
-        newBookings[index].price = Math.max(hours * spot.price, 0);
+        newBookings[index].price = Math.max(hours * spot.price * selectedDates.length, 0);
       }
     }
 
@@ -229,18 +301,20 @@ const BookSlot = () => {
 
   const handleProceedToPayment = () => {
     const totalPrice = vehicleBookings.reduce((sum, booking) => sum + booking.price, 0);
-    const selectedDateLabel = spot.availableDates.find(d => d.value === selectedDate)?.label || selectedDate;
+    const selectedDateLabels = selectedDates.map(date => 
+      spot.availableDates.find(d => d.value === date)?.shortLabel || date
+    ).join(', ');
     
     toast({
       title: "Booking Confirmed",
-      description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s) at ${spot.name} on ${selectedDateLabel}`
+      description: `Total: $${totalPrice.toFixed(2)} for ${vehicleCount} vehicle(s) at ${spot.name} on ${selectedDateLabels}`
     });
     navigate('/profile');
   };
 
   const isBookingValid = vehicleBookings.every(booking => 
     booking.slotId && booking.startTime && booking.endTime && booking.price > 0
-  );
+  ) && selectedDates.length > 0;
 
   const getAmenityIcon = (amenity: string) => {
     switch (amenity.toLowerCase()) {
@@ -312,12 +386,12 @@ const BookSlot = () => {
           </Card>
         </div>
 
-        {/* Date Selector */}
+        {/* Multi-Select Date Selector - Only show dates with actual slots */}
         <Card className="mb-6 bg-[#FFF8F2] border-[#FF6B00]/30 max-w-4xl mx-auto">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center space-x-2 text-lg">
               <Calendar className="h-5 w-5 text-[#FF6B00]" />
-              <span>Select Available Date:</span>
+              <span>Select Available Date(s):</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -325,11 +399,11 @@ const BookSlot = () => {
               {spot.availableDates.map((date) => (
                 <Button
                   key={date.value}
-                  variant={selectedDate === date.value ? "default" : "outline"}
+                  variant={selectedDates.includes(date.value) ? "default" : "outline"}
                   size="sm"
-                  onClick={() => handleDateChange(date.value)}
+                  onClick={() => handleDateToggle(date.value)}
                   className={`px-4 py-2 ${
-                    selectedDate === date.value 
+                    selectedDates.includes(date.value) 
                       ? 'bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white' 
                       : 'hover:bg-[#FF6B00]/10 hover:border-[#FF6B00] hover:text-[#FF6B00]'
                   }`}
@@ -338,18 +412,30 @@ const BookSlot = () => {
                 </Button>
               ))}
             </div>
+            {selectedDates.length > 1 && (
+              <div className="mt-3 text-sm text-[#606060]">
+                Selected {selectedDates.length} dates
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Available Slots for Selected Date */}
+        {/* Available Slots for Selected Dates */}
         <Card className="mb-4 max-w-4xl mx-auto">
           <CardContent className="p-6">
             <h3 className="text-base font-semibold text-[#1C1C1C] mb-3">
-              Available Slots for {spot.availableDates.find(d => d.value === selectedDate)?.shortLabel}
+              {selectedDates.length === 0 ? 'Please select at least one date' :
+               selectedDates.length === 1 ? `Available Slots for ${spot.availableDates.find(d => d.value === selectedDates[0])?.shortLabel}` :
+               'Common Slots Available Across All Selected Dates'
+              }
             </h3>
-            {availableSlotsForDate.length > 0 ? (
+            {selectedDates.length === 0 ? (
+              <div className="text-[#606060] text-sm bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                Please select at least one date to see available slots.
+              </div>
+            ) : availableSlotsForSelectedDates.length > 0 ? (
               <div className="flex flex-wrap gap-3">
-                {availableSlotsForDate.map(slot => (
+                {availableSlotsForSelectedDates.map(slot => (
                   <div key={slot.id} className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
                     <Circle className="w-3 h-3 fill-blue-500 text-blue-500" />
                     <div className="text-sm">
@@ -363,15 +449,15 @@ const BookSlot = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-[#606060] text-sm bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                No slots available for this date. Please select a different date.
+              <div className="text-[#606060] text-sm bg-red-50 border border-red-200 rounded-lg p-4">
+                No common time slots available for selected dates. Please select different dates or fewer dates.
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Main Content Grid - Only show if slots are available */}
-        {availableSlotsForDate.length > 0 && (
+        {selectedDates.length > 0 && availableSlotsForSelectedDates.length > 0 && (
           <div className="grid lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
             {/* Left Column - Booking Form */}
             <div className="lg:col-span-2">
@@ -413,7 +499,7 @@ const BookSlot = () => {
                               <SelectValue placeholder="Choose slot" />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableSlotsForDate.map(slot => (
+                              {availableSlotsForSelectedDates.map(slot => (
                                 <SelectItem key={slot.id} value={slot.id.toString()}>
                                   {slot.name}
                                 </SelectItem>
@@ -472,7 +558,9 @@ const BookSlot = () => {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="text-sm text-[#606060] mb-3">
-                      <strong>Date:</strong> {spot.availableDates.find(d => d.value === selectedDate)?.label}
+                      <strong>Date(s):</strong> {selectedDates.map(date => 
+                        spot.availableDates.find(d => d.value === date)?.shortLabel
+                      ).join(', ')}
                     </div>
                     
                     {vehicleBookings.map((booking, index) => {

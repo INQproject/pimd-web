@@ -11,11 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MapPin, Calendar, Clock, Filter, Car, Navigation, Search, DollarSign } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-// Generate available dates for each parking spot (next 7 days)
+// Generate available dates for each parking spot (next 7 days with slots)
 const generateAvailableDates = () => {
   const dates = [];
   const today = new Date();
   
+  // Simulate different availability patterns for different spots
   for (let i = 0; i < 7; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
@@ -24,6 +25,26 @@ const generateAvailableDates = () => {
       day: 'numeric' 
     }));
   }
+  
+  return dates;
+};
+
+// Generate dates where slots actually exist (simulate real availability)
+const generateSlotsAvailableDates = (spotId: number) => {
+  const dates = [];
+  const today = new Date();
+  
+  // Different spots have different availability patterns
+  const availabilityPattern = spotId === 1 ? [0, 1, 3, 4, 6] : spotId === 2 ? [0, 2, 4, 5] : [1, 2, 3, 5, 6];
+  
+  availabilityPattern.forEach(dayOffset => {
+    const date = new Date(today);
+    date.setDate(today.getDate() + dayOffset);
+    dates.push(date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    }));
+  });
   
   return dates;
 };
@@ -38,6 +59,7 @@ const mockParkingSpots = [
     image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=400',
     coordinates: { x: 35, y: 40 },
     availableDates: generateAvailableDates(),
+    slotsAvailableDates: generateSlotsAvailableDates(1),
     slots: [
       { id: 1, name: 'Slot A', timeRange: '8:00 AM - 12:00 PM', capacity: 2 },
       { id: 2, name: 'Slot B', timeRange: '1:00 PM - 6:00 PM', capacity: 1 }
@@ -52,6 +74,7 @@ const mockParkingSpots = [
     image: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400',
     coordinates: { x: 65, y: 25 },
     availableDates: generateAvailableDates(),
+    slotsAvailableDates: generateSlotsAvailableDates(2),
     slots: [
       { id: 3, name: 'Slot A', timeRange: '9:00 AM - 2:00 PM', capacity: 3 },
       { id: 4, name: 'Slot B', timeRange: '3:00 PM - 8:00 PM', capacity: 2 }
@@ -66,6 +89,7 @@ const mockParkingSpots = [
     image: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=400',
     coordinates: { x: 50, y: 60 },
     availableDates: generateAvailableDates(),
+    slotsAvailableDates: generateSlotsAvailableDates(3),
     slots: [
       { id: 5, name: 'Slot A', timeRange: '10:00 AM - 4:00 PM', capacity: 5 },
       { id: 6, name: 'Slot B', timeRange: '5:00 PM - 10:00 PM', capacity: 3 }
@@ -410,7 +434,7 @@ const FindParking = () => {
                   <Card 
                     key={spot.id} 
                     id={`spot-card-${spot.id}`}
-                    className={`w-full min-h-[380px] hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
+                    className={`w-full min-h-[420px] hover:shadow-xl hover:border-[#FF6B00]/30 transition-all duration-300 cursor-pointer group ${
                       selectedSpotId === spot.id ? 'ring-2 ring-[#FF6B00] shadow-lg border-[#FF6B00]/50' : 'hover:shadow-lg'
                     }`}
                     onClick={() => handleCardClick(spot.id)}
@@ -455,14 +479,14 @@ const FindParking = () => {
                         </div>
                       </div>
 
-                      {/* Available Dates */}
+                      {/* Available Dates - Only show dates with actual slots */}
                       <div className="mb-4 flex-1">
                         <div className="flex items-center space-x-2 text-sm text-gray-700 mb-2">
                           <Calendar className="w-4 h-4 flex-shrink-0 text-[#FF6B00]" />
                           <span className="font-semibold">Available Dates:</span>
                         </div>
                         <div className="flex overflow-x-auto gap-2 max-h-16 pb-2">
-                          {spot.availableDates.map((date, index) => (
+                          {spot.slotsAvailableDates.map((date, index) => (
                             <div key={index} className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-medium border border-blue-200 whitespace-nowrap flex-shrink-0">
                               {date}
                             </div>
