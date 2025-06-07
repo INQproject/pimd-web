@@ -69,7 +69,7 @@ const FindParking = () => {
 
   const getUniqueDatesForSpot = (spot: any) => {
     const allDates = spot.slots.flatMap((slot: any) => slot.availableDates || []);
-    return [...new Set(allDates.filter((date: any) => typeof date === 'string'))].sort();
+    return [...new Set(allDates.filter((date: any): date is string => typeof date === 'string'))].sort();
   };
 
   const formatAvailableDates = (dates: string[]) => {

@@ -3,16 +3,17 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { MapPin, Menu, X, User } from 'lucide-react';
+import { MapPin, Menu, X, User, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 
 interface LayoutProps {
   children: React.ReactNode;
   title?: string;
   showNavigation?: boolean;
+  showBackButton?: boolean;
 }
 
-const Layout = ({ children, title, showNavigation = true }: LayoutProps) => {
+const Layout = ({ children, title, showNavigation = true, showBackButton = false }: LayoutProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -155,6 +156,20 @@ const Layout = ({ children, title, showNavigation = true }: LayoutProps) => {
             )}
           </div>
         </nav>
+      )}
+
+      {/* Back Button */}
+      {showBackButton && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+          <Button
+            onClick={() => navigate(-1)}
+            variant="ghost"
+            className="flex items-center space-x-2 text-[#FF6B00] hover:bg-[#FF6B00]/10"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </Button>
+        </div>
       )}
 
       {/* Main Content */}
